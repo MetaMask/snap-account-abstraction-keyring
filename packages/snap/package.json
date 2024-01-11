@@ -27,6 +27,7 @@
     "snap.manifest.json"
   ],
   "scripts": {
+    "compile": "hardhat compile",
     "build": "mm-snap build",
     "build:clean": "yarn clean && yarn build",
     "clean": "rimraf dist",
@@ -37,8 +38,7 @@
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '!snap.manifest.json' --check",
     "lint:types": "tsc --noEmit",
     "serve": "mm-snap serve",
-    "start": "NODE_ENV='development' mm-snap watch",
-    "compile": "hardhat compile"
+    "start": "NODE_ENV='development' mm-snap watch"
   },
   "dependencies": {
     "@ethereumjs/common": "^4.1.0",
