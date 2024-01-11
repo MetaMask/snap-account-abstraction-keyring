@@ -1,7 +1,7 @@
 import type { JsonTx } from '@ethereumjs/tx';
 import type { Json } from '@metamask/utils';
 
-import type { Wallet } from './keyring';
+import type { Wallet } from '../keyring';
 
 /**
  * Serializes a transaction by removing undefined properties and converting them to null.

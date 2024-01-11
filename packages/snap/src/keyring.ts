@@ -1,21 +1,21 @@
 import { Common, Hardfork } from '@ethereumjs/common';
 import { TransactionFactory } from '@ethereumjs/tx';
 import {
+  addHexPrefix,
   Address,
   ecsign,
-  stripHexPrefix,
-  toChecksumAddress,
   isValidPrivate,
-  addHexPrefix,
+  stripHexPrefix,
   toBytes,
+  toChecksumAddress,
 } from '@ethereumjs/util';
 import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
 import {
-  SignTypedDataVersion,
   concatSig,
   personalSign,
   recoverPersonalSignature,
   signTypedData,
+  SignTypedDataVersion,
 } from '@metamask/eth-sig-util';
 import type {
   Keyring,
@@ -24,24 +24,36 @@ import type {
   SubmitRequestResponse,
 } from '@metamask/keyring-api';
 import {
+  emitSnapKeyringEvent,
   EthAccountType,
   EthMethod,
-  emitSnapKeyringEvent,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
+import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
 import { v4 as uuid } from 'uuid';
 
+import { getAAFactory } from './constants/aa-factories';
+import { logger } from './logger';
 import { saveState } from './stateManagement';
+import { getSigner, provider } from './utils/ethers';
 import {
   isEvmChain,
-  serializeTransaction,
   isUniqueAddress,
-  throwError,
   runSensitive,
-} from './util';
+  serializeTransaction,
+  throwError,
+} from './utils/util';
 import packageInfo from '../package.json';
+
+const unsupportedAAMethods = [
+  EthMethod.Sign,
+  EthMethod.PersonalSign,
+  EthMethod.SignTypedDataV1,
+  EthMethod.SignTypedDataV3,
+  EthMethod.SignTypedDataV4,
+];
 
 export type KeyringState = {
   wallets: Record<string, Wallet>;
@@ -53,8 +65,7 @@ export type Wallet = {
   account: KeyringAccount;
   admin: string;
   privateKey: string;
-  isDeployed: boolean;
-  chains: string[];
+  chains: Record<string, boolean>;
   initCode?: string;
 };
 
@@ -79,11 +90,9 @@ export class SimpleKeyring implements Keyring {
   async createAccount(
     options: Record<string, Json> = {},
   ): Promise<KeyringAccount> {
-    const { isDeployed, chains, initCode } = options as {
-      isDeployed: boolean;
-      chains: string[];
-      initCode?: string;
-    };
+    if (!options.privateKey) {
+      throwError(`[Snap] Private Key is required`);
+    }
 
     const { privateKey, address } = this.#getKeyPair(
       options?.privateKey as string | undefined,
@@ -99,18 +108,45 @@ export class SimpleKeyring implements Keyring {
       delete options.privateKey;
     }
 
+    const { chainId } = await provider.getNetwork();
+    const signer = getSigner(privateKey);
+
+    // get factory contract by chain
+    const aaFactory = await getAAFactory(chainId, signer);
+    console.log('factory', aaFactory);
+
+    const array = new Uint32Array(10);
+    const salt = keccak256(
+      defaultAbiCoder.encode(['uint256'], [crypto.getRandomValues(array)]),
+    );
+
+    const aaAddress = await aaFactory.getAddress(address, salt);
+
+    // check on chain if the account already exists.
+    // if it does, this means that there is a collision in the salt used.
+    const accountCollision = (await provider.getCode(aaAddress)) !== '0x';
+    if (accountCollision) {
+      throwError(`[Snap] Account Salt already used, please retry.`);
+    }
+    if (this.#state.wallets[address]) {
+      throwError('[Snap] Account already exists');
+    }
+
+    try {
+      // TODO: This will deploy the account on the chain, requires admin to pay for gas.
+      await aaFactory.createAccount(address, salt);
+      logger.info('[Snap] Deployed AA Account Successfully');
+    } catch (error) {
+      logger.error(`Error to deploy AA: ${(error as Error).message}`);
+    }
+
     try {
       const account: KeyringAccount = {
         id: uuid(),
         options,
-        address,
+        address: aaAddress,
         methods: [
-          EthMethod.PersonalSign,
-          EthMethod.Sign,
           EthMethod.SignTransaction,
-          EthMethod.SignTypedDataV1,
-          EthMethod.SignTypedDataV3,
-          EthMethod.SignTypedDataV4,
           // 4337 methods
           EthMethod.PatchUserOperation,
           EthMethod.PrepareUserOperation,
@@ -120,11 +156,10 @@ export class SimpleKeyring implements Keyring {
       };
       this.#state.wallets[account.id] = {
         account,
-        admin: address, // Address of the admin account
+        admin: address, // Address of the admin account from private key
         privateKey,
-        isDeployed,
-        chains,
-        initCode: initCode ?? '0x',
+        chains: { [chainId.toString()]: true },
+        initCode: '0x', // (@monte) TODO: handle init code
       };
       return account;
     } catch (error) {
@@ -142,6 +177,12 @@ export class SimpleKeyring implements Keyring {
     const wallet =
       this.#state.wallets[account.id] ??
       throwError(`Account '${account.id}' not found`);
+
+    if (
+      unsupportedAAMethods.some((method) => account.methods.includes(method))
+    ) {
+      throwError(`[Snap] Account does not implement EIP 1271`);
+    }
 
     const newAccount: KeyringAccount = {
       ...wallet.account,
