@@ -2,7 +2,11 @@
   "extends": "../../tsconfig.json",
   "compilerOptions": {
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true
   },
-  "include": ["src/", "snap.config.ts"]
+  "include": ["./src/", "snap.config.ts", "./contracts/"],
+  "files": ["./hardhat.config.ts"]
 }
