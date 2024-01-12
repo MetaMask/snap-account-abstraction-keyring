@@ -31,11 +31,10 @@ import {
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
-import { defaultAbiCoder, keccak256 } from 'ethers/lib/utils';
+import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
 import { v4 as uuid } from 'uuid';
 
 import { getAAFactory } from './constants/aa-factories';
-import { logger } from './logger';
 import { saveState } from './stateManagement';
 import { getSigner, provider } from './utils/ethers';
 import {
@@ -122,6 +121,10 @@ export class SimpleKeyring implements Keyring {
     );
 
     const aaAddress = await aaFactory.getAddress(address, salt);
+    const initCode = hexConcat([
+      aaFactory.address,
+      aaFactory.interface.encodeFunctionData('createAccount', [address, salt]),
+    ]);
 
     // check on chain if the account already exists.
     // if it does, this means that there is a collision in the salt used.
@@ -133,13 +136,14 @@ export class SimpleKeyring implements Keyring {
       throwError('[Snap] Account already exists');
     }
 
-    try {
-      // TODO: This will deploy the account on the chain, requires admin to pay for gas.
-      await aaFactory.createAccount(address, salt);
-      logger.info('[Snap] Deployed AA Account Successfully');
-    } catch (error) {
-      logger.error(`Error to deploy AA: ${(error as Error).message}`);
-    }
+    // Note: this is commented out because the AA is not deployed yet.
+    // Will store the initCode in the wallet object to deploy with a transaction later.
+    // try {
+    //   await aaFactory.createAccount(address, salt);
+    //   logger.info('[Snap] Deployed AA Account Successfully');
+    // } catch (error) {
+    //   logger.error(`Error to deploy AA: ${(error as Error).message}`);
+    // }
 
     try {
       const account: KeyringAccount = {
@@ -159,7 +163,7 @@ export class SimpleKeyring implements Keyring {
         admin: address, // Address of the admin account from private key
         privateKey,
         chains: { [chainId.toString()]: true },
-        initCode: '0x', // (@monte) TODO: handle init code
+        initCode,
       };
       return account;
     } catch (error) {
