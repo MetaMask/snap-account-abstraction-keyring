@@ -7,21 +7,21 @@ import type {
   OnRpcRequestHandler,
 } from '@metamask/snaps-types';
 
-import { SimpleKeyring } from './keyring';
+import { AccountAbstractionKeyring } from './keyring';
 import { logger } from './logger';
 import { InternalMethod, originPermissions } from './permissions';
 import { getState } from './stateManagement';
 
-let keyring: SimpleKeyring;
+let keyring: AccountAbstractionKeyring;
 
 /**
  * Return the keyring instance. If it doesn't exist, create it.
  */
-async function getKeyring(): Promise<SimpleKeyring> {
+async function getKeyring(): Promise<AccountAbstractionKeyring> {
   if (!keyring) {
     const state = await getState();
     if (!keyring) {
-      keyring = new SimpleKeyring(state);
+      keyring = new AccountAbstractionKeyring(state);
     }
   }
   return keyring;

@@ -1,23 +1,14 @@
-import { Common, Hardfork } from '@ethereumjs/common';
-import { TransactionFactory } from '@ethereumjs/tx';
 import {
   addHexPrefix,
   Address,
-  ecsign,
   isValidPrivate,
-  stripHexPrefix,
-  toBytes,
   toChecksumAddress,
 } from '@ethereumjs/util';
-import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
-import {
-  concatSig,
-  personalSign,
-  recoverPersonalSignature,
-  signTypedData,
-  SignTypedDataVersion,
-} from '@metamask/eth-sig-util';
 import type {
+  EthBaseTransaction,
+  EthBaseUserOperation,
+  EthUserOperation,
+  EthUserOperationPatch,
   Keyring,
   KeyringAccount,
   KeyringRequest,
@@ -26,11 +17,14 @@ import type {
 import {
   emitSnapKeyringEvent,
   EthAccountType,
+  EthBaseTransactionStruct,
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
+import { UserOperationController } from '@metamask/user-operation-controller';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
+import { Contract } from 'ethers';
 import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
 import { v4 as uuid } from 'uuid';
 
@@ -41,10 +35,8 @@ import {
   isEvmChain,
   isUniqueAddress,
   runSensitive,
-  serializeTransaction,
   throwError,
 } from './utils/util';
-import packageInfo from '../package.json';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -65,10 +57,10 @@ export type Wallet = {
   admin: string;
   privateKey: string;
   chains: Record<string, boolean>;
-  initCode?: string;
+  initCode: string;
 };
 
-export class SimpleKeyring implements Keyring {
+export class AccountAbstractionKeyring implements Keyring {
   #state: KeyringState;
 
   constructor(state: KeyringState) {
@@ -148,8 +140,8 @@ export class SimpleKeyring implements Keyring {
         address: aaAddress,
         methods: [
           // 4337 methods
-          EthMethod.PatchUserOperation,
           EthMethod.PrepareUserOperation,
+          EthMethod.PatchUserOperation,
           EthMethod.SignUserOperation,
         ],
         type: EthAccountType.Erc4337,
@@ -298,40 +290,26 @@ export class SimpleKeyring implements Keyring {
 
   #handleSigningRequest(method: string, params: Json): Json {
     switch (method) {
-      case EthMethod.PersonalSign: {
-        const [message, from] = params as [string, string];
-        return this.#signPersonalMessage(from, message);
-      }
-
-      case EthMethod.SignTransaction: {
-        const [tx] = params as [any];
-        return this.#signTransaction(tx);
-      }
-
-      case EthMethod.SignTypedDataV1: {
+      case EthMethod.PrepareUserOperation: {
         const [from, data] = params as [string, Json];
-        return this.#signTypedData(from, data, {
-          version: SignTypedDataVersion.V1,
+        const transactions: EthBaseTransaction[] = JSON.parse(
+          data as string,
+        ).map((item: unknown) => {
+          return EthBaseTransactionStruct.create(item);
         });
+        return this.#prepareUserOperation(from, transactions);
       }
 
-      case EthMethod.SignTypedDataV3: {
+      case EthMethod.PatchUserOperation: {
         const [from, data] = params as [string, Json];
-        return this.#signTypedData(from, data, {
-          version: SignTypedDataVersion.V3,
-        });
+        const userOp: EthUserOperation = JSON.parse(data as string);
+        return this.#patchUserOperation(from, userOp);
       }
 
-      case EthMethod.SignTypedDataV4: {
+      case EthMethod.SignUserOperation: {
         const [from, data] = params as [string, Json];
-        return this.#signTypedData(from, data, {
-          version: SignTypedDataVersion.V4,
-        });
-      }
-
-      case EthMethod.Sign: {
-        const [from, data] = params as [string, string];
-        return this.#signMessage(from, data);
+        const userOp: EthUserOperation = JSON.parse(data as string);
+        return this.#signUserOperation(from, userOp);
       }
 
       default: {
@@ -340,81 +318,25 @@ export class SimpleKeyring implements Keyring {
     }
   }
 
-  #signTransaction(tx: any): Json {
-    // Patch the transaction to make sure that the `chainId` is a hex string.
-    if (!tx.chainId.startsWith('0x')) {
-      tx.chainId = `0x${parseInt(tx.chainId, 10).toString(16)}`;
-    }
-
-    const wallet = this.#getWalletByAddress(tx.from);
-    const privateKey = Buffer.from(wallet.privateKey, 'hex');
-    const common = Common.custom(
-      { chainId: tx.chainId },
-      {
-        hardfork:
-          tx.maxPriorityFeePerGas || tx.maxFeePerGas
-            ? Hardfork.London
-            : Hardfork.Istanbul,
-      },
-    );
-
-    const signedTx = TransactionFactory.fromTxData(tx, {
-      common,
-    }).sign(privateKey);
-
-    return serializeTransaction(signedTx.toJSON(), signedTx.type);
+  async #prepareUserOperation(
+    address: string,
+    transactions: EthBaseTransaction[],
+  ): Promise<EthBaseUserOperation> {
+    throwError('Method not implemented.');
   }
 
-  #signTypedData(
-    from: string,
-    data: Json,
-    opts: { version: SignTypedDataVersion } = {
-      version: SignTypedDataVersion.V1,
-    },
-  ): string {
-    const { privateKey } = this.#getWalletByAddress(from);
-    const privateKeyBuffer = Buffer.from(privateKey, 'hex');
-
-    return signTypedData({
-      privateKey: privateKeyBuffer,
-      data: data as unknown as TypedDataV1 | TypedMessage<any>,
-      version: opts.version,
-    });
+  async #patchUserOperation(
+    address: string,
+    userOp: EthUserOperation,
+  ): Promise<EthUserOperationPatch> {
+    throw new Error('Method not implemented.');
   }
 
-  #signPersonalMessage(from: string, request: string): string {
-    const { privateKey } = this.#getWalletByAddress(from);
-    const privateKeyBuffer = Buffer.from(privateKey, 'hex');
-    const messageBuffer = Buffer.from(request.slice(2), 'hex');
-
-    const signature = personalSign({
-      privateKey: privateKeyBuffer,
-      data: messageBuffer,
-    });
-
-    const recoveredAddress = recoverPersonalSignature({
-      data: messageBuffer,
-      signature,
-    });
-    if (recoveredAddress !== from) {
-      throw new Error(
-        `Signature verification failed for account '${from}' (got '${recoveredAddress}')`,
-      );
-    }
-
-    return signature;
-  }
-
-  #signMessage(from: string, data: string): string {
-    const { privateKey } = this.#getWalletByAddress(from);
-    const privateKeyBuffer = Buffer.from(privateKey, 'hex');
-    const message = stripHexPrefix(data);
-    const signature = ecsign(Buffer.from(message, 'hex'), privateKeyBuffer);
-    return concatSig(
-      Buffer.from(toBytes(signature.v)),
-      Buffer.from(signature.r),
-      Buffer.from(signature.s),
-    );
+  async #signUserOperation(
+    address: string,
+    userOp: EthUserOperation,
+  ): Promise<string> {
+    throw new Error('Method not implemented.');
   }
 
   async #saveState(): Promise<void> {

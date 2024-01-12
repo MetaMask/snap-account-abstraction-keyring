@@ -60,6 +60,7 @@
     "@metamask/eslint-config-nodejs": "^12.1.0",
     "@metamask/eslint-config-typescript": "^12.1.0",
     "@metamask/snaps-cli": "^3.0.0",
+    "@metamask/user-operation-controller": "^0.0.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
@@ -72,6 +73,7 @@
     "@types/node": "^20.10.8",
     "@typescript-eslint/eslint-plugin": "^5.33.0",
     "@typescript-eslint/parser": "^5.33.0",
+    "add": "^2.0.6",
     "chai": "^4.3.7",
     "depcheck": "^1.4.6",
     "eslint": "^8.21.0",
@@ -89,7 +91,8 @@
     "solidity-coverage": "^0.8.1",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
-    "typescript": "^5.3.3"
+    "typescript": "^5.3.3",
+    "yarn": "^1.22.21"
   },
   "packageManager": "yarn@3.2.1",
   "engines": {
