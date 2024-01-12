@@ -132,9 +132,6 @@ export class SimpleKeyring implements Keyring {
     if (accountCollision) {
       throwError(`[Snap] Account Salt already used, please retry.`);
     }
-    if (this.#state.wallets[address]) {
-      throwError('[Snap] Account already exists');
-    }
 
     // Note: this is commented out because the AA is not deployed yet.
     // Will store the initCode in the wallet object to deploy with a transaction later.
@@ -162,7 +159,7 @@ export class SimpleKeyring implements Keyring {
         account,
         admin: address, // Address of the admin account from private key
         privateKey,
-        chains: { [chainId.toString()]: true },
+        chains: { [chainId.toString()]: false },
         initCode,
       };
       return account;
