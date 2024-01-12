@@ -58,7 +58,6 @@ const unsupportedAAMethods = [
 export type KeyringState = {
   wallets: Record<string, Wallet>;
   pendingRequests: Record<string, KeyringRequest>;
-  useSyncApprovals: boolean;
 };
 
 export type Wallet = {
@@ -182,7 +181,7 @@ export class SimpleKeyring implements Keyring {
     if (
       unsupportedAAMethods.some((method) => account.methods.includes(method))
     ) {
-      throwError(`[Snap] Account does not implement EIP 1271`);
+      throwError(`[Snap] Account does not implement EIP-1271`);
     }
 
     const newAccount: KeyringAccount = {
@@ -224,9 +223,7 @@ export class SimpleKeyring implements Keyring {
   }
 
   async submitRequest(request: KeyringRequest): Promise<SubmitRequestResponse> {
-    return this.#state.useSyncApprovals
-      ? this.#syncSubmitRequest(request)
-      : this.#asyncSubmitRequest(request);
+    return this.#syncSubmitRequest(request);
   }
 
   async approveRequest(id: string): Promise<void> {
@@ -255,36 +252,6 @@ export class SimpleKeyring implements Keyring {
   async #removePendingRequest(id: string): Promise<void> {
     delete this.#state.pendingRequests[id];
     await this.#saveState();
-  }
-
-  #getCurrentUrl(): string {
-    const dappUrlPrefix =
-      process.env.NODE_ENV === 'production'
-        ? process.env.DAPP_ORIGIN_PRODUCTION
-        : process.env.DAPP_ORIGIN_DEVELOPMENT;
-    const dappVersion: string = packageInfo.version;
-
-    // Ensuring that both dappUrlPrefix and dappVersion are truthy
-    if (dappUrlPrefix && dappVersion && process.env.NODE_ENV === 'production') {
-      return `${dappUrlPrefix}${dappVersion}/`;
-    }
-    // Default URL if dappUrlPrefix or dappVersion are falsy, or if URL construction fails
-    return dappUrlPrefix as string;
-  }
-
-  async #asyncSubmitRequest(
-    request: KeyringRequest,
-  ): Promise<SubmitRequestResponse> {
-    this.#state.pendingRequests[request.id] = request;
-    await this.#saveState();
-    const dappUrl = this.#getCurrentUrl();
-    return {
-      pending: true,
-      redirect: {
-        url: dappUrl,
-        message: 'Redirecting to Snap Simple Keyring to sign transaction',
-      },
-    };
   }
 
   async #syncSubmitRequest(
@@ -459,14 +426,5 @@ export class SimpleKeyring implements Keyring {
     data: Record<string, Json>,
   ): Promise<void> {
     await emitSnapKeyringEvent(snap, event, data);
-  }
-
-  async toggleSyncApprovals(): Promise<void> {
-    this.#state.useSyncApprovals = !this.#state.useSyncApprovals;
-    await this.#saveState();
-  }
-
-  isSynchronousMode(): boolean {
-    return this.#state.useSyncApprovals;
   }
 }

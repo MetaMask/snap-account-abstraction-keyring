@@ -53,21 +53,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       `Origin '${origin}' is not allowed to call '${request.method}'`,
     );
   }
-
-  // Handle custom methods.
-  switch (request.method) {
-    case InternalMethod.ToggleSyncApprovals: {
-      return (await getKeyring()).toggleSyncApprovals();
-    }
-
-    case InternalMethod.IsSynchronousMode: {
-      return (await getKeyring()).isSynchronousMode();
-    }
-
-    default: {
-      throw new MethodNotSupportedError(request.method);
-    }
-  }
 };
 
 export const onKeyringRequest: OnKeyringRequestHandler = async ({
