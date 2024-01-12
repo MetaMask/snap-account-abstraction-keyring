@@ -21,15 +21,15 @@ import {
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import { UserOperationController } from '@metamask/user-operation-controller';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
-import { Contract } from 'ethers';
+import { ethers } from 'ethers';
 import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
 import { v4 as uuid } from 'uuid';
 
 import { getAAFactory } from './constants/aa-factories';
 import { saveState } from './stateManagement';
+import { SimpleAccount__factory } from './types';
 import { getSigner, provider } from './utils/ethers';
 import {
   isEvmChain,
@@ -292,12 +292,8 @@ export class AccountAbstractionKeyring implements Keyring {
     switch (method) {
       case EthMethod.PrepareUserOperation: {
         const [from, data] = params as [string, Json];
-        const transactions: EthBaseTransaction[] = JSON.parse(
-          data as string,
-        ).map((item: unknown) => {
-          return EthBaseTransactionStruct.create(item);
-        });
-        return this.#prepareUserOperation(from, transactions);
+        const transaction: EthBaseTransaction = JSON.parse(data as string);
+        return this.#prepareUserOperation(from, transaction);
       }
 
       case EthMethod.PatchUserOperation: {
@@ -320,9 +316,34 @@ export class AccountAbstractionKeyring implements Keyring {
 
   async #prepareUserOperation(
     address: string,
-    transactions: EthBaseTransaction[],
+    transaction: EthBaseTransaction,
   ): Promise<EthBaseUserOperation> {
-    throwError('Method not implemented.');
+    const wallet = this.#getWalletByAddress(address);
+    const signer = getSigner(wallet.privateKey);
+    // eslint-disable-next-line camelcase
+    const aaInstance = SimpleAccount__factory.connect(
+      wallet.account.address,
+      signer,
+    );
+    return {
+      nonce: aaInstance.getNonce().toString(),
+      initCode: wallet.initCode,
+      callData: aaInstance.interface.encodeFunctionData('execute', [
+        transaction.to ?? ethers.constants.AddressZero,
+        transaction.value,
+        transaction.data ?? '0x',
+      ]),
+      dummySignature:
+        '0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+      dummyPaymasterAndData:
+        '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+      bundlerUrl: 'https://bundler.example.com/rpc',
+      gasLimits: {
+        callGasLimit: '0x58a83',
+        verificationGasLimit: '0xe8c4',
+        preVerificationGas: '0xc57c',
+      },
+    };
   }
 
   async #patchUserOperation(
@@ -330,6 +351,7 @@ export class AccountAbstractionKeyring implements Keyring {
     userOp: EthUserOperation,
   ): Promise<EthUserOperationPatch> {
     throw new Error('Method not implemented.');
+    // TODO: implement with default paymaster
   }
 
   async #signUserOperation(
