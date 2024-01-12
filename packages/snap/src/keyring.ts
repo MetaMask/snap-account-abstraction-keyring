@@ -48,6 +48,7 @@ import {
 import packageInfo from '../package.json';
 
 const unsupportedAAMethods = [
+  EthMethod.SignTransaction,
   EthMethod.Sign,
   EthMethod.PersonalSign,
   EthMethod.SignTypedDataV1,
@@ -146,7 +147,6 @@ export class SimpleKeyring implements Keyring {
         options,
         address: aaAddress,
         methods: [
-          EthMethod.SignTransaction,
           // 4337 methods
           EthMethod.PatchUserOperation,
           EthMethod.PrepareUserOperation,
