@@ -5,7 +5,11 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "strict": true
+    "strict": true,
+    "baseUrl": "./",
+    "paths": {
+      "@metamask/*": ["../../../*/src"]
+    }
   },
   "include": ["./src/", "snap.config.ts", "./contracts/"],
   "files": ["./hardhat.config.ts"]

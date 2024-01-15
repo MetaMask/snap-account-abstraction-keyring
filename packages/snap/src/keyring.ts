@@ -58,7 +58,7 @@ export type Wallet = {
   initCode?: string;
 };
 
-export class SimpleKeyring implements Keyring {
+export class AAKeyring implements Keyring {
   #state: KeyringState;
 
   constructor(state: KeyringState) {
@@ -325,10 +325,39 @@ export class SimpleKeyring implements Keyring {
         return this.#signMessage(from, data);
       }
 
+      case EthMethod.PrepareUserOperation: {
+        const [tx] = params as [any];
+        return this.#prepareUserOperation(tx);
+      }
+
+      case EthMethod.PatchUserOperation: {
+        const [tx] = params as [any];
+        return this.#patchUserOperation(tx);
+      }
+
+      case EthMethod.SignUserOperation: {
+        const [tx] = params as [any];
+        return this.#signUserOperation(tx);
+      }
+
       default: {
         throw new Error(`EVM method '${method}' not supported`);
       }
     }
+  }
+
+  #prepareUserOperation(tx: any): Json {
+    // TODO: validate tx
+
+    throwError('Not implemented');
+  }
+
+  #patchUserOperation(tx: any): Json {
+    throwError('Not implemented');
+  }
+
+  #signUserOperation(tx: any): Json {
+    throwError('Not implemented');
   }
 
   #signTransaction(tx: any): Json {
