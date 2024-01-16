@@ -1,64 +1,13 @@
-import type { Wallet } from 'ethers';
-
 import { CHAIN_IDS } from './chain-ids';
-// eslint-disable-next-line camelcase
-import { SimpleAccountFactory__factory } from '../types';
-import { throwError } from '../utils/util';
 
-export type AAFactoryInfo = {
-  version: number;
-  address: string;
-};
+export type EntryPointVersion = string;
 
-export const DEFAULT_AA_FACTORIES: Record<number, AAFactoryInfo> = {
-  [CHAIN_IDS.ETHEREUM]: {
-    version: 0.6,
-    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-  },
-  [CHAIN_IDS.POLYGON]: {
-    version: 0.6,
-    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-  },
-  [CHAIN_IDS.OPTIMISM]: {
-    version: 0.6,
-    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-  },
-  [CHAIN_IDS.AVALANCHE]: {
-    version: 0.6,
-    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-  },
-  [CHAIN_IDS.ARBITRUM]: {
-    version: 0.6,
-    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-  },
+export type AAFactoryInfo = Record<keyof typeof CHAIN_IDS, string>;
 
-  // TESTNETS
-  [CHAIN_IDS.POLYGON_MUMBAI]: {
-    version: 0.6,
-    address: '0xB73Ea064F1271f60e811847d2d2203036Ae74757',
-  },
-  [CHAIN_IDS.OPTMIISM_GOERLI]: {
-    version: 0.6,
-    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-  },
-  [CHAIN_IDS.AVALANCHE_FUJI]: {
-    version: 0.6,
-    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+export const DEFAULT_AA_FACTORIES: Record<EntryPointVersion, AAFactoryInfo> = {
+  // @ts-expect-error will deploy to other networks later
+  '0.6.0': {
+    // TESTNETS
+    [CHAIN_IDS.SEPOLIA]: '0x096272b01d0f7a407cdc4370d510e0e16bf0083d ',
   },
 };
-
-/**
- * Returns the default AA factory for the given chain ID.
- *
- * @param chainId - The chain ID.
- * @param signer - The signer to use.
- * @returns The AA factory.
- */
-export async function getAAFactory(chainId: number, signer: Wallet) {
-  const factoryAddress =
-    DEFAULT_AA_FACTORIES[chainId]?.address ??
-    throwError(`[Snap] Unknown factory address for chain ${chainId}`);
-  // get factory contract by chain
-  // eslint-disable-next-line camelcase
-  return SimpleAccountFactory__factory.connect(factoryAddress, signer);
-}
