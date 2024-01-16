@@ -378,13 +378,13 @@ export class AccountAbstractionKeyring implements Keyring {
     userOp: EthUserOperation,
   ): Promise<EthUserOperationPatch> {
     // (@monte) If snap has paymaster, return paymaster and data
-    const paymasterAddress = process.env.PAYMASTER_URL ?? '';
+    const paymaster = process.env.PAYMASTER_URL ?? '';
     logger.info(
       `[Snap] PatchUserOp for userOp:\n${JSON.stringify(
         userOp,
         null,
         2,
-      )}\nwith paymaster: ${paymasterAddress}`,
+      )}\nwith paymaster: ${paymaster}`,
     );
     // return the patched userOp as Json for #handleSigningRequest
   }
