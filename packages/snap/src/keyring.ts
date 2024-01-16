@@ -24,10 +24,16 @@ import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import { ethers } from 'ethers';
 import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
+import * as process from 'process';
 import { v4 as uuid } from 'uuid';
 
 import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
 import { CHAIN_IDS } from './constants/chain-ids';
+import {
+  DUMMY_GAS_VALUES,
+  DUMMY_PAYMASTER_AND_DATA,
+  DUMMY_SIGNATURE,
+} from './constants/dummy-values';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import { logger } from './logger';
 import { saveState } from './stateManagement';
@@ -92,12 +98,12 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Private Key is required`);
     }
 
-    const { privateKey, address } = this.#getKeyPair(
+    const { privateKey, address: admin } = this.#getKeyPair(
       options?.privateKey as string | undefined,
     );
 
-    if (!isUniqueAddress(address, Object.values(this.#state.wallets))) {
-      throw new Error(`Account address already in use: ${address}`);
+    if (!isUniqueAddress(admin, Object.values(this.#state.wallets))) {
+      throw new Error(`Account address already in use: ${admin}`);
     }
     // The private key should not be stored in the account options since the
     // account object is exposed to external components, such as MetaMask and
@@ -120,10 +126,10 @@ export class AccountAbstractionKeyring implements Keyring {
       ),
     );
 
-    const aaAddress = await aaFactory.getAddress(address, salt);
+    const aaAddress = await aaFactory.getAddress(admin, salt);
     const initCode = hexConcat([
       aaFactory.address,
-      aaFactory.interface.encodeFunctionData('createAccount', [address, salt]),
+      aaFactory.interface.encodeFunctionData('createAccount', [admin, salt]),
     ]);
 
     // check on chain if the account already exists.
@@ -134,7 +140,7 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     // Note: this is commented out because the AA is not deployed yet.
-    // Will store the initCode in the wallet object to deploy with a transaction later.
+    // Will store the initCode in the wallet object to deploy with first transaction later.
     // try {
     //   await aaFactory.createAccount(address, salt);
     //   logger.info('[Snap] Deployed AA Account Successfully');
@@ -157,7 +163,7 @@ export class AccountAbstractionKeyring implements Keyring {
       };
       this.#state.wallets[account.id] = {
         account,
-        admin: address, // Address of the admin account from private key
+        admin, // Address of the admin account from private key
         privateKey,
         chains: { [chainId.toString()]: false },
         initCode,
@@ -298,8 +304,10 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   async #handleSigningRequest(method: string, params: Json): Promise<Json> {
-    // Check if account is deployed on current chain
-    // Check if we support the chain
+    const { chainId } = await provider.getNetwork();
+    if (!this.#isSupportedChain(chainId)) {
+      throwError(`[Snap] Unsupported chain ID: ${chainId}`);
+    }
     switch (method) {
       case EthMethod.PrepareUserOperation: {
         const [from, data] = params as [string, Json];
@@ -334,13 +342,20 @@ export class AccountAbstractionKeyring implements Keyring {
     }
     const transaction =
       transactions[0] ?? throwError(`[Snap] Transaction is required`);
+    logger.info(
+      `[Snap] PrepareUserOp for transaction\n: ${JSON.stringify(
+        transaction,
+        null,
+        2,
+      )}`,
+    );
 
     const wallet = this.#getWalletByAddress(address);
     const signer = getSigner(wallet.privateKey);
     // eslint-disable-next-line camelcase
     const aaInstance = SimpleAccount__factory.connect(
-      wallet.account.address,
-      signer,
+      wallet.account.address, // AA address
+      signer, // Admin signer
     );
     const ethBaseUserOp: EthBaseUserOperation = {
       nonce: aaInstance.getNonce().toString(),
@@ -350,16 +365,10 @@ export class AccountAbstractionKeyring implements Keyring {
         transaction.value,
         transaction.data ?? '0x',
       ]),
-      dummySignature:
-        '0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-      dummyPaymasterAndData:
-        '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-      bundlerUrl: 'https://bundler.example.com/rpc',
-      gasLimits: {
-        callGasLimit: '0x58a83',
-        verificationGasLimit: '0xe8c4',
-        preVerificationGas: '0xc57c',
-      },
+      dummySignature: DUMMY_SIGNATURE,
+      dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
+      bundlerUrl: process.env.BUNDLER_URL ?? '',
+      gasLimits: DUMMY_GAS_VALUES,
     };
     return JSON.stringify(ethBaseUserOp, null, 2);
   }
@@ -368,30 +377,59 @@ export class AccountAbstractionKeyring implements Keyring {
     address: string,
     userOp: EthUserOperation,
   ): Promise<EthUserOperationPatch> {
-    throw new Error('Method not implemented.');
     // (@monte) If snap has paymaster, return paymaster and data
+    const paymasterAddress = process.env.PAYMASTER_URL ?? '';
+    logger.info(
+      `[Snap] PatchUserOp for userOp:\n${JSON.stringify(
+        userOp,
+        null,
+        2,
+      )}\nwith paymaster: ${paymasterAddress}`,
+    );
+    // return the patched userOp as Json for #handleSigningRequest
   }
 
   async #signUserOperation(
     address: string,
     userOp: EthUserOperation,
   ): Promise<string> {
-    const signer = getSigner(this.#getWalletByAddress(address).privateKey);
+    const wallet = this.#getWalletByAddress(address);
+    const signer = getSigner(wallet.privateKey);
     const { chainId } = await provider.getNetwork();
     const entryPoint = await this.#getEntryPoint(chainId, signer);
+    logger.info(
+      `[Snap] SignUserOperation:\n${JSON.stringify(userOp, null, 2)}`,
+    );
 
-    // sign the userOp
+    // Sign the userOp
     userOp.signature = '0x';
     const userOpHash = ethers.utils.arrayify(
       await entryPoint.getUserOpHash(userOp),
     );
     const signature = await signer.signMessage(userOpHash);
+    // Deploy the account on first transaction if not deployed yet
+    if (!wallet.chains[chainId.toString()]) {
+      const aaFactory = await this.#getAAFactory(chainId, signer);
+      try {
+        await aaFactory.createAccount(address, salt);
+        const aaAddress = wallet.account.address;
+        if (
+          (await provider.getCode(aaAddress).then((code) => code.length)) === 2
+        ) {
+          throwError('[Snap] Failed to deploy');
+        }
+        logger.info(`[Snap] Deployed AA Account Successfully`);
+        wallet.chains[chainId.toString()] = true;
+      } catch (error) {
+        logger.error(`Error to deploy AA: ${(error as Error).message}`);
+      }
+    }
     return deepHexlify({ ...userOp, signature });
   }
 
   async #getAAFactory(chainId: number, signer: ethers.Wallet) {
-    if (!this.#isValidChain(chainId)) {
-      throwError(`[Snap] Invalid chain ID: ${chainId}`);
+    if (!this.#isSupportedChain(chainId)) {
+      throwError(`[Snap] Unsupported chain ID: ${chainId}`);
     }
     const entryPointVersion =
       DEFAULT_ENTRYPOINTS[chainId]?.version.toString() ??
@@ -408,10 +446,9 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   async #getEntryPoint(chainId: number, signer: ethers.Wallet) {
-    if (!this.#isValidChain(chainId)) {
-      throwError(`[Snap] Invalid chain ID: ${chainId}`);
+    if (!this.#isSupportedChain(chainId)) {
+      throwError(`[Snap] Unsupported chain ID: ${chainId}`);
     }
-
     const entryPointAddress =
       DEFAULT_ENTRYPOINTS[chainId]?.address ??
       throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
@@ -431,7 +468,7 @@ export class AccountAbstractionKeyring implements Keyring {
     return found[0];
   }
 
-  #isValidChain(chainId: number): boolean {
+  #isSupportedChain(chainId: number): boolean {
     return Object.values(CHAIN_IDS).includes(chainId);
   }
 
