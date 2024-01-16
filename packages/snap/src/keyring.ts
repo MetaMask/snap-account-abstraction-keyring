@@ -17,7 +17,6 @@ import type {
 import {
   emitSnapKeyringEvent,
   EthAccountType,
-  EthBaseTransactionStruct,
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
@@ -28,6 +27,7 @@ import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
 import { v4 as uuid } from 'uuid';
 
 import { getAAFactory } from './constants/aa-factories';
+import { logger } from './logger';
 import { saveState } from './stateManagement';
 import { SimpleAccount__factory } from './types';
 import { getSigner, provider } from './utils/ethers';
@@ -104,7 +104,7 @@ export class AccountAbstractionKeyring implements Keyring {
 
     // get factory contract by chain
     const aaFactory = await getAAFactory(chainId, signer);
-    console.log('factory', aaFactory);
+    logger.info('[Snap] AA Factory Contract Address: ', aaFactory.address);
 
     const array = new Uint32Array(10);
     const salt = keccak256(
@@ -289,10 +289,12 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   #handleSigningRequest(method: string, params: Json): Json {
+    // Check if account is deployed on current chain
+    // Check if we support the chain
     switch (method) {
       case EthMethod.PrepareUserOperation: {
         const [from, data] = params as [string, Json];
-        const transaction: EthBaseTransaction = JSON.parse(data as string);
+        const transaction: EthBaseTransaction[] = JSON.parse(data as string);
         return this.#prepareUserOperation(from, transaction);
       }
 
@@ -316,8 +318,14 @@ export class AccountAbstractionKeyring implements Keyring {
 
   async #prepareUserOperation(
     address: string,
-    transaction: EthBaseTransaction,
+    transactions: EthBaseTransaction[],
   ): Promise<EthBaseUserOperation> {
+    if (transactions.length !== 1) {
+      throwError(`[Snap] Only one transaction per UserOp supported`);
+    }
+    const transaction =
+      transactions[0] ?? throwError(`[Snap] Transaction is required`);
+
     const wallet = this.#getWalletByAddress(address);
     const signer = getSigner(wallet.privateKey);
     // eslint-disable-next-line camelcase
@@ -351,14 +359,29 @@ export class AccountAbstractionKeyring implements Keyring {
     userOp: EthUserOperation,
   ): Promise<EthUserOperationPatch> {
     throw new Error('Method not implemented.');
-    // TODO: implement with default paymaster
+    // (@monte) If snap has paymaster, return paymaster and data
   }
 
   async #signUserOperation(
     address: string,
     userOp: EthUserOperation,
   ): Promise<string> {
-    throw new Error('Method not implemented.');
+    const provider = new ethers.providers.Web3Provider(ethereum as any);
+    const entryPointContract = new ethers.Contract(
+      DEFAULT_ENTRY_POINT,
+      EntryPoint__factory.abi,
+      provider,
+    );
+
+    // sign the userOp
+    const { privateKey } = this.#getWalletByAddress(address);
+    const wallet = new EthersWallet(privateKey);
+    userOp.signature = '0x';
+    const userOpHash = ethers.utils.arrayify(
+      await entryPointContract.getUserOpHash(userOp),
+    );
+    const signature = await wallet.signMessage(userOpHash);
+    return deepHexlify({ ...userOp, signature });
   }
 
   async #saveState(): Promise<void> {
