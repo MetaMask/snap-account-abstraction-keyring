@@ -1,64 +1,73 @@
-import { Common, Hardfork } from '@ethereumjs/common';
-import { TransactionFactory } from '@ethereumjs/tx';
 import {
-  Address,
-  ecsign,
-  stripHexPrefix,
-  toChecksumAddress,
-  isValidPrivate,
   addHexPrefix,
-  toBytes,
+  Address,
+  isValidPrivate,
+  toChecksumAddress,
 } from '@ethereumjs/util';
-import type { TypedDataV1, TypedMessage } from '@metamask/eth-sig-util';
-import {
-  SignTypedDataVersion,
-  concatSig,
-  personalSign,
-  recoverPersonalSignature,
-  signTypedData,
-} from '@metamask/eth-sig-util';
 import type {
+  EthBaseTransaction,
+  EthBaseUserOperation,
+  EthUserOperation,
+  EthUserOperationPatch,
   Keyring,
   KeyringAccount,
   KeyringRequest,
   SubmitRequestResponse,
 } from '@metamask/keyring-api';
 import {
+  emitSnapKeyringEvent,
   EthAccountType,
   EthMethod,
-  emitSnapKeyringEvent,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
+import { ethers } from 'ethers';
+import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
 import { v4 as uuid } from 'uuid';
 
+import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
+import { CHAIN_IDS } from './constants/chain-ids';
+import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
+import { logger } from './logger';
 import { saveState } from './stateManagement';
 import {
+  EntryPoint__factory,
+  SimpleAccount__factory,
+  SimpleAccountFactory__factory,
+} from './types';
+import { getSigner, provider } from './utils/ethers';
+import {
+  deepHexlify,
   isEvmChain,
-  serializeTransaction,
   isUniqueAddress,
-  throwError,
   runSensitive,
-} from './util';
-import packageInfo from '../package.json';
+  throwError,
+} from './utils/util';
+
+const unsupportedAAMethods = [
+  EthMethod.SignTransaction,
+  EthMethod.Sign,
+  EthMethod.PersonalSign,
+  EthMethod.SignTypedDataV1,
+  EthMethod.SignTypedDataV3,
+  EthMethod.SignTypedDataV4,
+];
 
 export type KeyringState = {
   wallets: Record<string, Wallet>;
   pendingRequests: Record<string, KeyringRequest>;
-  useSyncApprovals: boolean;
 };
 
 export type Wallet = {
   account: KeyringAccount;
   admin: string;
   privateKey: string;
-  isDeployed: boolean;
-  chains: string[];
-  initCode?: string;
+  chains: Record<string, boolean>;
+  initCode: string;
 };
 
-export class AAKeyring implements Keyring {
+export class AccountAbstractionKeyring implements Keyring {
   #state: KeyringState;
 
   constructor(state: KeyringState) {
@@ -79,11 +88,9 @@ export class AAKeyring implements Keyring {
   async createAccount(
     options: Record<string, Json> = {},
   ): Promise<KeyringAccount> {
-    const { isDeployed, chains, initCode } = options as {
-      isDeployed: boolean;
-      chains: string[];
-      initCode?: string;
-    };
+    if (!options.privateKey) {
+      throwError(`[Snap] Private Key is required`);
+    }
 
     const { privateKey, address } = this.#getKeyPair(
       options?.privateKey as string | undefined,
@@ -99,32 +106,61 @@ export class AAKeyring implements Keyring {
       delete options.privateKey;
     }
 
+    const { chainId } = await provider.getNetwork();
+    const signer = getSigner(privateKey);
+
+    // get factory contract by chain
+    const aaFactory = await this.#getAAFactory(chainId, signer);
+    logger.info('[Snap] AA Factory Contract Address: ', aaFactory.address);
+
+    const salt = keccak256(
+      defaultAbiCoder.encode(
+        ['uint256'],
+        [crypto.getRandomValues(new Uint32Array(10))],
+      ),
+    );
+
+    const aaAddress = await aaFactory.getAddress(address, salt);
+    const initCode = hexConcat([
+      aaFactory.address,
+      aaFactory.interface.encodeFunctionData('createAccount', [address, salt]),
+    ]);
+
+    // check on chain if the account already exists.
+    // if it does, this means that there is a collision in the salt used.
+    const accountCollision = (await provider.getCode(aaAddress)) !== '0x';
+    if (accountCollision) {
+      throwError(`[Snap] Account Salt already used, please retry.`);
+    }
+
+    // Note: this is commented out because the AA is not deployed yet.
+    // Will store the initCode in the wallet object to deploy with a transaction later.
+    // try {
+    //   await aaFactory.createAccount(address, salt);
+    //   logger.info('[Snap] Deployed AA Account Successfully');
+    // } catch (error) {
+    //   logger.error(`Error to deploy AA: ${(error as Error).message}`);
+    // }
+
     try {
       const account: KeyringAccount = {
         id: uuid(),
         options,
-        address,
+        address: aaAddress,
         methods: [
-          EthMethod.PersonalSign,
-          EthMethod.Sign,
-          EthMethod.SignTransaction,
-          EthMethod.SignTypedDataV1,
-          EthMethod.SignTypedDataV3,
-          EthMethod.SignTypedDataV4,
           // 4337 methods
-          EthMethod.PatchUserOperation,
           EthMethod.PrepareUserOperation,
+          EthMethod.PatchUserOperation,
           EthMethod.SignUserOperation,
         ],
         type: EthAccountType.Erc4337,
       };
       this.#state.wallets[account.id] = {
         account,
-        admin: address, // Address of the admin account
+        admin: address, // Address of the admin account from private key
         privateKey,
-        isDeployed,
-        chains,
-        initCode: initCode ?? '0x',
+        chains: { [chainId.toString()]: false },
+        initCode,
       };
       return account;
     } catch (error) {
@@ -142,6 +178,12 @@ export class AAKeyring implements Keyring {
     const wallet =
       this.#state.wallets[account.id] ??
       throwError(`Account '${account.id}' not found`);
+
+    if (
+      unsupportedAAMethods.some((method) => account.methods.includes(method))
+    ) {
+      throwError(`[Snap] Account does not implement EIP-1271`);
+    }
 
     const newAccount: KeyringAccount = {
       ...wallet.account,
@@ -182,9 +224,7 @@ export class AAKeyring implements Keyring {
   }
 
   async submitRequest(request: KeyringRequest): Promise<SubmitRequestResponse> {
-    return this.#state.useSyncApprovals
-      ? this.#syncSubmitRequest(request)
-      : this.#asyncSubmitRequest(request);
+    return this.#syncSubmitRequest(request);
   }
 
   async approveRequest(id: string): Promise<void> {
@@ -192,7 +232,7 @@ export class AAKeyring implements Keyring {
       this.#state.pendingRequests[id] ??
       throwError(`Request '${id}' not found`);
 
-    const result = this.#handleSigningRequest(
+    const result = await this.#handleSigningRequest(
       request.method,
       request.params ?? [],
     );
@@ -215,41 +255,11 @@ export class AAKeyring implements Keyring {
     await this.#saveState();
   }
 
-  #getCurrentUrl(): string {
-    const dappUrlPrefix =
-      process.env.NODE_ENV === 'production'
-        ? process.env.DAPP_ORIGIN_PRODUCTION
-        : process.env.DAPP_ORIGIN_DEVELOPMENT;
-    const dappVersion: string = packageInfo.version;
-
-    // Ensuring that both dappUrlPrefix and dappVersion are truthy
-    if (dappUrlPrefix && dappVersion && process.env.NODE_ENV === 'production') {
-      return `${dappUrlPrefix}${dappVersion}/`;
-    }
-    // Default URL if dappUrlPrefix or dappVersion are falsy, or if URL construction fails
-    return dappUrlPrefix as string;
-  }
-
-  async #asyncSubmitRequest(
-    request: KeyringRequest,
-  ): Promise<SubmitRequestResponse> {
-    this.#state.pendingRequests[request.id] = request;
-    await this.#saveState();
-    const dappUrl = this.#getCurrentUrl();
-    return {
-      pending: true,
-      redirect: {
-        url: dappUrl,
-        message: 'Redirecting to Snap Simple Keyring to sign transaction',
-      },
-    };
-  }
-
   async #syncSubmitRequest(
     request: KeyringRequest,
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
-    const signature = this.#handleSigningRequest(method, params);
+    const signature = await this.#handleSigningRequest(method, params);
     return {
       pending: false,
       result: signature,
@@ -287,57 +297,26 @@ export class AAKeyring implements Keyring {
     return { privateKey: privateKeyBuffer.toString('hex'), address };
   }
 
-  #handleSigningRequest(method: string, params: Json): Json {
+  async #handleSigningRequest(method: string, params: Json): Promise<Json> {
+    // Check if account is deployed on current chain
+    // Check if we support the chain
     switch (method) {
-      case EthMethod.PersonalSign: {
-        const [message, from] = params as [string, string];
-        return this.#signPersonalMessage(from, message);
-      }
-
-      case EthMethod.SignTransaction: {
-        const [tx] = params as [any];
-        return this.#signTransaction(tx);
-      }
-
-      case EthMethod.SignTypedDataV1: {
-        const [from, data] = params as [string, Json];
-        return this.#signTypedData(from, data, {
-          version: SignTypedDataVersion.V1,
-        });
-      }
-
-      case EthMethod.SignTypedDataV3: {
-        const [from, data] = params as [string, Json];
-        return this.#signTypedData(from, data, {
-          version: SignTypedDataVersion.V3,
-        });
-      }
-
-      case EthMethod.SignTypedDataV4: {
-        const [from, data] = params as [string, Json];
-        return this.#signTypedData(from, data, {
-          version: SignTypedDataVersion.V4,
-        });
-      }
-
-      case EthMethod.Sign: {
-        const [from, data] = params as [string, string];
-        return this.#signMessage(from, data);
-      }
-
       case EthMethod.PrepareUserOperation: {
-        const [tx] = params as [any];
-        return this.#prepareUserOperation(tx);
+        const [from, data] = params as [string, Json];
+        const transactions: EthBaseTransaction[] = JSON.parse(data as string);
+        return await this.#prepareUserOperation(from, transactions);
       }
 
       case EthMethod.PatchUserOperation: {
-        const [tx] = params as [any];
-        return this.#patchUserOperation(tx);
+        const [from, data] = params as [string, Json];
+        const userOp: EthUserOperation = JSON.parse(data as string);
+        return await this.#patchUserOperation(from, userOp);
       }
 
       case EthMethod.SignUserOperation: {
-        const [tx] = params as [any];
-        return this.#signUserOperation(tx);
+        const [from, data] = params as [string, Json];
+        const userOp: EthUserOperation = JSON.parse(data as string);
+        return await this.#signUserOperation(from, userOp);
       }
 
       default: {
@@ -346,95 +325,114 @@ export class AAKeyring implements Keyring {
     }
   }
 
-  #prepareUserOperation(tx: any): Json {
-    // TODO: validate tx
-
-    throwError('Not implemented');
-  }
-
-  #patchUserOperation(tx: any): Json {
-    throwError('Not implemented');
-  }
-
-  #signUserOperation(tx: any): Json {
-    throwError('Not implemented');
-  }
-
-  #signTransaction(tx: any): Json {
-    // Patch the transaction to make sure that the `chainId` is a hex string.
-    if (!tx.chainId.startsWith('0x')) {
-      tx.chainId = `0x${parseInt(tx.chainId, 10).toString(16)}`;
+  async #prepareUserOperation(
+    address: string,
+    transactions: EthBaseTransaction[],
+  ): Promise<Json> {
+    if (transactions.length !== 1) {
+      throwError(`[Snap] Only one transaction per UserOp supported`);
     }
+    const transaction =
+      transactions[0] ?? throwError(`[Snap] Transaction is required`);
 
-    const wallet = this.#getWalletByAddress(tx.from);
-    const privateKey = Buffer.from(wallet.privateKey, 'hex');
-    const common = Common.custom(
-      { chainId: tx.chainId },
-      {
-        hardfork:
-          tx.maxPriorityFeePerGas || tx.maxFeePerGas
-            ? Hardfork.London
-            : Hardfork.Istanbul,
+    const wallet = this.#getWalletByAddress(address);
+    const signer = getSigner(wallet.privateKey);
+    // eslint-disable-next-line camelcase
+    const aaInstance = SimpleAccount__factory.connect(
+      wallet.account.address,
+      signer,
+    );
+    const ethBaseUserOp: EthBaseUserOperation = {
+      nonce: aaInstance.getNonce().toString(),
+      initCode: wallet.initCode,
+      callData: aaInstance.interface.encodeFunctionData('execute', [
+        transaction.to ?? ethers.constants.AddressZero,
+        transaction.value,
+        transaction.data ?? '0x',
+      ]),
+      dummySignature:
+        '0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+      dummyPaymasterAndData:
+        '0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+      bundlerUrl: 'https://bundler.example.com/rpc',
+      gasLimits: {
+        callGasLimit: '0x58a83',
+        verificationGasLimit: '0xe8c4',
+        preVerificationGas: '0xc57c',
       },
+    };
+    return JSON.stringify(ethBaseUserOp, null, 2);
+  }
+
+  async #patchUserOperation(
+    address: string,
+    userOp: EthUserOperation,
+  ): Promise<EthUserOperationPatch> {
+    throw new Error('Method not implemented.');
+    // (@monte) If snap has paymaster, return paymaster and data
+  }
+
+  async #signUserOperation(
+    address: string,
+    userOp: EthUserOperation,
+  ): Promise<string> {
+    const signer = getSigner(this.#getWalletByAddress(address).privateKey);
+    const { chainId } = await provider.getNetwork();
+    const entryPoint = await this.#getEntryPoint(chainId, signer);
+
+    // sign the userOp
+    userOp.signature = '0x';
+    const userOpHash = ethers.utils.arrayify(
+      await entryPoint.getUserOpHash(userOp),
     );
-
-    const signedTx = TransactionFactory.fromTxData(tx, {
-      common,
-    }).sign(privateKey);
-
-    return serializeTransaction(signedTx.toJSON(), signedTx.type);
+    const signature = await signer.signMessage(userOpHash);
+    return deepHexlify({ ...userOp, signature });
   }
 
-  #signTypedData(
-    from: string,
-    data: Json,
-    opts: { version: SignTypedDataVersion } = {
-      version: SignTypedDataVersion.V1,
-    },
-  ): string {
-    const { privateKey } = this.#getWalletByAddress(from);
-    const privateKeyBuffer = Buffer.from(privateKey, 'hex');
+  async #getAAFactory(chainId: number, signer: ethers.Wallet) {
+    if (!this.#isValidChain(chainId)) {
+      throwError(`[Snap] Invalid chain ID: ${chainId}`);
+    }
+    const entryPointVersion =
+      DEFAULT_ENTRYPOINTS[chainId]?.version.toString() ??
+      throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
 
-    return signTypedData({
-      privateKey: privateKeyBuffer,
-      data: data as unknown as TypedDataV1 | TypedMessage<any>,
-      version: opts.version,
-    });
-  }
-
-  #signPersonalMessage(from: string, request: string): string {
-    const { privateKey } = this.#getWalletByAddress(from);
-    const privateKeyBuffer = Buffer.from(privateKey, 'hex');
-    const messageBuffer = Buffer.from(request.slice(2), 'hex');
-
-    const signature = personalSign({
-      privateKey: privateKeyBuffer,
-      data: messageBuffer,
-    });
-
-    const recoveredAddress = recoverPersonalSignature({
-      data: messageBuffer,
-      signature,
-    });
-    if (recoveredAddress !== from) {
-      throw new Error(
-        `Signature verification failed for account '${from}' (got '${recoveredAddress}')`,
+    const chainName = this.#getChainNameFromId(chainId);
+    const factoryAddress =
+      DEFAULT_AA_FACTORIES[entryPointVersion]?.[chainName] ??
+      throwError(
+        `[Snap] Unknown AA Factory address for chain ${chainId} and EntryPoint version ${entryPointVersion}`,
       );
+
+    return SimpleAccountFactory__factory.connect(factoryAddress, signer);
+  }
+
+  async #getEntryPoint(chainId: number, signer: ethers.Wallet) {
+    if (!this.#isValidChain(chainId)) {
+      throwError(`[Snap] Invalid chain ID: ${chainId}`);
     }
 
-    return signature;
+    const entryPointAddress =
+      DEFAULT_ENTRYPOINTS[chainId]?.address ??
+      throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
+
+    return EntryPoint__factory.connect(entryPointAddress, signer);
   }
 
-  #signMessage(from: string, data: string): string {
-    const { privateKey } = this.#getWalletByAddress(from);
-    const privateKeyBuffer = Buffer.from(privateKey, 'hex');
-    const message = stripHexPrefix(data);
-    const signature = ecsign(Buffer.from(message, 'hex'), privateKeyBuffer);
-    return concatSig(
-      Buffer.from(toBytes(signature.v)),
-      Buffer.from(signature.r),
-      Buffer.from(signature.s),
-    );
+  #getChainNameFromId(chainId: number): keyof typeof CHAIN_IDS {
+    const entries = Object.entries(CHAIN_IDS) as [
+      keyof typeof CHAIN_IDS,
+      number,
+    ][];
+    const found = entries.find(([, value]) => value === chainId);
+    if (!found) {
+      throwError(`[Snap] Unknown chain ID: ${chainId}`);
+    }
+    return found[0];
+  }
+
+  #isValidChain(chainId: number): boolean {
+    return Object.values(CHAIN_IDS).includes(chainId);
   }
 
   async #saveState(): Promise<void> {
@@ -446,14 +444,5 @@ export class AAKeyring implements Keyring {
     data: Record<string, Json>,
   ): Promise<void> {
     await emitSnapKeyringEvent(snap, event, data);
-  }
-
-  async toggleSyncApprovals(): Promise<void> {
-    this.#state.useSyncApprovals = !this.#state.useSyncApprovals;
-    await this.#saveState();
-  }
-
-  isSynchronousMode(): boolean {
-    return this.#state.useSyncApprovals;
   }
 }
