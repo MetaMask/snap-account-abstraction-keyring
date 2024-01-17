@@ -70,6 +70,7 @@ export type Wallet = {
   admin: string;
   privateKey: string;
   chains: Record<string, boolean>;
+  salt: string;
   initCode: string;
 };
 
@@ -166,6 +167,7 @@ export class AccountAbstractionKeyring implements Keyring {
         admin, // Address of the admin account from private key
         privateKey,
         chains: { [chainId.toString()]: false },
+        salt,
         initCode,
       };
       return account;
@@ -378,7 +380,7 @@ export class AccountAbstractionKeyring implements Keyring {
     userOp: EthUserOperation,
   ): Promise<EthUserOperationPatch> {
     // (@monte) If snap has paymaster, return paymaster and data
-    const paymaster = process.env.PAYMASTER_URL ?? '';
+    const paymaster = process.env.PAYMASTER_ADDRESS ?? '';
     logger.info(
       `[Snap] PatchUserOp for userOp:\n${JSON.stringify(
         userOp,
@@ -411,7 +413,7 @@ export class AccountAbstractionKeyring implements Keyring {
     if (!wallet.chains[chainId.toString()]) {
       const aaFactory = await this.#getAAFactory(chainId, signer);
       try {
-        await aaFactory.createAccount(address, salt);
+        await aaFactory.createAccount(address, wallet.salt);
         const aaAddress = wallet.account.address;
         if (
           (await provider.getCode(aaAddress).then((code) => code.length)) === 2
