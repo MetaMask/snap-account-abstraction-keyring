@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 import {
   addHexPrefix,
   Address,
@@ -308,7 +309,7 @@ export class AccountAbstractionKeyring implements Keyring {
   async #handleSigningRequest(method: string, params: Json): Promise<Json> {
     const { chainId } = await provider.getNetwork();
     if (!this.#isSupportedChain(chainId)) {
-      throwError(`[Snap] Unsupported chain ID: ${chainId}`);
+      throwError(`[Snap] Unsupported chain ID: ${chainId as number}`);
     }
     switch (method) {
       case EthMethod.PrepareUserOperation: {
@@ -378,17 +379,30 @@ export class AccountAbstractionKeyring implements Keyring {
   async #patchUserOperation(
     address: string,
     userOp: EthUserOperation,
-  ): Promise<EthUserOperationPatch> {
-    // (@monte) If snap has paymaster, return paymaster and data
-    const paymaster = process.env.PAYMASTER_ADDRESS ?? '';
-    logger.info(
-      `[Snap] PatchUserOp for userOp:\n${JSON.stringify(
-        userOp,
-        null,
-        2,
-      )}\nwith paymaster: ${paymaster}`,
+  ): Promise<Json> {
+    // Verifying paymaster
+    const { chainId } = await provider.getNetwork();
+    const paymasterEndpoint = this.#getPaymasterUrl(chainId);
+    const entryPoint = await SimpleAccount__factory.connect(
+      address,
+    ).entryPoint();
+
+    const pimlicoProvider = new ethers.providers.JsonRpcProvider(
+      paymasterEndpoint,
     );
-    // return the patched userOp as Json for #handleSigningRequest
+    const result = await pimlicoProvider.send('pm_sponsorUserOperation', [
+      userOp,
+      { entryPoint },
+    ]);
+    const { paymasterAndData } = result;
+
+    logger.info(
+      `[Snap] PatchUserOp paymasterAndData ${paymasterAndData as string}`,
+    );
+
+    return {
+      paymasterAndData,
+    };
   }
 
   async #signUserOperation(
@@ -456,6 +470,15 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
 
     return EntryPoint__factory.connect(entryPointAddress, signer);
+  }
+
+  #getPaymasterUrl(chainId: number): string {
+    const chainName = this.#getChainNameFromId(chainId);
+    const { PAYMASTER_API_KEY, PAYMASTER_BASE_URL } = process.env;
+    if (!PAYMASTER_API_KEY || !PAYMASTER_BASE_URL) {
+      throwError(`[Snap] Paymaster API Key or URL not set`);
+    }
+    return `${PAYMASTER_BASE_URL}/${chainName}/rpc?apiKey=${PAYMASTER_API_KEY}`;
   }
 
   #getChainNameFromId(chainId: number): keyof typeof CHAIN_IDS {

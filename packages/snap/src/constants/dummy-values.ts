@@ -24,7 +24,7 @@ function getDummyPaymasterAndData(paymasterAddress?: string): string {
 }
 
 export const DUMMY_PAYMASTER_AND_DATA = getDummyPaymasterAndData(
-  process.env.PAYMASTER_ADDRESS || '',
+  process.env.PAYMASTER_ADDRESS ?? '',
 );
 
 export const DUMMY_GAS_VALUES = {
