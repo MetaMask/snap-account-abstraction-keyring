@@ -339,7 +339,7 @@ export class AccountAbstractionKeyring implements Keyring {
   async #prepareUserOperation(
     address: string,
     transactions: EthBaseTransaction[],
-  ): Promise<Json> {
+  ): Promise<EthBaseUserOperation> {
     if (transactions.length !== 1) {
       throwError(`[Snap] Only one transaction per UserOp supported`);
     }
@@ -365,21 +365,21 @@ export class AccountAbstractionKeyring implements Keyring {
       initCode: wallet.initCode,
       callData: aaInstance.interface.encodeFunctionData('execute', [
         transaction.to ?? ethers.constants.AddressZero,
-        transaction.value,
-        transaction.data ?? '0x',
+        transaction.value ?? ethers.constants.HashZero,
+        transaction.data ?? ethers.constants.Zero,
       ]),
       dummySignature: DUMMY_SIGNATURE,
       dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
       bundlerUrl: process.env.BUNDLER_URL ?? '',
       gasLimits: DUMMY_GAS_VALUES,
     };
-    return JSON.stringify(ethBaseUserOp, null, 2);
+    return ethBaseUserOp;
   }
 
   async #patchUserOperation(
     address: string,
     userOp: EthUserOperation,
-  ): Promise<Json> {
+  ): Promise<EthUserOperationPatch> {
     // Verifying paymaster
     const { chainId } = await provider.getNetwork();
     const paymasterEndpoint = this.#getPaymasterUrl(chainId);
