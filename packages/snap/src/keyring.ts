@@ -127,7 +127,7 @@ export class AccountAbstractionKeyring implements Keyring {
       [random],
     );
 
-    const aaAddress = await aaFactory.getAccountAddress(admin, '0x123123');
+    const aaAddress = await aaFactory.getAccountAddress(admin, salt);
 
     const initCode = ethers.concat([
       aaFactory.target as string,
