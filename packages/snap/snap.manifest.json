@@ -19,16 +19,15 @@
   },
   "initialPermissions": {
     "endowment:keyring": {
-      "allowedOrigins": [
-        "https://metamask.github.io"
-      ]
+      "allowedOrigins": ["https://metamask.github.io"]
     },
     "endowment:rpc": {
       "dapps": true
     },
     "snap_manageAccounts": {},
     "snap_manageState": {},
-    "endowment:ethereum-provider": {}
+    "endowment:ethereum-provider": {},
+    "endowment:network-access": {}
   },
   "manifestVersion": "0.1"
 }
