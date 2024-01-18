@@ -23,6 +23,9 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic: MNEMONIC,
       },
+      forking: {
+        url: `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
+      },
     },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,

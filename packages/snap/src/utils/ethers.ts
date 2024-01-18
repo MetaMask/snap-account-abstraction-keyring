@@ -3,7 +3,7 @@ import { ethers } from 'ethers';
 import { throwError } from './util';
 import { logger } from '../logger';
 
-export const provider = new ethers.providers.Web3Provider(ethereum);
+export const provider = new ethers.BrowserProvider(ethereum);
 
 /**
  * Returns a signer object from the given private key.

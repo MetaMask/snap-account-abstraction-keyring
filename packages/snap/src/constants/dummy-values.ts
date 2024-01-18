@@ -1,5 +1,5 @@
 import { stripHexPrefix } from '@ethereumjs/util';
-import { defaultAbiCoder } from 'ethers/lib/utils';
+import { ethers } from 'ethers';
 import * as process from 'process';
 
 export const DUMMY_SIGNATURE =
@@ -15,7 +15,7 @@ function getDummyPaymasterAndData(paymasterAddress?: string): string {
   }
 
   const encodedValidUntilAfter = stripHexPrefix(
-    defaultAbiCoder.encode(['uint48', 'uint48'], [0, 0]),
+    ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
   );
 
   return `${paymasterAddress}${encodedValidUntilAfter}${stripHexPrefix(

@@ -24,8 +24,8 @@ import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import { ethers } from 'ethers';
-import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
-import * as process from 'process';
+// import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
+// import * as process from 'process';
 import { v4 as uuid } from 'uuid';
 
 import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
@@ -118,19 +118,19 @@ export class AccountAbstractionKeyring implements Keyring {
     const signer = getSigner(privateKey);
 
     // get factory contract by chain
-    const aaFactory = await this.#getAAFactory(chainId, signer);
-    logger.info('[Snap] AA Factory Contract Address: ', aaFactory.address);
+    const aaFactory = await this.#getAAFactory(Number(chainId), signer);
+    logger.info('[Snap] AA Factory Contract Address: ', aaFactory.target);
 
-    const salt = keccak256(
-      defaultAbiCoder.encode(
-        ['uint256'],
-        [crypto.getRandomValues(new Uint32Array(10))],
-      ),
+    const random = ethers.toBigInt(ethers.randomBytes(32));
+    const salt = ethers.AbiCoder.defaultAbiCoder().encode(
+      ['uint256'],
+      [random],
     );
 
-    const aaAddress = await aaFactory.getAddress(admin, salt);
-    const initCode = hexConcat([
-      aaFactory.address,
+    const aaAddress = await aaFactory.getAccountAddress(admin, '0x123123');
+
+    const initCode = ethers.concat([
+      aaFactory.target as string,
       aaFactory.interface.encodeFunctionData('createAccount', [admin, salt]),
     ]);
 
@@ -308,8 +308,8 @@ export class AccountAbstractionKeyring implements Keyring {
 
   async #handleSigningRequest(method: string, params: Json): Promise<Json> {
     const { chainId } = await provider.getNetwork();
-    if (!this.#isSupportedChain(chainId)) {
-      throwError(`[Snap] Unsupported chain ID: ${chainId as number}`);
+    if (!this.#isSupportedChain(Number(chainId))) {
+      throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
     }
     switch (method) {
       case EthMethod.PrepareUserOperation: {
@@ -364,9 +364,9 @@ export class AccountAbstractionKeyring implements Keyring {
       nonce: aaInstance.getNonce().toString(),
       initCode: wallet.initCode,
       callData: aaInstance.interface.encodeFunctionData('execute', [
-        transaction.to ?? ethers.constants.AddressZero,
-        transaction.value ?? ethers.constants.HashZero,
-        transaction.data ?? ethers.constants.Zero,
+        transaction.to ?? ethers.ZeroAddress,
+        transaction.value ?? ethers.ZeroHash,
+        transaction.data ?? ethers.ZeroHash,
       ]),
       dummySignature: DUMMY_SIGNATURE,
       dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
@@ -382,14 +382,12 @@ export class AccountAbstractionKeyring implements Keyring {
   ): Promise<EthUserOperationPatch> {
     // Verifying paymaster
     const { chainId } = await provider.getNetwork();
-    const paymasterEndpoint = this.#getPaymasterUrl(chainId);
+    const paymasterEndpoint = this.#getPaymasterUrl(Number(chainId));
     const entryPoint = await SimpleAccount__factory.connect(
       address,
     ).entryPoint();
 
-    const pimlicoProvider = new ethers.providers.JsonRpcProvider(
-      paymasterEndpoint,
-    );
+    const pimlicoProvider = new ethers.JsonRpcProvider(paymasterEndpoint);
     const result = await pimlicoProvider.send('pm_sponsorUserOperation', [
       userOp,
       { entryPoint },
@@ -412,34 +410,16 @@ export class AccountAbstractionKeyring implements Keyring {
     const wallet = this.#getWalletByAddress(address);
     const signer = getSigner(wallet.privateKey);
     const { chainId } = await provider.getNetwork();
-    const entryPoint = await this.#getEntryPoint(chainId, signer);
+    const entryPoint = await this.#getEntryPoint(Number(chainId), signer);
     logger.info(
       `[Snap] SignUserOperation:\n${JSON.stringify(userOp, null, 2)}`,
     );
 
     // Sign the userOp
     userOp.signature = '0x';
-    const userOpHash = ethers.utils.arrayify(
-      await entryPoint.getUserOpHash(userOp),
-    );
+    const userOpHash = ethers.getBytes(await entryPoint.getUserOpHash(userOp));
     const signature = await signer.signMessage(userOpHash);
-    // Deploy the account on first transaction if not deployed yet
-    if (!wallet.chains[chainId.toString()]) {
-      const aaFactory = await this.#getAAFactory(chainId, signer);
-      try {
-        await aaFactory.createAccount(address, wallet.salt);
-        const aaAddress = wallet.account.address;
-        if (
-          (await provider.getCode(aaAddress).then((code) => code.length)) === 2
-        ) {
-          throwError('[Snap] Failed to deploy');
-        }
-        logger.info(`[Snap] Deployed AA Account Successfully`);
-        wallet.chains[chainId.toString()] = true;
-      } catch (error) {
-        logger.error(`Error to deploy AA: ${(error as Error).message}`);
-      }
-    }
+
     return deepHexlify({ ...userOp, signature });
   }
 
@@ -451,9 +431,8 @@ export class AccountAbstractionKeyring implements Keyring {
       DEFAULT_ENTRYPOINTS[chainId]?.version.toString() ??
       throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
 
-    const chainName = this.#getChainNameFromId(chainId);
     const factoryAddress =
-      DEFAULT_AA_FACTORIES[entryPointVersion]?.[chainName] ??
+      DEFAULT_AA_FACTORIES[entryPointVersion]?.[chainId.toString()] ??
       throwError(
         `[Snap] Unknown AA Factory address for chain ${chainId} and EntryPoint version ${entryPointVersion}`,
       );
@@ -494,6 +473,7 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   #isSupportedChain(chainId: number): boolean {
+    console.log('chainId', chainId);
     return Object.values(CHAIN_IDS).includes(chainId);
   }
 
