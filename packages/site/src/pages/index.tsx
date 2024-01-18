@@ -1,15 +1,9 @@
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
 import Grid from '@mui/material/Grid';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
-import {
-  Accordion,
-  AccountList,
-  Card,
-  ConnectButton,
-  Toggle,
-} from '../components';
+import { Accordion, AccountList, Card, ConnectButton } from '../components';
 import {
   CardContainer,
   Container,
@@ -18,15 +12,10 @@ import {
   StyledBox,
 } from '../components/styledComponents';
 import { defaultSnapOrigin } from '../config';
-import { MetaMaskContext, MetamaskActions } from '../hooks';
+import { MetamaskActions, MetaMaskContext } from '../hooks';
 import { InputType } from '../types';
 import type { KeyringState } from '../utils';
-import {
-  connectSnap,
-  getSnap,
-  isSynchronousMode,
-  toggleSynchronousApprovals,
-} from '../utils';
+import { connectSnap, getSnap, isSynchronousMode } from '../utils';
 
 const snapId = defaultSnapOrigin;
 
@@ -52,6 +41,10 @@ const Index = () => {
   const [requestId, setRequestId] = useState<string | null>(null);
   // const [accountPayload, setAccountPayload] =
   //   useState<Pick<KeyringAccount, 'name' | 'options'>>();
+  // UserOp method state
+  const [transactionsObject, setTransactionsObject] = useState<string | null>();
+  const [userOpObject, setUserOpObject] = useState<string | null>();
+
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
 
   useEffect(() => {
@@ -86,12 +79,6 @@ const Index = () => {
   };
 
   const createAccount = async () => {
-    const newAccount = await client.createAccount();
-    await syncAccounts();
-    return newAccount;
-  };
-
-  const importAccount = async () => {
     const newAccount = await client.createAccount({
       privateKey: privateKey as string,
     });
@@ -113,6 +100,55 @@ const Index = () => {
     await syncAccounts();
   };
 
+  // UserOp methods
+  const prepareUserOp = async () => {
+    if (!transactionsObject) {
+      return;
+    }
+    const request: KeyringRequest = {
+      id: '',
+      scope: '',
+      account: '',
+      request: {
+        method: 'eth_prepareUserOperation',
+        params: [JSON.parse(transactionsObject)],
+      },
+    };
+    await client.submitRequest(request);
+  };
+
+  const patchUserOp = async () => {
+    if (!userOpObject) {
+      return;
+    }
+    const request: KeyringRequest = {
+      id: '',
+      scope: '',
+      account: '',
+      request: {
+        method: 'eth_patchUserOperation',
+        params: [JSON.parse(userOpObject)],
+      },
+    };
+    await client.submitRequest(request);
+  };
+
+  const signUserOp = async () => {
+    if (!userOpObject) {
+      return;
+    }
+    const request: KeyringRequest = {
+      id: '',
+      scope: '',
+      account: '',
+      request: {
+        method: 'eth_signUserOperation',
+        params: [JSON.parse(userOpObject)],
+      },
+    };
+    await client.submitRequest(request);
+  };
+
   const handleConnectClick = async () => {
     try {
       await connectSnap();
@@ -128,32 +164,23 @@ const Index = () => {
     }
   };
 
-  const handleUseSyncToggle = useCallback(async () => {
-    console.log('Toggling synchronous approval');
-    await toggleSynchronousApprovals();
-    setSnapState({
-      ...snapState,
-      useSynchronousApprovals: !snapState.useSynchronousApprovals,
-    });
-  }, [snapState]);
+  // Note: not using this for now
+  // const handleUseSyncToggle = useCallback(async () => {
+  //   console.log('Toggling synchronous approval');
+  //   await toggleSynchronousApprovals();
+  //   setSnapState({
+  //     ...snapState,
+  //     useSynchronousApprovals: !snapState.useSynchronousApprovals,
+  //   });
+  // }, [snapState]);
 
   const accountManagementMethods = [
     {
       name: 'Create account',
-      description: 'Create a new account',
-      inputs: [],
-      action: {
-        callback: async () => await createAccount(),
-        label: 'Create Account',
-      },
-      successMessage: 'Account created',
-    },
-    {
-      name: 'Import account',
-      description: 'Import an account using a private key',
+      description: 'Create a 4337 account using an admin private key',
       inputs: [
         {
-          id: 'import-account-private-key',
+          id: 'create-account-private-key',
           title: 'Private key',
           value: privateKey,
           type: InputType.TextField,
@@ -163,10 +190,10 @@ const Index = () => {
         },
       ],
       action: {
-        callback: async () => await importAccount(),
-        label: 'Import Account',
+        callback: async () => await createAccount(),
+        label: 'Create Account',
       },
-      successMessage: 'Account imported',
+      successMessage: 'Smart Contract Account Created',
     },
     {
       name: 'Get account',
@@ -328,6 +355,101 @@ const Index = () => {
     },
   ];
 
+  const userOpMethods = [
+    {
+      name: 'Prepare UserOp',
+      description: 'Input Transaction array to Prepare UserOp',
+      inputs: [
+        {
+          id: 'prepare-user-op-transactions-object',
+          title: 'Transactions Object Array',
+          type: InputType.TextArea,
+          placeholder:
+            '[\n' +
+            '    {\n' +
+            '      "to": "0x0c54fccd2e384b4bb6f2e405bf5cbc15a017aafb",\n' +
+            '      "value": "0x0",\n' +
+            '      "data": "0x"\n' +
+            '    },\n' +
+            ']',
+          onChange: (event: any) =>
+            setTransactionsObject(event.currentTarget.value),
+        },
+      ],
+      action: {
+        disabled: Boolean(accountId),
+        callback: async () => await prepareUserOp(),
+        label: 'Prepare UserOp',
+      },
+      successMessage: 'UserOp Prepared',
+    },
+    {
+      name: 'Patch UserOp',
+      description: 'Input User Operation object to Patch UserOp',
+      inputs: [
+        {
+          id: 'patch-user-op-userOp-object',
+          title: 'UserOp Object',
+          type: InputType.TextArea,
+          placeholder:
+            '{\n' +
+            '  "sender": "0x4584d2B4905087A100420AFfCe1b2d73fC69B8E4",\n' +
+            '  "nonce": "0x1",\n' +
+            '  "initCode": "0x",\n' +
+            '  "callData": "0x70641a22000000000000000000000000f3de3...",\n' +
+            '  "callGasLimit": "0x58a83",\n' +
+            '  "verificationGasLimit": "0xe8c4",\n' +
+            '  "preVerificationGas": "0xc57c",\n' +
+            '  "maxFeePerGas": "0x87f0878c0",\n' +
+            '  "maxPriorityFeePerGas": "0x1dcd6500",\n' +
+            '  "paymasterAndData": "0x00000000000000000000...",\n' +
+            '  "signature": "0x00000000000000000000000..."\n' +
+            '}',
+          onChange: (event: any) => setUserOpObject(event.currentTarget.value),
+        },
+      ],
+      action: {
+        disabled: Boolean(accountId),
+        callback: async () => await patchUserOp(),
+        label: 'Patch UserOp',
+      },
+      successMessage: 'UserOp Patched',
+    },
+    {
+      name: 'Sign UserOp',
+      description: 'Input User Operation object to Sign UserOp',
+      inputs: [
+        {
+          id: 'sign-user-op-userOp-object',
+          title: 'UserOp Object',
+          type: InputType.TextArea,
+          placeholder:
+            '{\n' +
+            '  "sender": "0x4584d2B4905087A100420AFfCe1b2d73fC69B8E4",\n' +
+            '  "nonce": "0x1",\n' +
+            '  "initCode": "0x",\n' +
+            '  "callData": "0x70641a22000000000000000000000000f3de...",\n' +
+            '  "callGasLimit": "0x58a83",\n' +
+            '  "verificationGasLimit": "0xe8c4",\n' +
+            '  "preVerificationGas": "0xc57c",\n' +
+            '  "maxFeePerGas": "0x87f0878c0",\n' +
+            '  "maxPriorityFeePerGas": "0x1dcd6500",\n' +
+            '  "paymasterAndData": "0x952514d7cBCB495EACeB86e021...",\n' +
+            '  "signature": "0x"\n' +
+            '},\n' +
+            '"0xEntryPointAddress"',
+          onChange: (event: any) => setUserOpObject(event.currentTarget.value),
+        },
+      ],
+      action: {
+        disabled: Boolean(accountId),
+        callback: async () => await signUserOp(),
+        label: 'Sign UserOp',
+      },
+      successMessage: 'UserOp Signed',
+    },
+  ];
+
   return (
     <Container>
       <CardContainer>
@@ -352,16 +474,20 @@ const Index = () => {
       <StyledBox sx={{ flexGrow: 1 }}>
         <Grid container spacing={4} columns={[1, 2, 3]}>
           <Grid item xs={8} sm={4} md={2}>
-            <DividerTitle>Options</DividerTitle>
-            <Toggle
-              title="Use Synchronous Approval"
-              defaultChecked={snapState.useSynchronousApprovals}
-              onToggle={handleUseSyncToggle}
-              enabled={Boolean(state.installedSnap)}
-            />
-            <Divider>&nbsp;</Divider>
+            {/* Not using this for now*/}
+            {/* <DividerTitle>Options</DividerTitle>*/}
+            {/* <Toggle*/}
+            {/*  title="Use Synchronous Approval"*/}
+            {/*  defaultChecked={snapState.useSynchronousApprovals}*/}
+            {/*  onToggle={handleUseSyncToggle}*/}
+            {/*  enabled={Boolean(state.installedSnap)}*/}
+            {/*/ >*/}
+            {/* <Divider>&nbsp;</Divider>*/}
             <DividerTitle>Methods</DividerTitle>
             <Accordion items={accountManagementMethods} />
+            <Divider />
+            <DividerTitle>UserOp Methods</DividerTitle>
+            <Accordion items={userOpMethods} />
             <Divider />
             <DividerTitle>Request Methods</DividerTitle>
             <Accordion items={requestMethods} />
