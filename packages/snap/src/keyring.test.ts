@@ -62,6 +62,39 @@ describe('Keyring', () => {
     });
   });
 
+  describe('Create Account', () => {
+    it('should not create a new account without admin private key', async () => {
+      await expect(keyring.createAccount()).rejects.toThrow(
+        '[Snap] Private Key is required',
+      );
+    });
+
+    it('should create a new account', async () => {
+      const account = await keyring.createAccount({ privateKey: aaOwnerPk });
+      expect(account).toBeDefined();
+      expect(await keyring.getAccount(account.id)).toStrictEqual(account);
+    });
+
+    it('should create a new account with salt', async () => {
+      const expectedAddressFromSalt =
+        '0x7b3d94f00b07a74e82571034c750E67637D9cC87';
+      const account = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt: '0x123',
+      });
+      expect(account).toBeDefined();
+      expect(await keyring.getAccount(account.id)).toStrictEqual(account);
+      expect(account.address).toBe(expectedAddressFromSalt);
+      const accountFromDifferentSalt = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt: '0x124',
+      });
+      expect(accountFromDifferentSalt.address).not.toBe(
+        expectedAddressFromSalt,
+      );
+    });
+  });
+
   describe('UserOperations Methods', () => {
     let aaAccount: KeyringAccount;
 
