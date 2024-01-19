@@ -14,7 +14,7 @@ export function getUserOperationHash(
   entrypointAddress: string,
   chainId: string,
 ): string {
-  const chainIdDecimal = parseInt(chainId, 16);
+  const chainIdDecimal = parseInt(chainId, 10);
   const hash = ethers.keccak256(encodeUserOperation(userOperation));
 
   const data = ethers.AbiCoder.defaultAbiCoder().encode(
