@@ -24,8 +24,6 @@ import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import { ethers } from 'ethers';
-// import { defaultAbiCoder, hexConcat, keccak256 } from 'ethers/lib/utils';
-// import * as process from 'process';
 import { v4 as uuid } from 'uuid';
 
 import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
@@ -43,9 +41,9 @@ import {
   SimpleAccount__factory,
   SimpleAccountFactory__factory,
 } from './types';
+import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
 import {
-  deepHexlify,
   isEvmChain,
   isUniqueAddress,
   runSensitive,
@@ -239,14 +237,15 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   async approveRequest(id: string): Promise<void> {
-    const { request } =
+    const { account, request } =
       this.#state.pendingRequests[id] ??
       throwError(`Request '${id}' not found`);
 
-    const result = await this.#handleSigningRequest(
-      request.method,
-      request.params ?? [],
-    );
+    const result = await this.#handleSigningRequest({
+      account: this.#getWalletById(account).account,
+      method: request.method,
+      params: request.params ?? [],
+    });
 
     await this.#removePendingRequest(id);
     await this.#emitEvent(KeyringEvent.RequestApproved, { id, result });
@@ -270,11 +269,23 @@ export class AccountAbstractionKeyring implements Keyring {
     request: KeyringRequest,
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
-    const signature = await this.#handleSigningRequest(method, params);
+    const signature = await this.#handleSigningRequest({
+      account: this.#getWalletById(request.account).account,
+      method,
+      params,
+    });
     return {
       pending: false,
       result: signature,
     };
+  }
+
+  #getWalletById(accountId: string): Wallet {
+    const wallet = this.#state.wallets[accountId];
+    if (!wallet) {
+      throwError(`Account '${accountId}' not found`);
+    }
+    return wallet;
   }
 
   #getWalletByAddress(address: string): Wallet {
@@ -308,28 +319,35 @@ export class AccountAbstractionKeyring implements Keyring {
     return { privateKey: privateKeyBuffer.toString('hex'), address };
   }
 
-  async #handleSigningRequest(method: string, params: Json): Promise<Json> {
+  async #handleSigningRequest({
+    account,
+    method,
+    params,
+  }: {
+    account: KeyringAccount;
+    method: string;
+    params: Json;
+  }): Promise<Json> {
     const { chainId } = await provider.getNetwork();
     if (!this.#isSupportedChain(Number(chainId))) {
       throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
     }
+
     switch (method) {
       case EthMethod.PrepareUserOperation: {
-        const [from, data] = params as [string, Json];
-        const transactions: EthBaseTransaction[] = JSON.parse(data as string);
-        return await this.#prepareUserOperation(from, transactions);
+        const [transactions] = params as [EthBaseTransaction[]];
+        console.log('transactions', transactions);
+        return await this.#prepareUserOperation(account.address, transactions);
       }
 
       case EthMethod.PatchUserOperation: {
-        const [from, data] = params as [string, Json];
-        const userOp: EthUserOperation = JSON.parse(data as string);
-        return await this.#patchUserOperation(from, userOp);
+        const [userOp] = params as [EthUserOperation];
+        return await this.#patchUserOperation(account.address, userOp);
       }
 
       case EthMethod.SignUserOperation: {
-        const [from, data] = params as [string, Json];
-        const userOp: EthUserOperation = JSON.parse(data as string);
-        return await this.#signUserOperation(from, userOp);
+        const [userOp] = params as [EthUserOperation];
+        return await this.#signUserOperation(account.address, userOp);
       }
 
       default: {
@@ -357,17 +375,22 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const wallet = this.#getWalletByAddress(address);
     const signer = getSigner(wallet.privateKey);
+
     // eslint-disable-next-line camelcase
     const aaInstance = SimpleAccount__factory.connect(
       wallet.account.address, // AA address
       signer, // Admin signer
     );
+
+    const { chainId } = await provider.getNetwork();
+    const isDeployed = wallet.chains[chainId.toString()];
+
     const ethBaseUserOp: EthBaseUserOperation = {
-      nonce: aaInstance.getNonce().toString(),
-      initCode: wallet.initCode,
+      nonce: isDeployed ? (await aaInstance.getNonce()).toString() : '0x0',
+      initCode: isDeployed ? wallet.initCode : '0x',
       callData: aaInstance.interface.encodeFunctionData('execute', [
         transaction.to ?? ethers.ZeroAddress,
-        transaction.value ?? ethers.ZeroHash,
+        transaction.value ?? '0x00',
         transaction.data ?? ethers.ZeroHash,
       ]),
       dummySignature: DUMMY_SIGNATURE,
@@ -419,10 +442,14 @@ export class AccountAbstractionKeyring implements Keyring {
 
     // Sign the userOp
     userOp.signature = '0x';
-    const userOpHash = ethers.getBytes(await entryPoint.getUserOpHash(userOp));
+    const userOpHash = getUserOperationHash(
+      userOp,
+      await entryPoint.getAddress(),
+      chainId.toString(),
+    );
     const signature = await signer.signMessage(userOpHash);
 
-    return deepHexlify({ ...userOp, signature });
+    return signature;
   }
 
   async #getAAFactory(chainId: number, signer: ethers.Wallet) {
@@ -434,7 +461,9 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
 
     const factoryAddress =
-      DEFAULT_AA_FACTORIES[entryPointVersion]?.[chainId.toString()] ??
+      (DEFAULT_AA_FACTORIES[entryPointVersion] as Record<string, string>)?.[
+        chainId.toString()
+      ] ??
       throwError(
         `[Snap] Unknown AA Factory address for chain ${chainId} and EntryPoint version ${entryPointVersion}`,
       );
@@ -475,7 +504,6 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   #isSupportedChain(chainId: number): boolean {
-    console.log('chainId', chainId);
     return Object.values(CHAIN_IDS).includes(chainId);
   }
 
