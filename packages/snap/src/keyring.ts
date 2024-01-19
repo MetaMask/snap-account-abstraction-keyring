@@ -483,7 +483,7 @@ export class AccountAbstractionKeyring implements Keyring {
       await entryPoint.getAddress(),
       chainId.toString(),
     );
-    const signature = await signer.signMessage(userOpHash);
+    const signature = await signer.signMessage(ethers.getBytes(userOpHash));
 
     return signature;
   }
