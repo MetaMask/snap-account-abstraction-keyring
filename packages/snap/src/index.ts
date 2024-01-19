@@ -7,6 +7,7 @@ import type {
   OnRpcRequestHandler,
 } from '@metamask/snaps-types';
 
+import type { ChainConfig } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
 import { logger } from './logger';
 import { InternalMethod, originPermissions } from './permissions';
@@ -52,6 +53,20 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     throw new Error(
       `Origin '${origin}' is not allowed to call '${request.method}'`,
     );
+  }
+
+  // Handle custom methods.
+  switch (request.method) {
+    case InternalMethod.SetConfig: {
+      if (!request.params?.length) {
+        throw new Error('Missing config');
+      }
+      return (await getKeyring()).setConfig(request.params as ChainConfig);
+    }
+
+    default: {
+      throw new MethodNotSupportedError(request.method);
+    }
   }
 };
 

@@ -7,7 +7,7 @@ import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
 import { DUMMY_SIGNATURE } from './constants/dummy-values';
-import type { KeyringState } from './keyring';
+import type { ChainConfig, KeyringState } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
 import { SimpleAccount__factory, VerifyingPaymaster__factory } from './types';
 import { getUserOperationHash } from './utils/ecdsa';
@@ -59,6 +59,21 @@ describe('Keyring', () => {
       expect(keyring).toBeDefined();
       expect(await keyring.listAccounts()).toStrictEqual([]);
       expect(await keyring.listRequests()).toStrictEqual([]);
+    });
+  });
+
+  describe('Set Config', () => {
+    it('should set the config', async () => {
+      const config: ChainConfig = {
+        simpleAccountFactory: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+        entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+        bundlerUrl: 'https://bundler.example.com/rpc',
+        customVerifyingPaymasterPK: 'abcd1234qwer5678tyui9012ghjk3456zxcv7890',
+        customVerifyingPaymasterAddress:
+          '0x123456789ABCDEF0123456789ABCDEF012345678',
+      };
+      const keyringConfig = await keyring.setConfig(config);
+      expect(keyringConfig).toStrictEqual(config);
     });
   });
 
