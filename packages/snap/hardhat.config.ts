@@ -20,8 +20,10 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {
+      chainId: 11155111,
       accounts: {
         mnemonic: MNEMONIC,
+        count: 2,
       },
       forking: {
         url: `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
