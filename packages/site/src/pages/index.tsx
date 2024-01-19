@@ -43,6 +43,7 @@ const Index = () => {
   // const [accountPayload, setAccountPayload] =
   //   useState<Pick<KeyringAccount, 'name' | 'options'>>();
   // UserOp method state
+  const [chainConfig, setChainConfigObject] = useState<string | null>();
   const [transactionsObject, setTransactionsObject] = useState<string | null>();
   const [userOpObject, setUserOpObject] = useState<string | null>();
 
@@ -102,15 +103,31 @@ const Index = () => {
     await syncAccounts();
   };
 
-  // UserOp methods
-  const prepareUserOp = async () => {
-    if (!transactionsObject) {
+  // UserOp methods (default to send from first AA account created)
+  const setChainConfig = async () => {
+    if (!chainConfig) {
       return;
     }
     const request: KeyringRequest = {
       id: '',
       scope: '',
       account: '',
+      request: {
+        method: 'snap.internal.setConfig',
+        params: [JSON.stringify(chainConfig)],
+      },
+    };
+    const result = await client.submitRequest(request);
+    console.log(result);
+  };
+  const prepareUserOp = async () => {
+    if (!transactionsObject || !snapState.accounts[0]) {
+      return;
+    }
+    const request: KeyringRequest = {
+      id: '',
+      scope: '',
+      account: snapState.accounts[0]?.id ?? '',
       request: {
         method: 'eth_prepareUserOperation',
         params: [JSON.stringify(transactionsObject)],
@@ -120,13 +137,13 @@ const Index = () => {
   };
 
   const patchUserOp = async () => {
-    if (!userOpObject) {
+    if (!userOpObject || !snapState.accounts[0]) {
       return;
     }
     const request: KeyringRequest = {
       id: '',
       scope: '',
-      account: '',
+      account: snapState.accounts[0]?.id ?? '',
       request: {
         method: 'eth_patchUserOperation',
         params: [JSON.stringify(userOpObject)],
@@ -136,13 +153,13 @@ const Index = () => {
   };
 
   const signUserOp = async () => {
-    if (!userOpObject) {
+    if (!userOpObject || !snapState.accounts[0]) {
       return;
     }
     const request: KeyringRequest = {
       id: '',
       scope: '',
-      account: '',
+      account: snapState.accounts[0]?.id ?? '',
       request: {
         method: 'eth_signUserOperation',
         params: [JSON.stringify(userOpObject)],
@@ -366,6 +383,34 @@ const Index = () => {
   ];
 
   const userOpMethods = [
+    {
+      name: 'Set Chain Config',
+      description:
+        'Set account abstraction configuration options for the current chain.',
+      inputs: [
+        {
+          id: 'set-chain-config-chain-config-object',
+          title: 'Chain Config Object',
+          type: InputType.TextArea,
+          placeholder:
+            '{\n' +
+            '    "simpleAccountFactory": "0x97a0924bf222499cBa5C29eA746E82F230730293",\n' +
+            '    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",\n' +
+            '    "bundlerUrl": "https://bundler.example.com/rpc",\n' +
+            '    "customVerifyingPaymasterPK": "abcd1234qwer5678tyui9012ghjk3456zxcv7890",\n' +
+            '    "customVerifyingPaymasterAddress": "0x123456789ABCDEF0123456789ABCDEF012345678"\n' +
+            '}',
+          onChange: (event: any) =>
+            setChainConfigObject(event.currentTarget.value),
+        },
+      ],
+      action: {
+        disabled: Boolean(accountId),
+        callback: async () => await setChainConfig(),
+        label: 'Set Chain Configs',
+      },
+      successMessage: 'Chain Config Set',
+    },
     {
       name: 'Prepare UserOp',
       description: 'Input Transaction array to Prepare UserOp',

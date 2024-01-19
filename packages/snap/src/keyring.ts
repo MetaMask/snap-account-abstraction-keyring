@@ -61,10 +61,18 @@ const unsupportedAAMethods = [
   EthMethod.SignTypedDataV4,
 ];
 
+export type ChainConfig = {
+  simpleAccountFactory?: string;
+  entryPoint?: string;
+  bundlerUrl?: string;
+  customVerifyingPaymasterPK: string;
+  customVerifyingPaymasterAddress?: string;
+};
+
 export type KeyringState = {
   wallets: Record<string, Wallet>;
   pendingRequests: Record<string, KeyringRequest>;
-  customVerifyingPaymasterPK?: string;
+  config?: Record<number, ChainConfig>;
 };
 
 export type Wallet = {
@@ -81,6 +89,19 @@ export class AccountAbstractionKeyring implements Keyring {
 
   constructor(state: KeyringState) {
     this.#state = state;
+  }
+
+  async setConfig(config: ChainConfig): Promise<ChainConfig> {
+    if (!this.#state.config) {
+      this.#state.config = {};
+    }
+    const { chainId } = await provider.getNetwork();
+    this.#state.config[Number(chainId)] = {
+      ...this.#state.config[Number(chainId)],
+      ...config,
+    };
+    await this.#saveState();
+    return this.#state.config[Number(chainId)]!;
   }
 
   async listAccounts(): Promise<KeyringAccount[]> {
@@ -396,7 +417,10 @@ export class AccountAbstractionKeyring implements Keyring {
       ]),
       dummySignature: DUMMY_SIGNATURE,
       dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
-      bundlerUrl: process.env.BUNDLER_URL ?? '',
+      bundlerUrl:
+        this.#getChainConfig(Number(chainId))?.bundlerUrl ??
+        process.env.BUNDLER_URL ??
+        '',
       gasLimits: DUMMY_GAS_VALUES,
     };
     return ethBaseUserOp;
@@ -408,9 +432,13 @@ export class AccountAbstractionKeyring implements Keyring {
   ): Promise<EthUserOperationPatch> {
     const wallet = this.#getWalletByAddress(address);
     const signer = getSigner(wallet.privateKey);
+    const { chainId } = await provider.getNetwork();
+    const chainConfig = this.#getChainConfig(Number(chainId));
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const verifyingPaymasterAddress = process.env.VERIFYING_PAYMASTER_ADDRESS!;
+    const verifyingPaymasterAddress =
+      chainConfig?.customVerifyingPaymasterAddress ??
+      process.env.VERIFYING_PAYMASTER_ADDRESS!;
 
     const verifyingPaymaster = VerifyingPaymaster__factory.connect(
       verifyingPaymasterAddress,
@@ -418,7 +446,7 @@ export class AccountAbstractionKeyring implements Keyring {
     );
 
     const verifyingSigner = getSigner(
-      this.#state.customVerifyingPaymasterPK ?? wallet.privateKey,
+      chainConfig?.customVerifyingPaymasterPK ?? wallet.privateKey,
     );
 
     // Create a hash that doesn't expire
@@ -464,18 +492,21 @@ export class AccountAbstractionKeyring implements Keyring {
     if (!this.#isSupportedChain(chainId)) {
       throwError(`[Snap] Unsupported chain ID: ${chainId}`);
     }
-    const entryPointVersion =
-      DEFAULT_ENTRYPOINTS[chainId]?.version.toString() ??
-      throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
-
-    const factoryAddress =
-      (DEFAULT_AA_FACTORIES[entryPointVersion] as Record<string, string>)?.[
-        chainId.toString()
-      ] ??
-      throwError(
-        `[Snap] Unknown AA Factory address for chain ${chainId} and EntryPoint version ${entryPointVersion}`,
-      );
-
+    let factoryAddress: string;
+    if (this.#getChainConfig(chainId)?.simpleAccountFactory) {
+      factoryAddress = this.#getChainConfig(chainId)?.simpleAccountFactory!;
+    } else {
+      const entryPointVersion =
+        DEFAULT_ENTRYPOINTS[chainId]?.version.toString() ??
+        throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
+      factoryAddress =
+        (DEFAULT_AA_FACTORIES[entryPointVersion] as Record<string, string>)?.[
+          chainId.toString()
+        ] ??
+        throwError(
+          `[Snap] Unknown AA Factory address for chain ${chainId} and EntryPoint version ${entryPointVersion}`,
+        );
+    }
     return SimpleAccountFactory__factory.connect(factoryAddress, signer);
   }
 
@@ -484,22 +515,15 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Unsupported chain ID: ${chainId}`);
     }
     const entryPointAddress =
+      this.#getChainConfig(chainId)?.entryPoint ??
       DEFAULT_ENTRYPOINTS[chainId]?.address ??
       throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
 
     return EntryPoint__factory.connect(entryPointAddress, signer);
   }
 
-  #getChainNameFromId(chainId: number): keyof typeof CHAIN_IDS {
-    const entries = Object.entries(CHAIN_IDS) as [
-      keyof typeof CHAIN_IDS,
-      number,
-    ][];
-    const found = entries.find(([, value]) => value === chainId);
-    if (!found) {
-      throwError(`[Snap] Unknown chain ID: ${chainId}`);
-    }
-    return found[0];
+  #getChainConfig(chainId: number): ChainConfig | undefined {
+    return this.#state.config?.[chainId];
   }
 
   #isSupportedChain(chainId: number): boolean {
