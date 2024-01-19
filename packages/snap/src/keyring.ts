@@ -358,7 +358,7 @@ export class AccountAbstractionKeyring implements Keyring {
 
     switch (method) {
       case EthMethod.PrepareUserOperation: {
-        const [transactions] = params as [EthBaseTransaction[]];
+        const transactions = params as EthBaseTransaction[];
         return await this.#prepareUserOperation(account.address, transactions);
       }
 
