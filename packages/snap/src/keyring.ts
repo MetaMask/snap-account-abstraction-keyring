@@ -123,10 +123,9 @@ export class AccountAbstractionKeyring implements Keyring {
     logger.info('[Snap] AA Factory Contract Address: ', aaFactory.target);
 
     const random = ethers.toBigInt(ethers.randomBytes(32));
-    const salt = ethers.AbiCoder.defaultAbiCoder().encode(
-      ['uint256'],
-      [random],
-    );
+    const salt =
+      (options.salt as string) ??
+      ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
     const aaAddress = await aaFactory.getAccountAddress(admin, salt);
 

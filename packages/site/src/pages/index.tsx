@@ -36,6 +36,7 @@ const Index = () => {
   // a component but for this case it should be ok since this is an
   // internal development and testing tool.
   const [privateKey, setPrivateKey] = useState<string | null>();
+  const [salt, setSalt] = useState<string | null>();
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
   const [requestId, setRequestId] = useState<string | null>(null);
@@ -81,6 +82,7 @@ const Index = () => {
   const createAccount = async () => {
     const newAccount = await client.createAccount({
       privateKey: privateKey as string,
+      salt: salt as string,
     });
     await syncAccounts();
     return newAccount;
@@ -111,7 +113,7 @@ const Index = () => {
       account: '',
       request: {
         method: 'eth_prepareUserOperation',
-        params: [JSON.parse(transactionsObject)],
+        params: [JSON.stringify(transactionsObject)],
       },
     };
     await client.submitRequest(request);
@@ -127,7 +129,7 @@ const Index = () => {
       account: '',
       request: {
         method: 'eth_patchUserOperation',
-        params: [JSON.parse(userOpObject)],
+        params: [JSON.stringify(userOpObject)],
       },
     };
     await client.submitRequest(request);
@@ -143,7 +145,7 @@ const Index = () => {
       account: '',
       request: {
         method: 'eth_signUserOperation',
-        params: [JSON.parse(userOpObject)],
+        params: [JSON.stringify(userOpObject)],
       },
     };
     await client.submitRequest(request);
@@ -187,6 +189,14 @@ const Index = () => {
           placeholder:
             'E.g. 0000000000000000000000000000000000000000000000000000000000000000',
           onChange: (event: any) => setPrivateKey(event.currentTarget.value),
+        },
+        {
+          id: 'create-account-salt',
+          title: 'Salt (optional)',
+          value: salt,
+          type: InputType.TextField,
+          placeholder: 'E.g. 0x123',
+          onChange: (event: any) => setSalt(event.currentTarget.value),
         },
       ],
       action: {
