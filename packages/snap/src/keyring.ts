@@ -3,6 +3,7 @@ import {
   addHexPrefix,
   Address,
   isValidPrivate,
+  stripHexPrefix,
   toChecksumAddress,
 } from '@ethereumjs/util';
 import type {
@@ -40,6 +41,7 @@ import {
   EntryPoint__factory,
   SimpleAccount__factory,
   SimpleAccountFactory__factory,
+  VerifyingPaymaster__factory,
 } from './types';
 import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
@@ -62,6 +64,7 @@ const unsupportedAAMethods = [
 export type KeyringState = {
   wallets: Record<string, Wallet>;
   pendingRequests: Record<string, KeyringRequest>;
+  customVerifyingPaymasterPK?: string;
 };
 
 export type Wallet = {
@@ -336,7 +339,6 @@ export class AccountAbstractionKeyring implements Keyring {
     switch (method) {
       case EthMethod.PrepareUserOperation: {
         const [transactions] = params as [EthBaseTransaction[]];
-        console.log('transactions', transactions);
         return await this.#prepareUserOperation(account.address, transactions);
       }
 
@@ -387,7 +389,7 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const ethBaseUserOp: EthBaseUserOperation = {
       nonce: isDeployed ? (await aaInstance.getNonce()).toString() : '0x0',
-      initCode: isDeployed ? wallet.initCode : '0x',
+      initCode: isDeployed ? '0x' : wallet.initCode,
       callData: aaInstance.interface.encodeFunctionData('execute', [
         transaction.to ?? ethers.ZeroAddress,
         transaction.value ?? '0x00',
@@ -405,23 +407,30 @@ export class AccountAbstractionKeyring implements Keyring {
     address: string,
     userOp: EthUserOperation,
   ): Promise<EthUserOperationPatch> {
-    // Verifying paymaster
-    const { chainId } = await provider.getNetwork();
-    const paymasterEndpoint = this.#getPaymasterUrl(Number(chainId));
-    const entryPoint = await SimpleAccount__factory.connect(
-      address,
-    ).entryPoint();
+    const wallet = this.#getWalletByAddress(address);
+    const signer = getSigner(wallet.privateKey);
 
-    const pimlicoProvider = new ethers.JsonRpcProvider(paymasterEndpoint);
-    const result = await pimlicoProvider.send('pm_sponsorUserOperation', [
-      userOp,
-      { entryPoint },
-    ]);
-    const { paymasterAndData } = result;
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const verifyingPaymasterAddress = process.env.VERIFYING_PAYMASTER_ADDRESS!;
 
-    logger.info(
-      `[Snap] PatchUserOp paymasterAndData ${paymasterAndData as string}`,
+    const verifyingPaymaster = VerifyingPaymaster__factory.connect(
+      verifyingPaymasterAddress,
+      signer,
     );
+
+    const verifyingSigner = getSigner(
+      this.#state.customVerifyingPaymasterPK ?? wallet.privateKey,
+    );
+
+    // Create a hash that doesn't expire
+    const hash = await verifyingPaymaster.getHash(userOp, 0, 0);
+    const signature = await verifyingSigner.signMessage(hash);
+    const paymasterAndData =
+      hash +
+      stripHexPrefix(
+        ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
+      ) +
+      stripHexPrefix(signature);
 
     return {
       paymasterAndData,
@@ -480,15 +489,6 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
 
     return EntryPoint__factory.connect(entryPointAddress, signer);
-  }
-
-  #getPaymasterUrl(chainId: number): string {
-    const chainName = this.#getChainNameFromId(chainId);
-    const { PAYMASTER_API_KEY, PAYMASTER_BASE_URL } = process.env;
-    if (!PAYMASTER_API_KEY || !PAYMASTER_BASE_URL) {
-      throwError(`[Snap] Paymaster API Key or URL not set`);
-    }
-    return `${PAYMASTER_BASE_URL}/${chainName}/rpc?apiKey=${PAYMASTER_API_KEY}`;
   }
 
   #getChainNameFromId(chainId: number): keyof typeof CHAIN_IDS {

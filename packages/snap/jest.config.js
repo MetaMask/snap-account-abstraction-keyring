@@ -4,4 +4,11 @@ module.exports = {
   },
   testEnvironment: 'jest-environment-hardhat',
   testTimeout: 20000,
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/test/',
+    'src/types/',
+    'contracts',
+    'artifacts',
+  ],
 };

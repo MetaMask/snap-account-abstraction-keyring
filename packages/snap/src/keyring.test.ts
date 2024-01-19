@@ -1,13 +1,15 @@
 /* eslint-disable camelcase */
 /* eslint-disable n/no-process-env */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { stripHexPrefix } from '@ethereumjs/util';
 import type { EthUserOperation, KeyringAccount } from '@metamask/keyring-api';
 import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
+import { DUMMY_SIGNATURE } from './constants/dummy-values';
 import type { KeyringState } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
-import { SimpleAccount__factory } from './types';
+import { SimpleAccount__factory, VerifyingPaymaster__factory } from './types';
 import { getUserOperationHash } from './utils/ecdsa';
 
 const mockAccountId = 'ea747116-767c-4117-a347-0c3f7b19cc5a';
@@ -60,13 +62,13 @@ describe('Keyring', () => {
     });
   });
 
-  describe('userOperations', () => {
+  describe('UserOperations Methods', () => {
     let aaAccount: KeyringAccount;
 
     beforeEach(async () => {
       aaAccount = await keyring.createAccount({ privateKey: aaOwnerPk });
     });
-    describe('prepareUserOperation', () => {
+    describe('#prepareUserOperation', () => {
       it('should prepare a new user operation', async () => {
         const intent = {
           to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
@@ -83,7 +85,7 @@ describe('Keyring', () => {
           pending: false,
           result: {
             nonce: '0x0',
-            initCode: '0x',
+            initCode: expect.any(String), // not testing the init code here
             callData: expectedCallData,
             dummySignature:
               '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c',
@@ -112,13 +114,77 @@ describe('Keyring', () => {
       });
     });
 
-    describe('patchUserOperation', () => {});
+    describe('#patchUserOperation', () => {
+      it('should return a valid paymasterAndData', async () => {
+        const userOperation: EthUserOperation = {
+          sender: aaAccount.address,
+          nonce: '0x00',
+          initCode: '0x',
+          callData:
+            '0xb61d27f600000000000000000000000097a0924bf222499cba5c29ea746e82f2307302930000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',
+          signature: DUMMY_SIGNATURE,
+          paymasterAndData: '0x',
+          callGasLimit: '0x58a83',
+          verificationGasLimit: '0xe8c4',
+          preVerificationGas: '0xc57c',
+          maxFeePerGas: '0x11',
+          maxPriorityFeePerGas: '0x11',
+        };
 
-    describe('signUserOperation', () => {
+        const operation = (await keyring.submitRequest({
+          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+          scope: '',
+          account: mockAccountId,
+          request: {
+            method: 'eth_patchUserOperation',
+            params: [userOperation],
+          },
+        })) as { pending: false; result: { paymasterAndData: string } };
+
+        const verifyingPaymaster = VerifyingPaymaster__factory.connect(
+          process.env.VERIFYING_PAYMASTER_ADDRESS!,
+          ethers.provider,
+        );
+
+        const hash = await verifyingPaymaster.getHash(userOperation, 0, 0);
+        const expectedSignature = await aaOwner.signMessage(hash);
+        const expectedPaymasterAndData =
+          hash +
+          stripHexPrefix(
+            ethers.AbiCoder.defaultAbiCoder().encode(
+              ['uint48', 'uint48'],
+              [0, 0],
+            ),
+          ) +
+          stripHexPrefix(expectedSignature);
+
+        console.log(expectedPaymasterAndData);
+
+        expect(operation.result.paymasterAndData).toBe(
+          expectedPaymasterAndData,
+        );
+
+        const userOperationWithPaymasterAndData = {
+          ...userOperation,
+          paymasterAndData: operation.result.paymasterAndData,
+        };
+
+        expect(
+          await verifyingPaymaster.validatePaymasterUserOp.staticCall(
+            userOperationWithPaymasterAndData,
+            '0x'.padEnd(66, '0'),
+            100,
+            { from: entryPoint },
+          ),
+        ).toHaveReturned();
+      });
+    });
+
+    describe('#signUserOperation', () => {
       it('should sign a user operation', async () => {
         const userOperation: EthUserOperation = {
           sender: aaAccount.address,
-          nonce: '0x0',
+          nonce: '0x00',
           initCode: '0x',
           callData:
             '0xb61d27f600000000000000000000000097a0924bf222499cba5c29ea746e82f2307302930000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',
