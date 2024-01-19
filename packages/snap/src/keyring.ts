@@ -142,7 +142,7 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     // Note: this is commented out because the AA is not deployed yet.
-    // Will store the initCode in the wallet object to deploy with first transaction later.
+    // Will store the initCode and salt in the wallet object to deploy with first transaction later.
     // try {
     //   await aaFactory.createAccount(address, salt);
     //   logger.info('[Snap] Deployed AA Account Successfully');
@@ -171,6 +171,8 @@ export class AccountAbstractionKeyring implements Keyring {
         salt,
         initCode,
       };
+      await this.#emitEvent(KeyringEvent.AccountCreated, { account });
+      await this.#saveState();
       return account;
     } catch (error) {
       throw new Error((error as Error).message);
