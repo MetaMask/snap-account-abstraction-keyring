@@ -117,8 +117,7 @@ const Index = () => {
         params: [JSON.stringify(chainConfig)],
       },
     };
-    const result = await client.submitRequest(request);
-    console.log(result);
+    await client.submitRequest(request);
   };
   const prepareUserOp = async () => {
     if (!transactionsObject || !snapState.accounts[0]) {
