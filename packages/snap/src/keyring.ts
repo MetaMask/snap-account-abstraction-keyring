@@ -93,10 +93,41 @@ export class AccountAbstractionKeyring implements Keyring {
 
   async setConfig(config: ChainConfig): Promise<ChainConfig> {
     const { chainId } = await provider.getNetwork();
-    // TODO: validate config
-    // use isAddress check for address
-    // regex for bundler url
-    // try/catch for ethers.wallet with pk
+    if (
+      config.simpleAccountFactory &&
+      !ethers.isAddress(config.simpleAccountFactory)
+    ) {
+      throwError(
+        `[Snap] Invalid Simple Account Factory Address: ${config.simpleAccountFactory}`,
+      );
+    }
+    if (config.entryPoint && !ethers.isAddress(config.entryPoint)) {
+      throwError(`[Snap] Invalid EntryPoint Address: ${config.entryPoint}`);
+    }
+    if (
+      config.customVerifyingPaymasterAddress &&
+      !ethers.isAddress(config.customVerifyingPaymasterAddress)
+    ) {
+      throwError(
+        `[Snap] Invalid Verifying Paymaster Address: ${config.customVerifyingPaymasterAddress}`,
+      );
+    }
+    const bundlerUrlRegex =
+      /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
+      throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
+    }
+    if (config.customVerifyingPaymasterPK) {
+      try {
+        new ethers.Wallet(config.customVerifyingPaymasterPK);
+      } catch (error) {
+        throwError(
+          `[Snap] Invalid Verifying Paymaster Private Key: ${
+            (error as Error).message
+          }`,
+        );
+      }
+    }
     this.#state.config[Number(chainId)] = {
       ...this.#state.config[Number(chainId)],
       ...config,
