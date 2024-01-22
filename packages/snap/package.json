@@ -28,7 +28,7 @@
   ],
   "scripts": {
     "compile": "hardhat compile",
-    "build": "mm-snap build",
+    "build": "yarn compile && mm-snap build",
     "build:clean": "yarn clean && yarn build",
     "clean": "rimraf dist",
     "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types",
