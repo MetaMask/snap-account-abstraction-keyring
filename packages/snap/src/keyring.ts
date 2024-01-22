@@ -65,14 +65,14 @@ export type ChainConfig = {
   simpleAccountFactory?: string;
   entryPoint?: string;
   bundlerUrl?: string;
-  customVerifyingPaymasterPK: string;
+  customVerifyingPaymasterPK?: string;
   customVerifyingPaymasterAddress?: string;
 };
 
 export type KeyringState = {
   wallets: Record<string, Wallet>;
   pendingRequests: Record<string, KeyringRequest>;
-  config?: Record<number, ChainConfig>;
+  config: Record<number, ChainConfig>;
 };
 
 export type Wallet = {
@@ -92,10 +92,11 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   async setConfig(config: ChainConfig): Promise<ChainConfig> {
-    if (!this.#state.config) {
-      this.#state.config = {};
-    }
     const { chainId } = await provider.getNetwork();
+    // TODO: validate config
+    // use isAddress check for address
+    // regex for bundler url
+    // try/catch for ethers.wallet with pk
     this.#state.config[Number(chainId)] = {
       ...this.#state.config[Number(chainId)],
       ...config,
@@ -405,11 +406,22 @@ export class AccountAbstractionKeyring implements Keyring {
     );
 
     const { chainId } = await provider.getNetwork();
-    const isDeployed = wallet.chains[chainId.toString()];
+
+    let nonce = '0x0';
+    let initCode = '0x';
+    try {
+      nonce = `0x${(await aaInstance.getNonce()).toString(16)}`;
+      if (!wallet.chains[chainId.toString()]) {
+        wallet.chains[chainId.toString()] = true;
+        await this.#saveState();
+      }
+    } catch (error) {
+      initCode = wallet.initCode;
+    }
 
     const ethBaseUserOp: EthBaseUserOperation = {
-      nonce: isDeployed ? (await aaInstance.getNonce()).toString() : '0x0',
-      initCode: isDeployed ? '0x' : wallet.initCode,
+      nonce,
+      initCode,
       callData: aaInstance.interface.encodeFunctionData('execute', [
         transaction.to ?? ethers.ZeroAddress,
         transaction.value ?? '0x00',
