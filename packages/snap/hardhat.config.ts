@@ -10,7 +10,15 @@ const MNEMONIC = process.env.MNEMONIC!;
 const INFURA_PROJECT_ID = process.env.INFURA_PROJECT_ID!;
 
 const config: HardhatUserConfig = {
-  solidity: '0.8.19',
+  solidity: {
+    version: '0.8.19',
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 1000,
+      },
+    },
+  },
   typechain: {
     outDir: 'src/types',
     target: 'ethers-v6',
@@ -22,12 +30,12 @@ const config: HardhatUserConfig = {
     hardhat: {
       chainId: 11155111,
       accounts: {
-        mnemonic: MNEMONIC,
+        mnemonic: 'test test test test test test test test test test test junk',
         count: 2,
       },
-      forking: {
-        url: `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
-      },
+      // forking: {
+      //   url: `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
+      // },
     },
     sepolia: {
       url: `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
