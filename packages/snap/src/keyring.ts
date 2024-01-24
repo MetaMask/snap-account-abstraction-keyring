@@ -399,25 +399,25 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
     }
 
-      switch (method) {
-        case EthMethod.PrepareUserOperation: {
-          const transactions = params as EthBaseTransaction[];
+    switch (method) {
+      case EthMethod.PrepareUserOperation: {
+        const transactions = params as EthBaseTransaction[];
         return await this.#prepareUserOperation(account.address, transactions);
-        }
+      }
 
-        case EthMethod.PatchUserOperation: {
-          const [userOp] = params as [EthUserOperation];
-          return await this.#patchUserOperation(account.address, userOp);
-        }
+      case EthMethod.PatchUserOperation: {
+        const [userOp] = params as [EthUserOperation];
+        return await this.#patchUserOperation(account.address, userOp);
+      }
 
-        case EthMethod.SignUserOperation: {
-          const [userOp] = params as [EthUserOperation];
-          return await this.#signUserOperation(account.address, userOp);
-        }
+      case EthMethod.SignUserOperation: {
+        const [userOp] = params as [EthUserOperation];
+        return await this.#signUserOperation(account.address, userOp);
+      }
 
-        default: {
-          throw new Error(`EVM method '${method}' not supported`);
-        }
+      default: {
+        throw new Error(`EVM method '${method}' not supported`);
+      }
     }
   }
 
@@ -511,9 +511,9 @@ export class AccountAbstractionKeyring implements Keyring {
 
     // Create a hash that doesn't expire
     const hash = await verifyingPaymaster.getHash(userOp, 0, 0);
-    const signature = await verifyingSigner.signMessage(hash);
+    const signature = await verifyingSigner.signMessage(ethers.getBytes(hash));
     const paymasterAndData =
-      hash +
+      verifyingPaymasterAddress +
       stripHexPrefix(
         ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
       ) +
