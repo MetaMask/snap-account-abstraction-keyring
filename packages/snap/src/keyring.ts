@@ -449,7 +449,7 @@ export class AccountAbstractionKeyring implements Keyring {
     let nonce = '0x0';
     let initCode = '0x';
     try {
-      nonce = `0x${(await aaInstance.getNonce()).toString(16)}`;
+      nonce = `0x${(await aaInstance.getNonce()).toString(16) as string}`;
       if (!wallet.chains[chainId.toString()]) {
         wallet.chains[chainId.toString()] = true;
         await this.#saveState();
@@ -502,12 +502,9 @@ export class AccountAbstractionKeyring implements Keyring {
     // Create a hash that doesn't expire
     const hash = await verifyingPaymaster.getHash(userOp, 0, 0);
     const signature = await verifyingSigner.signMessage(ethers.getBytes(hash));
-    const paymasterAndData =
-      (await verifyingPaymaster.getAddress()) +
-      stripHexPrefix(
-        ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
-      ) +
-      stripHexPrefix(signature);
+    const paymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
+      ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
+    )}${stripHexPrefix(signature)}`;
 
     return {
       paymasterAndData,

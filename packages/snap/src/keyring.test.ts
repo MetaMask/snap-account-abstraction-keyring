@@ -262,15 +262,12 @@ describe('Keyring', () => {
         const expectedSignature = await aaOwner.signMessage(
           ethers.getBytes(hash),
         );
-        const expectedPaymasterAndData =
-          (await verifyingPaymaster.getAddress()) +
-          stripHexPrefix(
-            ethers.AbiCoder.defaultAbiCoder().encode(
-              ['uint48', 'uint48'],
-              [0, 0],
-            ),
-          ) +
-          stripHexPrefix(expectedSignature);
+        const expectedPaymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ['uint48', 'uint48'],
+            [0, 0],
+          ),
+        )}${stripHexPrefix(expectedSignature)}`;
 
         expect(operation.result.paymasterAndData).toBe(
           expectedPaymasterAndData,
