@@ -1,15 +1,9 @@
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
 import Grid from '@mui/material/Grid';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
-import {
-  Accordion,
-  AccountList,
-  Card,
-  ConnectButton,
-  Toggle,
-} from '../components';
+import { Accordion, AccountList, Card, ConnectButton } from '../components';
 import {
   CardContainer,
   Container,
@@ -18,15 +12,10 @@ import {
   StyledBox,
 } from '../components/styledComponents';
 import { defaultSnapOrigin } from '../config';
-import { MetaMaskContext, MetamaskActions } from '../hooks';
+import { MetamaskActions, MetaMaskContext } from '../hooks';
 import { InputType } from '../types';
 import type { KeyringState } from '../utils';
-import {
-  connectSnap,
-  getSnap,
-  isSynchronousMode,
-  toggleSynchronousApprovals,
-} from '../utils';
+import { connectSnap, getSnap, isSynchronousMode } from '../utils';
 
 const snapId = defaultSnapOrigin;
 
@@ -47,11 +36,11 @@ const Index = () => {
   // a component but for this case it should be ok since this is an
   // internal development and testing tool.
   const [privateKey, setPrivateKey] = useState<string | null>();
+  const [salt, setSalt] = useState<string | null>();
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
   const [requestId, setRequestId] = useState<string | null>(null);
-  // const [accountPayload, setAccountPayload] =
-  //   useState<Pick<KeyringAccount, 'name' | 'options'>>();
+
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
 
   useEffect(() => {
@@ -86,14 +75,9 @@ const Index = () => {
   };
 
   const createAccount = async () => {
-    const newAccount = await client.createAccount();
-    await syncAccounts();
-    return newAccount;
-  };
-
-  const importAccount = async () => {
     const newAccount = await client.createAccount({
       privateKey: privateKey as string,
+      salt: salt as string,
     });
     await syncAccounts();
     return newAccount;
@@ -128,32 +112,23 @@ const Index = () => {
     }
   };
 
-  const handleUseSyncToggle = useCallback(async () => {
-    console.log('Toggling synchronous approval');
-    await toggleSynchronousApprovals();
-    setSnapState({
-      ...snapState,
-      useSynchronousApprovals: !snapState.useSynchronousApprovals,
-    });
-  }, [snapState]);
+  // Note: not using this for now
+  // const handleUseSyncToggle = useCallback(async () => {
+  //   console.log('Toggling synchronous approval');
+  //   await toggleSynchronousApprovals();
+  //   setSnapState({
+  //     ...snapState,
+  //     useSynchronousApprovals: !snapState.useSynchronousApprovals,
+  //   });
+  // }, [snapState]);
 
   const accountManagementMethods = [
     {
       name: 'Create account',
-      description: 'Create a new account',
-      inputs: [],
-      action: {
-        callback: async () => await createAccount(),
-        label: 'Create Account',
-      },
-      successMessage: 'Account created',
-    },
-    {
-      name: 'Import account',
-      description: 'Import an account using a private key',
+      description: 'Create a 4337 account using an admin private key',
       inputs: [
         {
-          id: 'import-account-private-key',
+          id: 'create-account-private-key',
           title: 'Private key',
           value: privateKey,
           type: InputType.TextField,
@@ -161,12 +136,20 @@ const Index = () => {
             'E.g. 0000000000000000000000000000000000000000000000000000000000000000',
           onChange: (event: any) => setPrivateKey(event.currentTarget.value),
         },
+        {
+          id: 'create-account-salt',
+          title: 'Salt (optional)',
+          value: salt,
+          type: InputType.TextField,
+          placeholder: 'E.g. 0x123',
+          onChange: (event: any) => setSalt(event.currentTarget.value),
+        },
       ],
       action: {
-        callback: async () => await importAccount(),
-        label: 'Import Account',
+        callback: async () => await createAccount(),
+        label: 'Create Account',
       },
-      successMessage: 'Account imported',
+      successMessage: 'Smart Contract Account Created',
     },
     {
       name: 'Get account',
@@ -352,14 +335,15 @@ const Index = () => {
       <StyledBox sx={{ flexGrow: 1 }}>
         <Grid container spacing={4} columns={[1, 2, 3]}>
           <Grid item xs={8} sm={4} md={2}>
-            <DividerTitle>Options</DividerTitle>
-            <Toggle
-              title="Use Synchronous Approval"
-              defaultChecked={snapState.useSynchronousApprovals}
-              onToggle={handleUseSyncToggle}
-              enabled={Boolean(state.installedSnap)}
-            />
-            <Divider>&nbsp;</Divider>
+            {/* Not using this for now*/}
+            {/* <DividerTitle>Options</DividerTitle>*/}
+            {/* <Toggle*/}
+            {/*  title="Use Synchronous Approval"*/}
+            {/*  defaultChecked={snapState.useSynchronousApprovals}*/}
+            {/*  onToggle={handleUseSyncToggle}*/}
+            {/*  enabled={Boolean(state.installedSnap)}*/}
+            {/*/ >*/}
+            {/* <Divider>&nbsp;</Divider>*/}
             <DividerTitle>Methods</DividerTitle>
             <Accordion items={accountManagementMethods} />
             <Divider />

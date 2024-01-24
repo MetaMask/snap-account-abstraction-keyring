@@ -1,7 +1,8 @@
 import type { JsonTx } from '@ethereumjs/tx';
 import type { Json } from '@metamask/utils';
+import { hexlify } from 'ethers';
 
-import type { Wallet } from './keyring';
+import type { Wallet } from '../keyring';
 
 /**
  * Serializes a transaction by removing undefined properties and converting them to null.
@@ -24,6 +25,33 @@ export function serializeTransaction(tx: JsonTx, type: number): Json {
   });
 
   return serializableSignedTx;
+}
+
+/**
+ * Hexlify all members of object, recursively.
+ *
+ * @param obj - The object to hexlify.
+ * @returns The hexlified object.
+ */
+export function deepHexlify(obj: any): any {
+  if (typeof obj === 'function') {
+    return undefined;
+  }
+  if (obj === null || typeof obj === 'string' || typeof obj === 'boolean') {
+    return obj;
+  } else if (obj._isBigNumber !== null || typeof obj !== 'object') {
+    return hexlify(obj).replace(/^0x0/u, '0x');
+  }
+  if (Array.isArray(obj)) {
+    return obj.map((member) => deepHexlify(member));
+  }
+  return Object.keys(obj).reduce(
+    (set, key) => ({
+      ...set,
+      [key]: deepHexlify(obj[key]),
+    }),
+    {},
+  );
 }
 
 /**

@@ -9,7 +9,8 @@ import { SimpleAccountFactory__factory } from '../src/types';
 async function main() {
   const [deployer] = await ethers.getSigners();
 
-  const SimpleAccountFactory = new SimpleAccountFactory__factory(deployer);
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const SimpleAccountFactory = new SimpleAccountFactory__factory(deployer!);
 
   const contract = await SimpleAccountFactory.deploy(
     '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',

@@ -1,4 +1,4 @@
-# Simple Keyring Snap
+# Simple Account Abstraction Snap
 
 This repository contains a simple example of a keyring snap.
 

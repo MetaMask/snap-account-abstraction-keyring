@@ -7,21 +7,22 @@ import type {
   OnRpcRequestHandler,
 } from '@metamask/snaps-types';
 
-import { SimpleKeyring } from './keyring';
+import type { ChainConfig } from './keyring';
+import { AccountAbstractionKeyring } from './keyring';
 import { logger } from './logger';
 import { InternalMethod, originPermissions } from './permissions';
 import { getState } from './stateManagement';
 
-let keyring: SimpleKeyring;
+let keyring: AccountAbstractionKeyring;
 
 /**
  * Return the keyring instance. If it doesn't exist, create it.
  */
-async function getKeyring(): Promise<SimpleKeyring> {
+async function getKeyring(): Promise<AccountAbstractionKeyring> {
   if (!keyring) {
     const state = await getState();
     if (!keyring) {
-      keyring = new SimpleKeyring(state);
+      keyring = new AccountAbstractionKeyring(state);
     }
   }
   return keyring;
@@ -56,12 +57,11 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 
   // Handle custom methods.
   switch (request.method) {
-    case InternalMethod.ToggleSyncApprovals: {
-      return (await getKeyring()).toggleSyncApprovals();
-    }
-
-    case InternalMethod.IsSynchronousMode: {
-      return (await getKeyring()).isSynchronousMode();
+    case InternalMethod.SetConfig: {
+      if (!request.params?.length) {
+        throw new Error('Missing config');
+      }
+      return (await getKeyring()).setConfig(request.params as ChainConfig);
     }
 
     default: {

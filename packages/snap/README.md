@@ -15,3 +15,9 @@ can customize the wallet experience.
 1. `yarn install` to install the dependencies
 2. `yarn compile` to build the types for the contracts.
 3. `yarn serve` to create a local instance of the snap.
+
+# Deploying Factory Contracts
+
+Deploying the contracts will use eth from the first account of your mnemonic.
+
+1. `yarn hardhat --network <chain name specified in hardhat config> run scripts/deployFactory.ts`

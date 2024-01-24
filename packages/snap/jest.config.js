@@ -1,7 +1,13 @@
 module.exports = {
-  preset: '@metamask/snaps-jest',
   transform: {
     '^.+\\.(t|j)sx?$': 'ts-jest',
   },
-  testEnvironmentContext: 'jest-environment-hardhat',
+  testTimeout: 20000,
+  coveragePathIgnorePatterns: [
+    '/node_modules/',
+    '/test/',
+    'src/types/',
+    'contracts',
+    'artifacts',
+  ],
 };

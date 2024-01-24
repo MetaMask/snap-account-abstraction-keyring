@@ -81,14 +81,16 @@ export const toggleSynchronousApprovals = async () => {
   });
 };
 
+// Note: not used in the example
 export const isSynchronousMode = async (): Promise<boolean> => {
-  return (await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: {
-      snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.isSynchronousMode' },
-    },
-  })) as boolean;
+  // return (await window.ethereum.request({
+  //   method: 'wallet_invokeSnap',
+  //   params: {
+  //     snapId: defaultSnapOrigin,
+  //     request: { method: 'snap.internal.isSynchronousMode' },
+  //   },
+  // })) as boolean;
+  return true;
 };
 
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');
