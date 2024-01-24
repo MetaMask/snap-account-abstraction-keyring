@@ -449,7 +449,8 @@ export class AccountAbstractionKeyring implements Keyring {
     let nonce = '0x0';
     let initCode = '0x';
     try {
-      nonce = `0x${(await aaInstance.getNonce()).toString(16) as string}`;
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+      nonce = `0x${(await aaInstance.getNonce()).toString(16)}`;
       if (!wallet.chains[chainId.toString()]) {
         wallet.chains[chainId.toString()] = true;
         await this.#saveState();
