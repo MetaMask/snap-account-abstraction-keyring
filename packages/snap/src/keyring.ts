@@ -33,6 +33,7 @@ import {
   DUMMY_GAS_VALUES,
   DUMMY_PAYMASTER_AND_DATA,
   DUMMY_SIGNATURE,
+  getDummyPaymasterAndData,
 } from './constants/dummy-values';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import { logger } from './logger';
@@ -51,6 +52,7 @@ import {
   runSensitive,
   throwError,
 } from './utils/util';
+import { InternalMethod } from './permissions';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -113,7 +115,7 @@ export class AccountAbstractionKeyring implements Keyring {
       );
     }
     const bundlerUrlRegex =
-      /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      /^(https?:\/\/)?[\w\.-]+(:\d{2,6})?(\/[\/\w \.-]*)?$/;
     if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
       throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
     }
@@ -132,6 +134,7 @@ export class AccountAbstractionKeyring implements Keyring {
       ...this.#state.config[Number(chainId)],
       ...config,
     };
+
     await this.#saveState();
     return this.#state.config[Number(chainId)]!;
   }
@@ -324,6 +327,14 @@ export class AccountAbstractionKeyring implements Keyring {
     request: KeyringRequest,
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
+
+    if (method === InternalMethod.SetConfig) {
+      return {
+        pending: false,
+        result: await this.setConfig((params as [ChainConfig])[0]),
+      };
+    }
+
     const signature = await this.#handleSigningRequest({
       account: this.#getWalletById(request.account).account,
       method,
@@ -388,25 +399,25 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
     }
 
-    switch (method) {
-      case EthMethod.PrepareUserOperation: {
-        const transactions = params as EthBaseTransaction[];
+      switch (method) {
+        case EthMethod.PrepareUserOperation: {
+          const transactions = params as EthBaseTransaction[];
         return await this.#prepareUserOperation(account.address, transactions);
-      }
+        }
 
-      case EthMethod.PatchUserOperation: {
-        const [userOp] = params as [EthUserOperation];
-        return await this.#patchUserOperation(account.address, userOp);
-      }
+        case EthMethod.PatchUserOperation: {
+          const [userOp] = params as [EthUserOperation];
+          return await this.#patchUserOperation(account.address, userOp);
+        }
 
-      case EthMethod.SignUserOperation: {
-        const [userOp] = params as [EthUserOperation];
-        return await this.#signUserOperation(account.address, userOp);
-      }
+        case EthMethod.SignUserOperation: {
+          const [userOp] = params as [EthUserOperation];
+          return await this.#signUserOperation(account.address, userOp);
+        }
 
-      default: {
-        throw new Error(`EVM method '${method}' not supported`);
-      }
+        default: {
+          throw new Error(`EVM method '${method}' not supported`);
+        }
     }
   }
 
@@ -450,6 +461,11 @@ export class AccountAbstractionKeyring implements Keyring {
       initCode = wallet.initCode;
     }
 
+    const chainConfig = this.#getChainConfig(Number(chainId));
+
+    const verifyingPaymasterAddress =
+      chainConfig?.customVerifyingPaymasterAddress;
+
     const ethBaseUserOp: EthBaseUserOperation = {
       nonce,
       initCode,
@@ -459,12 +475,10 @@ export class AccountAbstractionKeyring implements Keyring {
         transaction.data ?? ethers.ZeroHash,
       ]),
       dummySignature: DUMMY_SIGNATURE,
-      dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
-      bundlerUrl:
-        this.#getChainConfig(Number(chainId))?.bundlerUrl ??
-        process.env.BUNDLER_URL ??
-        '',
-      gasLimits: DUMMY_GAS_VALUES,
+      dummyPaymasterAndData: getDummyPaymasterAndData(
+        verifyingPaymasterAddress,
+      ),
+      bundlerUrl: chainConfig?.bundlerUrl ?? '',
     };
     return ethBaseUserOp;
   }
@@ -480,8 +494,11 @@ export class AccountAbstractionKeyring implements Keyring {
 
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const verifyingPaymasterAddress =
-      chainConfig?.customVerifyingPaymasterAddress ??
-      process.env.VERIFYING_PAYMASTER_ADDRESS!;
+      chainConfig?.customVerifyingPaymasterAddress!;
+
+    if (!verifyingPaymasterAddress) {
+      return { paymasterAndData: '0x' };
+    }
 
     const verifyingPaymaster = VerifyingPaymaster__factory.connect(
       verifyingPaymasterAddress,
@@ -570,7 +587,10 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   #isSupportedChain(chainId: number): boolean {
-    return Object.values(CHAIN_IDS).includes(chainId);
+    return (
+      Object.values(CHAIN_IDS).includes(chainId) ||
+      Boolean(this.#state.config[chainId])
+    );
   }
 
   async #saveState(): Promise<void> {

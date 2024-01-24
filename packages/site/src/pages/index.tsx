@@ -2,6 +2,7 @@ import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
 import Grid from '@mui/material/Grid';
 import React, { useContext, useEffect, useState } from 'react';
+import * as uuid from 'uuid';
 
 import { Accordion, AccountList, Card, ConnectButton } from '../components';
 import {
@@ -109,12 +110,12 @@ const Index = () => {
       return;
     }
     const request: KeyringRequest = {
-      id: '',
+      id: uuid.v4(),
       scope: '',
-      account: '',
+      account: uuid.v4(),
       request: {
         method: 'snap.internal.setConfig',
-        params: [JSON.stringify(chainConfig)],
+        params: [JSON.parse(chainConfig)],
       },
     };
     await client.submitRequest(request);

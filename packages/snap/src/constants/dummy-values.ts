@@ -1,6 +1,5 @@
 import { stripHexPrefix } from '@ethereumjs/util';
 import { ethers } from 'ethers';
-import * as process from 'process';
 
 export const DUMMY_SIGNATURE =
   '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c';
@@ -9,7 +8,7 @@ export const DUMMY_SIGNATURE =
  *
  * @param paymasterAddress
  */
-function getDummyPaymasterAndData(paymasterAddress?: string): string {
+export function getDummyPaymasterAndData(paymasterAddress?: string): string {
   if (!paymasterAddress) {
     return '0x';
   }
@@ -22,10 +21,6 @@ function getDummyPaymasterAndData(paymasterAddress?: string): string {
     DUMMY_SIGNATURE,
   )}`;
 }
-
-export const DUMMY_PAYMASTER_AND_DATA = getDummyPaymasterAndData(
-  process.env.PAYMASTER_ADDRESS ?? '',
-);
 
 export const DUMMY_GAS_VALUES = {
   callGasLimit: '0x58a83',
