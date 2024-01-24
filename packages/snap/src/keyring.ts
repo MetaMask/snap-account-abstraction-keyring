@@ -502,6 +502,7 @@ export class AccountAbstractionKeyring implements Keyring {
     // Create a hash that doesn't expire
     const hash = await verifyingPaymaster.getHash(userOp, 0, 0);
     const signature = await verifyingSigner.signMessage(ethers.getBytes(hash));
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
     const paymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
       ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
     )}${stripHexPrefix(signature)}`;

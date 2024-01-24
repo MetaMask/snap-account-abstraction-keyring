@@ -262,6 +262,7 @@ describe('Keyring', () => {
         const expectedSignature = await aaOwner.signMessage(
           ethers.getBytes(hash),
         );
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         const expectedPaymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
           ethers.AbiCoder.defaultAbiCoder().encode(
             ['uint48', 'uint48'],
