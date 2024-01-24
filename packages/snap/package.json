@@ -35,7 +35,7 @@
     "lint:deps": "depcheck",
     "lint:eslint": "eslint . --cache --ext js,jsx,ts,tsx",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
-    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '!snap.manifest.json' --check",
+    "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '!snap.manifest.json' '!artifacts/**/*' '!cache/**/*' '!coverage/**/*' --check",
     "lint:types": "tsc --noEmit",
     "serve": "mm-snap serve",
     "start": "NODE_ENV='development' mm-snap watch",
