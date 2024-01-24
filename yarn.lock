@@ -5972,7 +5972,6 @@ __metadata:
     "@types/node": ^20.10.8
     "@typescript-eslint/eslint-plugin": ^5.33.0
     "@typescript-eslint/parser": ^5.33.0
-    "@uniswap/sdk-core": ^4.0.10
     chai: ^4.3.7
     depcheck: ^1.4.6
     dotenv: ^16.3.1
@@ -10007,20 +10006,6 @@ __metadata:
     "@typescript-eslint/types": 5.62.0
     eslint-visitor-keys: ^3.3.0
   checksum: 976b05d103fe8335bef5c93ad3f76d781e3ce50329c0243ee0f00c0fcfb186c81df50e64bfdd34970148113f8ade90887f53e3c4938183afba830b4ba8e30a35
-  languageName: node
-  linkType: hard
-
-"@uniswap/sdk-core@npm:^4.0.10":
-  version: 4.0.10
-  resolution: "@uniswap/sdk-core@npm:4.0.10"
-  dependencies:
-    "@ethersproject/address": ^5.0.2
-    big.js: ^5.2.2
-    decimal.js-light: ^2.5.0
-    jsbi: ^3.1.4
-    tiny-invariant: ^1.1.0
-    toformat: ^2.0.0
-  checksum: 85c1ca851c94a6acdb822eb6bfda50e55701a1fb72b7928e6f7b0a6d6ced42cb987f392d3a4d4cc3453421fe52b850e5aaa896a42075d50786f28648399b977f
   languageName: node
   linkType: hard
 
@@ -14228,13 +14213,6 @@ __metadata:
   version: 6.0.0
   resolution: "decamelize@npm:6.0.0"
   checksum: 0066bc30798ec11e01adf0c19ad975caef86545d4bb6f70cfb90b7eb8e3cbf7974cf774ac2e6ea2586e4e07b1f654bfecc4e772c42128a79a89f8584fc546753
-  languageName: node
-  linkType: hard
-
-"decimal.js-light@npm:^2.5.0":
-  version: 2.5.1
-  resolution: "decimal.js-light@npm:2.5.1"
-  checksum: f5a2c7eac1c4541c8ab8a5c8abea64fc1761cefc7794bd5f8afd57a8a78d1b51785e0c4e4f85f4895a043eaa90ddca1edc3981d1263eb6ddce60f32bf5fe66c9
   languageName: node
   linkType: hard
 
@@ -21196,13 +21174,6 @@ __metadata:
   bin:
     js-yaml: bin/js-yaml.js
   checksum: c7830dfd456c3ef2c6e355cc5a92e6700ceafa1d14bba54497b34a99f0376cecbb3e9ac14d3e5849b426d5a5140709a66237a8c991c675431271c4ce5504151a
-  languageName: node
-  linkType: hard
-
-"jsbi@npm:^3.1.4":
-  version: 3.2.5
-  resolution: "jsbi@npm:3.2.5"
-  checksum: 642d1bb139ad1c1e96c4907eb159565e980a0d168487626b493d0d0b7b341da0e43001089d3b21703fe17b18a7a6c0f42c92026f71d54471ed0a0d1b3015ec0f
   languageName: node
   linkType: hard
 
@@ -28991,7 +28962,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tiny-invariant@npm:^1.0.6, tiny-invariant@npm:^1.1.0":
+"tiny-invariant@npm:^1.0.6":
   version: 1.3.1
   resolution: "tiny-invariant@npm:1.3.1"
   checksum: 872dbd1ff20a21303a2fd20ce3a15602cfa7fcf9b228bd694a52e2938224313b5385a1078cb667ed7375d1612194feaca81c4ecbe93121ca1baebe344de4f84c
@@ -29045,13 +29016,6 @@ __metadata:
   dependencies:
     is-number: ^7.0.0
   checksum: f76fa01b3d5be85db6a2a143e24df9f60dd047d151062d0ba3df62953f2f697b16fe5dad9b0ac6191c7efc7b1d9dcaa4b768174b7b29da89d4428e64bc0a20ed
-  languageName: node
-  linkType: hard
-
-"toformat@npm:^2.0.0":
-  version: 2.0.0
-  resolution: "toformat@npm:2.0.0"
-  checksum: c75341911a811a85c309e2c3eb8e9c7b60f26e2c629170179fc92ed339a2faf44433ebde75d4ac6dbe6f55a2aa044e1d4cd5242dbdd5e4c047babbe6defd8387
   languageName: node
   linkType: hard
 
