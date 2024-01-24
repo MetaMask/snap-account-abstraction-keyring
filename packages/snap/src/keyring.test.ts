@@ -2,7 +2,11 @@
 /* eslint-disable n/no-process-env */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { stripHexPrefix } from '@ethereumjs/util';
-import type { EthUserOperation, KeyringAccount } from '@metamask/keyring-api';
+import type {
+  EthBaseUserOperation,
+  EthUserOperation,
+  KeyringAccount,
+} from '@metamask/keyring-api';
 import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
@@ -12,14 +16,19 @@ import {
 } from './constants/dummy-values';
 import type { ChainConfig, KeyringState } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
-import type { EntryPoint, VerifyingPaymaster } from './types';
+import type {
+  EntryPoint,
+  SimpleAccountFactory,
+  VerifyingPaymaster,
+} from './types';
 import {
+  EntryPoint__factory,
   SimpleAccount__factory,
   SimpleAccountFactory__factory,
   VerifyingPaymaster__factory,
-  EntryPoint__factory,
 } from './types';
 import { getUserOperationHash } from './utils/ecdsa';
+import { provider } from './utils/ethers';
 
 const mockAccountId = 'ea747116-767c-4117-a347-0c3f7b19cc5a';
 const TEST_MNEMONIC =
@@ -51,11 +60,13 @@ const defaultState: KeyringState = {
 };
 
 const aaAccountInterface = new SimpleAccount__factory();
+const simpleAccountFactoryInterface = new SimpleAccountFactory__factory();
 
 describe('Keyring', () => {
   let aaOwner: Signer;
   let aaOwnerPk: string;
   let keyring: AccountAbstractionKeyring;
+  let simpleAccountFactory: SimpleAccountFactory;
   let entryPoint: EntryPoint;
   let verifyingPaymaster: VerifyingPaymaster;
 
@@ -63,7 +74,6 @@ describe('Keyring', () => {
     const signers = await ethers.getSigners();
     aaOwner = signers[0]!;
     aaOwnerPk = ethers.Wallet.fromPhrase(TEST_MNEMONIC).privateKey;
-
     entryPoint = await new EntryPoint__factory(aaOwner).deploy();
 
     verifyingPaymaster = await new VerifyingPaymaster__factory(aaOwner).deploy(
@@ -71,7 +81,7 @@ describe('Keyring', () => {
       await aaOwner.getAddress(),
     );
 
-    const simpleAccountFactory = await new SimpleAccountFactory__factory(
+    simpleAccountFactory = await new SimpleAccountFactory__factory(
       aaOwner,
     ).deploy(await entryPoint.getAddress());
 
@@ -174,13 +184,24 @@ describe('Keyring', () => {
 
   describe('UserOperations Methods', () => {
     let aaAccount: KeyringAccount;
+    let initCode: string;
+    const salt = '0x123';
 
     beforeEach(async () => {
       aaAccount = await keyring.createAccount({
         privateKey: aaOwnerPk,
-        salt: '0x123',
+        salt,
       });
+
+      initCode = ethers.concat([
+        await simpleAccountFactory.getAddress(),
+        simpleAccountFactoryInterface.interface.encodeFunctionData(
+          'createAccount',
+          [await aaOwner.getAddress(), salt],
+        ),
+      ]);
     });
+
     describe('#prepareUserOperation', () => {
       it('should prepare a new user operation', async () => {
         const intent = {
@@ -220,6 +241,50 @@ describe('Keyring', () => {
         });
 
         expect(op).toStrictEqual(expected);
+      });
+
+      it('should prepare a new user operation with init code', async () => {
+        const intent = {
+          to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+          value: '0x00',
+          data: ethers.ZeroHash,
+        };
+        const expectedCallData =
+          aaAccountInterface.interface.encodeFunctionData(
+            'execute',
+            Object.values(intent),
+          );
+
+        const expected = {
+          pending: false,
+          result: {
+            nonce: '0x0',
+            initCode,
+            callData: expectedCallData,
+            dummySignature:
+              '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c',
+            dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
+            bundlerUrl: expect.any(String),
+            gasLimits: {
+              callGasLimit: '0x58a83',
+              verificationGasLimit: '0xe8c4',
+              preVerificationGas: '0xc57c',
+            },
+          },
+        };
+
+        const op = (await keyring.submitRequest({
+          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+          scope: '',
+          account: mockAccountId,
+          request: {
+            method: 'eth_prepareUserOperation',
+            params: [intent],
+          },
+        })) as { pending: false; result: EthBaseUserOperation };
+
+        expect(op).toStrictEqual(expected);
+        expect(op.result.initCode).toBe(initCode);
       });
     });
 
@@ -327,6 +392,57 @@ describe('Keyring', () => {
         })) as { pending: false; result: string };
 
         expect(operation.result).toBe(expectedSignature);
+      });
+
+      it('should sign a user operation with init code and deploy the account', async () => {
+        const userOperation: EthUserOperation = {
+          sender: aaAccount.address,
+          nonce: '0x00',
+          initCode,
+          callData:
+            '0xb61d27f600000000000000000000000097a0924bf222499cba5c29ea746e82f2307302930000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',
+          signature: '0x',
+          paymasterAndData: '0x',
+          callGasLimit: '0x58a83',
+          verificationGasLimit: '0xe8c4',
+          preVerificationGas: '0xc57c',
+          maxFeePerGas: '0x11',
+          maxPriorityFeePerGas: '0x11',
+        };
+
+        const userOpHash = getUserOperationHash(
+          userOperation,
+          await entryPoint.getAddress(),
+          chainId.toString(),
+        );
+
+        const expectedSignature = await aaOwner.signMessage(
+          ethers.getBytes(userOpHash),
+        );
+
+        const operation = (await keyring.submitRequest({
+          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+          scope: '',
+          account: mockAccountId,
+          request: {
+            method: 'eth_signUserOperation',
+            params: [userOperation],
+          },
+        })) as { pending: false; result: string };
+
+        const userOperationWithSignature = {
+          ...userOperation,
+          signature: operation.result,
+        };
+
+        expect(operation.result).toBe(expectedSignature);
+        // Check if account with init code was deployed
+        await entryPoint.handleOps(
+          [userOperationWithSignature],
+          aaAccount.address,
+        );
+        const accountCode = await provider.getCode(aaAccount.address);
+        expect(accountCode).not.toBe('0x');
       });
     });
   });
