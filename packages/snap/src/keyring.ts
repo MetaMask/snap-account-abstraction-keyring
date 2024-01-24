@@ -524,8 +524,9 @@ export class AccountAbstractionKeyring implements Keyring {
     const userOpHash = getUserOperationHash(
       userOp,
       await entryPoint.getAddress(),
-      chainId.toString(),
+      chainId.toString(10),
     );
+
     const signature = await signer.signMessage(ethers.getBytes(userOpHash));
 
     return signature;
