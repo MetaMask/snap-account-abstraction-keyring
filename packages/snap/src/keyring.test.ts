@@ -7,7 +7,7 @@ import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
 import {
-  DUMMY_PAYMASTER_AND_DATA,
+  getDummyPaymasterAndData,
   DUMMY_SIGNATURE,
 } from './constants/dummy-values';
 import type { ChainConfig, KeyringState } from './keyring';
@@ -202,13 +202,10 @@ describe('Keyring', () => {
             callData: expectedCallData,
             dummySignature:
               '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c',
-            dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
+            dummyPaymasterAndData: getDummyPaymasterAndData(
+              await verifyingPaymaster.getAddress(),
+            ),
             bundlerUrl: expect.any(String),
-            gasLimits: {
-              callGasLimit: '0x58a83',
-              verificationGasLimit: '0xe8c4',
-              preVerificationGas: '0xc57c',
-            },
           },
         };
 
