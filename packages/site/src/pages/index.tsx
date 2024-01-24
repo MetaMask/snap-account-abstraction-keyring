@@ -40,12 +40,6 @@ const Index = () => {
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
   const [requestId, setRequestId] = useState<string | null>(null);
-  // const [accountPayload, setAccountPayload] =
-  //   useState<Pick<KeyringAccount, 'name' | 'options'>>();
-  // UserOp method state
-  const [chainConfig, setChainConfigObject] = useState<string | null>();
-  const [transactionsObject, setTransactionsObject] = useState<string | null>();
-  const [userOpObject, setUserOpObject] = useState<string | null>();
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
 

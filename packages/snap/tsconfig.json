@@ -11,6 +11,6 @@
       "@metamask/*": ["../../../*/src"]
     }
   },
-  "include": ["./src/", "snap.config.ts", "./contracts/"],
+  "include": ["./src/", "snap.config.ts", "./contracts/", "./scripts/**/*"],
   "files": ["./hardhat.config.ts"]
 }
