@@ -5899,7 +5899,7 @@ __metadata:
     "@metamask/eslint-config-nodejs": ^12.1.0
     "@metamask/eslint-config-typescript": ^12.1.0
     "@metamask/keyring-api": ^2.0.0
-    "@metamask/providers": ^13.0.0
+    "@metamask/providers": ^14.0.2
     "@mui/icons-material": ^5.14.0
     "@mui/material": ^5.14.0
     "@svgr/webpack": ^6.5.1
