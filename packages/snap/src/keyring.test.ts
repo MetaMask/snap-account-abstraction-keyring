@@ -261,7 +261,7 @@ describe('Keyring', () => {
           ethers.getBytes(hash),
         );
         const expectedPaymasterAndData =
-          hash +
+          (await verifyingPaymaster.getAddress()) +
           stripHexPrefix(
             ethers.AbiCoder.defaultAbiCoder().encode(
               ['uint48', 'uint48'],
@@ -279,16 +279,16 @@ describe('Keyring', () => {
           paymasterAndData: operation.result.paymasterAndData,
         };
 
-        console.log(userOperationWithPaymasterAndData);
+        const result = await localVerifying.validatePaymasterUserOp.staticCall(
+          userOperationWithPaymasterAndData,
+          '0x'.padEnd(66, '0'),
+          1,
+          { from: await entryPoint.getAddress() },
+        );
 
-        expect(
-          await localVerifying.validatePaymasterUserOp.staticCall(
-            userOperationWithPaymasterAndData,
-            '0x'.padEnd(66, '0'),
-            1,
-            { from: await entryPoint.getAddress() },
-          ),
-        ).toHaveReturned();
+        const packedResult = result[1].toString(16);
+
+        expect(packedResult).toBe('1');
       });
     });
 
