@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable camelcase */
 import {
   addHexPrefix,
@@ -98,27 +99,34 @@ export class AccountAbstractionKeyring implements Keyring {
       !ethers.isAddress(config.simpleAccountFactory)
     ) {
       throwError(
-        `[Snap] Invalid Simple Account Factory Address: ${config.simpleAccountFactory}`,
+        `[Snap] Invalid Simple Account Factory Address: ${
+          config.simpleAccountFactory as string
+        }`,
       );
     }
     if (config.entryPoint && !ethers.isAddress(config.entryPoint)) {
-      throwError(`[Snap] Invalid EntryPoint Address: ${config.entryPoint}`);
+      throwError(
+        `[Snap] Invalid EntryPoint Address: ${config.entryPoint as string}`,
+      );
     }
     if (
       config.customVerifyingPaymasterAddress &&
       !ethers.isAddress(config.customVerifyingPaymasterAddress)
     ) {
       throwError(
-        `[Snap] Invalid Verifying Paymaster Address: ${config.customVerifyingPaymasterAddress}`,
+        `[Snap] Invalid Verifying Paymaster Address: ${
+          config.customVerifyingPaymasterAddress as string
+        }`,
       );
     }
     const bundlerUrlRegex =
-      /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+      /^(https?:\/\/)?([da-z.-]+).([a-z.]{2,6})([/w .-]*)*\/?$/u;
     if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
       throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
     }
     if (config.customVerifyingPaymasterPK) {
       try {
+        // eslint-disable-next-line no-new -- doing this to validate the pk
         new ethers.Wallet(config.customVerifyingPaymasterPK);
       } catch (error) {
         throwError(
@@ -478,7 +486,6 @@ export class AccountAbstractionKeyring implements Keyring {
     const { chainId } = await provider.getNetwork();
     const chainConfig = this.#getChainConfig(Number(chainId));
 
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const verifyingPaymasterAddress =
       chainConfig?.customVerifyingPaymasterAddress ??
       process.env.VERIFYING_PAYMASTER_ADDRESS!;
@@ -537,8 +544,9 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Unsupported chain ID: ${chainId}`);
     }
     let factoryAddress: string;
-    if (this.#getChainConfig(chainId)?.simpleAccountFactory) {
-      factoryAddress = this.#getChainConfig(chainId)?.simpleAccountFactory!;
+    const chainConfig = this.#getChainConfig(chainId);
+    if (chainConfig?.simpleAccountFactory) {
+      factoryAddress = chainConfig.simpleAccountFactory;
     } else {
       const entryPointVersion =
         DEFAULT_ENTRYPOINTS[chainId]?.version.toString() ??

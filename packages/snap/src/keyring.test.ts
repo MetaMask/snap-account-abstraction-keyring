@@ -107,7 +107,9 @@ describe('Keyring', () => {
         simpleAccountFactory: '0xNotAnAddress',
       };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Simple Account Factory Address: ${invalidConfig.simpleAccountFactory}`,
+        `[Snap] Invalid Simple Account Factory Address: ${
+          invalidConfig.simpleAccountFactory as string
+        }`,
       );
       invalidConfig.simpleAccountFactory = config.simpleAccountFactory!;
       invalidConfig.entryPoint = '0xNotAnAddress';
