@@ -11,5 +11,12 @@ module.exports = {
     },
   ],
 
-  ignorePatterns: ['!.eslintrc.js', 'dist/'],
+  ignorePatterns: [
+    '!.eslintrc.js',
+    'dist/',
+    'contracts/',
+    'coverage/',
+    'cache/',
+    'artifacts/',
+  ],
 };

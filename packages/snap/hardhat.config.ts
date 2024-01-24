@@ -5,7 +5,7 @@ import '@nomicfoundation/hardhat-toolbox';
 import '@typechain/hardhat';
 import '@nomicfoundation/hardhat-ethers';
 import 'dotenv/config';
-import { NetworkUserConfig } from 'hardhat/types';
+import type { NetworkUserConfig } from 'hardhat/types';
 
 const { MNEMONIC } = process.env;
 const { INFURA_PROJECT_ID } = process.env;
