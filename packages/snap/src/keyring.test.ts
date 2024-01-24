@@ -13,7 +13,11 @@ import { ethers } from 'hardhat';
 import { DUMMY_SIGNATURE } from './constants/dummy-values';
 import type { ChainConfig, KeyringState } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
-import { SimpleAccount__factory, VerifyingPaymaster__factory } from './types';
+import {
+  EntryPoint__factory,
+  SimpleAccount__factory,
+  VerifyingPaymaster__factory,
+} from './types';
 import { getUserOperationHash } from './utils/ecdsa';
 import { provider } from './utils/ethers';
 
@@ -389,8 +393,9 @@ describe('Keyring', () => {
         })) as { pending: false; result: string };
 
         expect(operation.result).toBe(expectedSignature);
+
+        const entryPoint = EntryPoint__factory.connect();
         // Check if account with init code was deployed
-        // Need to wait for the transaction to be verified
         const accountCode = await provider.getCode(aaAccount.address);
         expect(accountCode).not.toBe('0x');
       });
