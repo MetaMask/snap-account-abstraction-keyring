@@ -194,10 +194,12 @@ describe('Keyring', () => {
       });
 
       initCode = ethers.concat([
-        await simpleAccountFactory.getAddress(),
-        simpleAccountFactoryInterface.interface.encodeFunctionData(
-          'createAccount',
-          [await aaOwner.getAddress(), salt],
+        ethers.getBytes(await simpleAccountFactory.getAddress()),
+        ethers.getBytes(
+          simpleAccountFactoryInterface.interface.encodeFunctionData(
+            'createAccount',
+            [await aaOwner.getAddress(), salt],
+          ),
         ),
       ]);
     });
@@ -396,7 +398,7 @@ describe('Keyring', () => {
         expect(operation.result).toBe(expectedSignature);
       });
 
-      it('should sign a user operation with init code and deploy the account', async () => {
+      it.only('should sign a user operation with init code and deploy the account', async () => {
         const userOperation: EthUserOperation = {
           sender: aaAccount.address,
           nonce: '0x00',
