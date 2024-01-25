@@ -206,7 +206,7 @@ export class AccountAbstractionKeyring implements Keyring {
     // Note: this is commented out because the AA is not deployed yet.
     // Will store the initCode and salt in the wallet object to deploy with first transaction later.
     // try {
-    //   await aaFactory.createAccount(address, salt);
+    //   await aaFactory.createAccount(admin, salt);
     //   logger.info('[Snap] Deployed AA Account Successfully');
     // } catch (error) {
     //   logger.error(`Error to deploy AA: ${(error as Error).message}`);
@@ -458,7 +458,6 @@ export class AccountAbstractionKeyring implements Keyring {
     let nonce = '0x0';
     let initCode = '0x';
     try {
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       nonce = `0x${(await aaInstance.getNonce()).toString(16)}`;
       if (!wallet.chains[chainId.toString()]) {
         wallet.chains[chainId.toString()] = true;
