@@ -396,7 +396,12 @@ describe('Keyring', () => {
         expect(operation.result).toBe(expectedSignature);
       });
 
-      it.only('should sign a user operation with init code and deploy the account', async () => {
+      it('should sign a user operation with init code and deploy the account', async () => {
+        // Fund the entry point with a deposit
+        await entryPoint.depositTo(aaAccount.address, {
+          value: ethers.parseEther('1'),
+        });
+
         const userOperation: EthUserOperation = {
           sender: aaAccount.address,
           nonce: '0x00',
@@ -405,9 +410,10 @@ describe('Keyring', () => {
             '0xb61d27f600000000000000000000000097a0924bf222499cba5c29ea746e82f2307302930000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',
           signature: '0x',
           paymasterAndData: '0x',
-          callGasLimit: '0x58a83',
-          verificationGasLimit: '0xe8c4',
-          preVerificationGas: '0xc57c',
+          // Need more gas for deployment
+          callGasLimit: '0x7A120',
+          verificationGasLimit: '0x7A120',
+          preVerificationGas: '0x7A120',
           maxFeePerGas: '0x11',
           maxPriorityFeePerGas: '0x11',
         };
