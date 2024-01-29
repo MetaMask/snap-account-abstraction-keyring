@@ -36,6 +36,7 @@ import {
 } from './constants/dummy-values';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import { logger } from './logger';
+import { InternalMethod } from './permissions';
 import { saveState } from './stateManagement';
 import {
   EntryPoint__factory,
@@ -51,7 +52,6 @@ import {
   runSensitive,
   throwError,
 } from './utils/util';
-import { InternalMethod } from './permissions';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -120,7 +120,7 @@ export class AccountAbstractionKeyring implements Keyring {
       );
     }
     const bundlerUrlRegex =
-      /^(https?:\/\/)?[\w\.-]+(:\d{2,6})?(\/[\/\w \.-]*)?$/;
+      /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?$/u;
     if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
       throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
     }
@@ -499,6 +499,7 @@ export class AccountAbstractionKeyring implements Keyring {
     const chainConfig = this.#getChainConfig(Number(chainId));
 
     const verifyingPaymasterAddress =
+      // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
       chainConfig?.customVerifyingPaymasterAddress!;
 
     if (!verifyingPaymasterAddress) {
