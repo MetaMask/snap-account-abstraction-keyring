@@ -31,12 +31,12 @@ import { v4 as uuid } from 'uuid';
 import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
 import { CHAIN_IDS } from './constants/chain-ids';
 import {
-  DUMMY_GAS_VALUES,
-  DUMMY_PAYMASTER_AND_DATA,
   DUMMY_SIGNATURE,
+  getDummyPaymasterAndData,
 } from './constants/dummy-values';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import { logger } from './logger';
+import { InternalMethod } from './permissions';
 import { saveState } from './stateManagement';
 import {
   EntryPoint__factory,
@@ -120,7 +120,7 @@ export class AccountAbstractionKeyring implements Keyring {
       );
     }
     const bundlerUrlRegex =
-      /^(https?:\/\/)?([da-z.-]+).([a-z.]{2,6})([/w .-]*)*\/?$/u;
+      /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?$/u;
     if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
       throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
     }
@@ -140,6 +140,7 @@ export class AccountAbstractionKeyring implements Keyring {
       ...this.#state.config[Number(chainId)],
       ...config,
     };
+
     await this.#saveState();
     return this.#state.config[Number(chainId)]!;
   }
@@ -205,7 +206,7 @@ export class AccountAbstractionKeyring implements Keyring {
     // Note: this is commented out because the AA is not deployed yet.
     // Will store the initCode and salt in the wallet object to deploy with first transaction later.
     // try {
-    //   await aaFactory.createAccount(address, salt);
+    //   await aaFactory.createAccount(admin, salt);
     //   logger.info('[Snap] Deployed AA Account Successfully');
     // } catch (error) {
     //   logger.error(`Error to deploy AA: ${(error as Error).message}`);
@@ -332,6 +333,14 @@ export class AccountAbstractionKeyring implements Keyring {
     request: KeyringRequest,
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
+
+    if (method === InternalMethod.SetConfig) {
+      return {
+        pending: false,
+        result: await this.setConfig((params as [ChainConfig])[0]),
+      };
+    }
+
     const signature = await this.#handleSigningRequest({
       account: this.#getWalletById(request.account).account,
       method,
@@ -449,7 +458,6 @@ export class AccountAbstractionKeyring implements Keyring {
     let nonce = '0x0';
     let initCode = '0x';
     try {
-      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       nonce = `0x${(await aaInstance.getNonce()).toString(16)}`;
       if (!wallet.chains[chainId.toString()]) {
         wallet.chains[chainId.toString()] = true;
@@ -458,6 +466,11 @@ export class AccountAbstractionKeyring implements Keyring {
     } catch (error) {
       initCode = wallet.initCode;
     }
+
+    const chainConfig = this.#getChainConfig(Number(chainId));
+
+    const verifyingPaymasterAddress =
+      chainConfig?.customVerifyingPaymasterAddress;
 
     const ethBaseUserOp: EthBaseUserOperation = {
       nonce,
@@ -468,12 +481,10 @@ export class AccountAbstractionKeyring implements Keyring {
         transaction.data ?? ethers.ZeroHash,
       ]),
       dummySignature: DUMMY_SIGNATURE,
-      dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
-      bundlerUrl:
-        this.#getChainConfig(Number(chainId))?.bundlerUrl ??
-        process.env.BUNDLER_URL ??
-        '',
-      gasLimits: DUMMY_GAS_VALUES,
+      dummyPaymasterAndData: getDummyPaymasterAndData(
+        verifyingPaymasterAddress,
+      ),
+      bundlerUrl: chainConfig?.bundlerUrl ?? '',
     };
     return ethBaseUserOp;
   }
@@ -488,8 +499,12 @@ export class AccountAbstractionKeyring implements Keyring {
     const chainConfig = this.#getChainConfig(Number(chainId));
 
     const verifyingPaymasterAddress =
-      chainConfig?.customVerifyingPaymasterAddress ??
-      process.env.VERIFYING_PAYMASTER_ADDRESS!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+      chainConfig?.customVerifyingPaymasterAddress!;
+
+    if (!verifyingPaymasterAddress) {
+      return { paymasterAndData: '0x' };
+    }
 
     const verifyingPaymaster = VerifyingPaymaster__factory.connect(
       verifyingPaymasterAddress,
@@ -578,7 +593,10 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   #isSupportedChain(chainId: number): boolean {
-    return Object.values(CHAIN_IDS).includes(chainId);
+    return (
+      Object.values(CHAIN_IDS).includes(chainId) ||
+      Boolean(this.#state.config[chainId])
+    );
   }
 
   async #saveState(): Promise<void> {

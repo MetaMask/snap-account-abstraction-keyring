@@ -2,6 +2,7 @@ import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
 import Grid from '@mui/material/Grid';
 import React, { useContext, useEffect, useState } from 'react';
+import * as uuid from 'uuid';
 
 import { Accordion, AccountList, Card, ConnectButton } from '../components';
 import {
@@ -40,6 +41,8 @@ const Index = () => {
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
   const [requestId, setRequestId] = useState<string | null>(null);
+  // UserOp method state
+  const [chainConfig, setChainConfigObject] = useState<string | null>();
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
 
@@ -97,6 +100,23 @@ const Index = () => {
     await syncAccounts();
   };
 
+  // UserOp methods (default to send from first AA account created)
+  const setChainConfig = async () => {
+    if (!chainConfig) {
+      return;
+    }
+    const request: KeyringRequest = {
+      id: uuid.v4(),
+      scope: '',
+      account: uuid.v4(),
+      request: {
+        method: 'snap.internal.setConfig',
+        params: [JSON.parse(chainConfig)],
+      },
+    };
+    await client.submitRequest(request);
+  };
+
   const handleConnectClick = async () => {
     try {
       await connectSnap();
@@ -121,6 +141,37 @@ const Index = () => {
   //     useSynchronousApprovals: !snapState.useSynchronousApprovals,
   //   });
   // }, [snapState]);
+
+  const userOpMethods = [
+    {
+      name: 'Set Chain Config',
+      description:
+        'Set account abstraction configuration options for the current chain.',
+      inputs: [
+        {
+          id: 'set-chain-config-chain-config-object',
+          title: 'Chain Config Object',
+          type: InputType.TextArea,
+          placeholder:
+            '{\n' +
+            '    "simpleAccountFactory": "0x97a0924bf222499cBa5C29eA746E82F230730293",\n' +
+            '    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",\n' +
+            '    "bundlerUrl": "https://bundler.example.com/rpc",\n' +
+            '    "customVerifyingPaymasterPK": "abcd1234qwer5678tyui9012ghjk3456zxcv7890",\n' +
+            '    "customVerifyingPaymasterAddress": "0x123456789ABCDEF0123456789ABCDEF012345678"\n' +
+            '}',
+          onChange: (event: any) =>
+            setChainConfigObject(event.currentTarget.value),
+        },
+      ],
+      action: {
+        disabled: Boolean(accountId),
+        callback: async () => await setChainConfig(),
+        label: 'Set Chain Configs',
+      },
+      successMessage: 'Chain Config Set',
+    },
+  ];
 
   const accountManagementMethods = [
     {
@@ -346,6 +397,9 @@ const Index = () => {
             {/* <Divider>&nbsp;</Divider>*/}
             <DividerTitle>Methods</DividerTitle>
             <Accordion items={accountManagementMethods} />
+            <Divider />
+            <DividerTitle>UserOp Methods</DividerTitle>
+            <Accordion items={userOpMethods} />
             <Divider />
             <DividerTitle>Request Methods</DividerTitle>
             <Accordion items={requestMethods} />

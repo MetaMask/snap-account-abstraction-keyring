@@ -42,6 +42,7 @@
     "react-is": "^18.2.0",
     "semver": "^7.5.4",
     "styled-components": "5.3.9",
+    "uuid": "^9.0.0",
     "webpack": "^5.88.2"
   },
   "devDependencies": {
