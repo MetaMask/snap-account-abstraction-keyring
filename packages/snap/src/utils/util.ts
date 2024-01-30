@@ -1,6 +1,6 @@
 import type { JsonTx } from '@ethereumjs/tx';
 import type { Json } from '@metamask/utils';
-import { hexlify } from 'ethers';
+import { hexlify } from 'ethers/lib/utils';
 
 import type { Wallet } from '../keyring';
 

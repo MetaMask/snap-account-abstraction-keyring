@@ -7,6 +7,8 @@ import {
   stripHexPrefix,
   toChecksumAddress,
 } from '@ethereumjs/util';
+import type { DeleGator } from '@metamask/delegator-sdk';
+import type { MultiSigDeleGatorDeployParams } from '@metamask/delegator-sdk/dist/types/types';
 import type {
   EthBaseTransaction,
   EthBaseUserOperation,
@@ -17,26 +19,23 @@ import type {
   KeyringRequest,
   SubmitRequestResponse,
 } from '@metamask/keyring-api';
-import {
-  emitSnapKeyringEvent,
-  EthAccountType,
-  EthMethod,
-} from '@metamask/keyring-api';
+import { emitSnapKeyringEvent, EthMethod } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
+import { getAddress } from 'ethers/lib/utils';
 import { v4 as uuid } from 'uuid';
 
 import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
 import { CHAIN_IDS } from './constants/chain-ids';
 import {
-  DUMMY_GAS_VALUES,
-  DUMMY_PAYMASTER_AND_DATA,
   DUMMY_SIGNATURE,
+  getDummyPaymasterAndData,
 } from './constants/dummy-values';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import { logger } from './logger';
+import { InternalMethod } from './permissions';
 import { saveState } from './stateManagement';
 import {
   EntryPoint__factory,
@@ -52,6 +51,7 @@ import {
   runSensitive,
   throwError,
 } from './utils/util';
+import { deleGatorSdk } from '../../../../snap-delegator-accounts/packages/snap/src/delegator';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -96,31 +96,25 @@ export class AccountAbstractionKeyring implements Keyring {
     const { chainId } = await provider.getNetwork();
     if (
       config.simpleAccountFactory &&
-      !ethers.isAddress(config.simpleAccountFactory)
+      !ethers.utils.isAddress(config.simpleAccountFactory)
     ) {
       throwError(
-        `[Snap] Invalid Simple Account Factory Address: ${
-          config.simpleAccountFactory as string
-        }`,
+        `[Snap] Invalid Simple Account Factory Address: ${config.simpleAccountFactory}`,
       );
     }
-    if (config.entryPoint && !ethers.isAddress(config.entryPoint)) {
-      throwError(
-        `[Snap] Invalid EntryPoint Address: ${config.entryPoint as string}`,
-      );
+    if (config.entryPoint && !ethers.utils.isAddress(config.entryPoint)) {
+      throwError(`[Snap] Invalid EntryPoint Address: ${config.entryPoint}`);
     }
     if (
       config.customVerifyingPaymasterAddress &&
-      !ethers.isAddress(config.customVerifyingPaymasterAddress)
+      !ethers.utils.isAddress(config.customVerifyingPaymasterAddress)
     ) {
       throwError(
-        `[Snap] Invalid Verifying Paymaster Address: ${
-          config.customVerifyingPaymasterAddress as string
-        }`,
+        `[Snap] Invalid Verifying Paymaster Address: ${config.customVerifyingPaymasterAddress}`,
       );
     }
     const bundlerUrlRegex =
-      /^(https?:\/\/)?([da-z.-]+).([a-z.]{2,6})([/w .-]*)*\/?$/u;
+      /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?$/u;
     if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
       throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
     }
@@ -140,6 +134,7 @@ export class AccountAbstractionKeyring implements Keyring {
       ...this.#state.config[Number(chainId)],
       ...config,
     };
+
     await this.#saveState();
     return this.#state.config[Number(chainId)]!;
   }
@@ -158,81 +153,102 @@ export class AccountAbstractionKeyring implements Keyring {
   async createAccount(
     options: Record<string, Json> = {},
   ): Promise<KeyringAccount> {
+    const { deploy } = options as { deploy: boolean };
     if (!options.privateKey) {
       throwError(`[Snap] Private Key is required`);
     }
-
     const { privateKey, address: admin } = this.#getKeyPair(
       options?.privateKey as string | undefined,
     );
-
     if (!isUniqueAddress(admin, Object.values(this.#state.wallets))) {
-      throw new Error(`Account address already in use: ${admin}`);
+      throwError(`Account address already in use: ${admin}`);
     }
-    // The private key should not be stored in the account options since the
-    // account object is exposed to external components, such as MetaMask and
-    // the snap UI.
-    if (options?.privateKey) {
-      delete options.privateKey;
-    }
+    delete options.privateKey;
 
     const { chainId } = await provider.getNetwork();
-    const signer = getSigner(privateKey);
 
-    // get factory contract by chain
-    const aaFactory = await this.#getAAFactory(Number(chainId), signer);
-    logger.info('[Snap] AA Factory Contract Address: ', aaFactory.target);
+    // Create counterfactual DeleGator
+    let deleGator: DeleGator, creationCode: ethers.BytesLike, initCode: string;
+    const deployParams: MultiSigDeleGatorDeployParams = {
+      owners: [admin],
+      threshold: 1,
+    };
 
-    const random = ethers.toBigInt(ethers.randomBytes(32));
-    const salt =
-      (options.salt as string) ??
-      ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
+    const random = BigNumber.from(ethers.utils.randomBytes(32)).toBigInt();
+    const defaultSalt = ethers.utils.defaultAbiCoder.encode(
+      ['uint256'],
+      [random],
+    );
+    const salt = typeof options.salt === 'string' ? options.salt : defaultSalt;
 
-    const aaAddress = await aaFactory.getAccountAddress(admin, salt);
-
-    const initCode = ethers.concat([
-      aaFactory.target as string,
-      aaFactory.interface.encodeFunctionData('createAccount', [admin, salt]),
-    ]);
-
-    // check on chain if the account already exists.
-    // if it does, this means that there is a collision in the salt used.
-    const accountCollision = (await provider.getCode(aaAddress)) !== '0x';
-    if (accountCollision) {
-      throwError(`[Snap] Account Salt already used, please retry.`);
+    try {
+      const result = deleGatorSdk.createCounterfactualMultiSigDeleGator(
+        deployParams,
+        salt,
+      );
+      deleGator = result.deleGator;
+      creationCode = result.deleGatorProxyCreationcode;
+      initCode = deleGatorSdk.getMultiSigDeleGatorDeployBytecode(
+        deployParams,
+        salt,
+      );
+      logger.info(
+        '[Snap] Deployed Counterfactual MultiSigDeleGator successfully',
+      );
+    } catch (error) {
+      logger.error(
+        `Error to deploy Counterfactual MultiSigDeleGator: ${
+          (error as Error).message
+        }`,
+      );
+      throwError(
+        `Error to deploy Counterfactual MultiSigDeleGator: ${
+          (error as Error).message
+        }`,
+      );
     }
 
-    // Note: this is commented out because the AA is not deployed yet.
-    // Will store the initCode and salt in the wallet object to deploy with first transaction later.
-    // try {
-    //   await aaFactory.createAccount(admin, salt);
-    //   logger.info('[Snap] Deployed AA Account Successfully');
-    // } catch (error) {
-    //   logger.error(`Error to deploy AA: ${(error as Error).message}`);
-    // }
+    if (deploy) {
+      // Deploy counterfactual MultiSigDeleGator on chain
+      try {
+        const signer = new ethers.Wallet(privateKey, provider);
+        await deleGatorSdk.deployCounterfactualDeleGator(signer, creationCode);
+        logger.info('[Snap] Deployed MultiSigDeleGator successfully');
+      } catch (error) {
+        logger.error(
+          `Error to deploy MultiSigDeleGator: ${(error as Error).message}`,
+        );
+        throwError(
+          `Error to deploy MultiSigDeleGator: ${(error as Error).message}`,
+        );
+      }
+    }
 
     try {
       const account: KeyringAccount = {
         id: uuid(),
         options,
-        address: aaAddress,
+        // Use the address of the 4337 DeleGator
+        address: deleGator.address,
         methods: [
-          // 4337 methods
-          EthMethod.PrepareUserOperation,
-          EthMethod.PatchUserOperation,
-          EthMethod.SignUserOperation,
+          EthMethod.PersonalSign,
+          EthMethod.Sign,
+          EthMethod.SignTransaction,
+          EthMethod.SignTypedDataV1,
+          EthMethod.SignTypedDataV3,
+          EthMethod.SignTypedDataV4,
         ],
-        type: EthAccountType.Erc4337,
+        type: 'eip155:erc4337',
       };
+      await this.#emitEvent(KeyringEvent.AccountCreated, { account });
       this.#state.wallets[account.id] = {
         account,
-        admin, // Address of the admin account from private key
+        admin,
         privateKey,
         chains: { [chainId.toString()]: false },
         salt,
         initCode,
       };
-      await this.#emitEvent(KeyringEvent.AccountCreated, { account });
       await this.#saveState();
       return account;
     } catch (error) {
@@ -332,6 +348,14 @@ export class AccountAbstractionKeyring implements Keyring {
     request: KeyringRequest,
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
+
+    if (method === InternalMethod.SetConfig) {
+      return {
+        pending: false,
+        result: await this.setConfig((params as [ChainConfig])[0]),
+      };
+    }
+
     const signature = await this.#handleSigningRequest({
       account: this.#getWalletById(request.account).account,
       method,
@@ -458,21 +482,24 @@ export class AccountAbstractionKeyring implements Keyring {
       initCode = wallet.initCode;
     }
 
+    const chainConfig = this.#getChainConfig(Number(chainId));
+
+    const verifyingPaymasterAddress =
+      chainConfig?.customVerifyingPaymasterAddress;
+
     const ethBaseUserOp: EthBaseUserOperation = {
       nonce,
       initCode,
       callData: aaInstance.interface.encodeFunctionData('execute', [
-        transaction.to ?? ethers.ZeroAddress,
+        transaction.to ?? ethers.constants.AddressZero,
         transaction.value ?? '0x00',
-        transaction.data ?? ethers.ZeroHash,
+        transaction.data ?? ethers.constants.HashZero,
       ]),
       dummySignature: DUMMY_SIGNATURE,
-      dummyPaymasterAndData: DUMMY_PAYMASTER_AND_DATA,
-      bundlerUrl:
-        this.#getChainConfig(Number(chainId))?.bundlerUrl ??
-        process.env.BUNDLER_URL ??
-        '',
-      gasLimits: DUMMY_GAS_VALUES,
+      dummyPaymasterAndData: getDummyPaymasterAndData(
+        verifyingPaymasterAddress,
+      ),
+      bundlerUrl: chainConfig?.bundlerUrl ?? '',
     };
     return ethBaseUserOp;
   }
@@ -487,8 +514,12 @@ export class AccountAbstractionKeyring implements Keyring {
     const chainConfig = this.#getChainConfig(Number(chainId));
 
     const verifyingPaymasterAddress =
-      chainConfig?.customVerifyingPaymasterAddress ??
-      process.env.VERIFYING_PAYMASTER_ADDRESS!;
+      // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+      chainConfig?.customVerifyingPaymasterAddress!;
+
+    if (!verifyingPaymasterAddress) {
+      return { paymasterAndData: '0x' };
+    }
 
     const verifyingPaymaster = VerifyingPaymaster__factory.connect(
       verifyingPaymasterAddress,
@@ -501,9 +532,14 @@ export class AccountAbstractionKeyring implements Keyring {
 
     // Create a hash that doesn't expire
     const hash = await verifyingPaymaster.getHash(userOp, 0, 0);
-    const signature = await verifyingSigner.signMessage(ethers.getBytes(hash));
-    const paymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
-      ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
+    const signature = await verifyingSigner.signMessage(
+      ethers.utils.arrayify(hash),
+    );
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    const paymasterAndData = `${getAddress(
+      verifyingPaymaster.address,
+    )}${stripHexPrefix(
+      ethers.utils.defaultAbiCoder.encode(['uint48', 'uint48'], [0, 0]),
     )}${stripHexPrefix(signature)}`;
 
     return {
@@ -527,11 +563,13 @@ export class AccountAbstractionKeyring implements Keyring {
     userOp.signature = '0x';
     const userOpHash = getUserOperationHash(
       userOp,
-      await entryPoint.getAddress(),
+      getAddress(entryPoint.address),
       chainId.toString(10),
     );
 
-    const signature = await signer.signMessage(ethers.getBytes(userOpHash));
+    const signature = await signer.signMessage(
+      ethers.utils.arrayify(userOpHash),
+    );
 
     return signature;
   }
@@ -576,7 +614,10 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   #isSupportedChain(chainId: number): boolean {
-    return Object.values(CHAIN_IDS).includes(chainId);
+    return (
+      Object.values(CHAIN_IDS).includes(chainId) ||
+      Boolean(this.#state.config[chainId])
+    );
   }
 
   async #saveState(): Promise<void> {
