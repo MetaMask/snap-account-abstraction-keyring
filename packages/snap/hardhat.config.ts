@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable import/no-unassigned-import */
 import type { HardhatUserConfig } from 'hardhat/config';
-import '@nomicfoundation/hardhat-toolbox';
 import '@typechain/hardhat';
-import '@nomicfoundation/hardhat-ethers';
+import '@nomiclabs/hardhat-ethers';
 import 'dotenv/config';
 import type { NetworkUserConfig } from 'hardhat/types';
 
@@ -41,7 +40,7 @@ const config: HardhatUserConfig = {
   },
   typechain: {
     outDir: 'src/types',
-    target: 'ethers-v6',
+    target: 'ethers-v5',
     alwaysGenerateOverloads: false, // should overloads with full signatures like deposit(uint256) be generated always, even if there are no overloads?
     externalArtifacts: ['externalArtifacts/*.json'], // optional array of glob patterns with external artifacts to process (for example external libs from node_modules)
     dontOverrideCompile: false, // defaults to false

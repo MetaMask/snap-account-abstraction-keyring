@@ -16,7 +16,7 @@ export function getDummyPaymasterAndData(paymasterAddress?: string): string {
   }
 
   const encodedValidUntilAfter = stripHexPrefix(
-    ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
+    ethers.utils.defaultAbiCoder.encode(['uint48', 'uint48'], [0, 0]),
   );
 
   return `${paymasterAddress}${encodedValidUntilAfter}${stripHexPrefix(

@@ -15,14 +15,14 @@ export function getUserOperationHash(
   chainId: string,
 ): string {
   const chainIdDecimal = parseInt(chainId, 10);
-  const hash = ethers.keccak256(encodeUserOperation(userOperation));
+  const hash = ethers.utils.keccak256(encodeUserOperation(userOperation));
 
-  const data = ethers.AbiCoder.defaultAbiCoder().encode(
+  const data = ethers.utils.defaultAbiCoder.encode(
     ['bytes32', 'address', 'uint256'],
     [hash, entrypointAddress, chainIdDecimal],
   );
 
-  return ethers.keccak256(data);
+  return ethers.utils.keccak256(data);
 }
 
 /**
@@ -32,7 +32,7 @@ export function getUserOperationHash(
  * @returns The encoded user operation.
  */
 function encodeUserOperation(userOperation: EthUserOperation): string {
-  return ethers.AbiCoder.defaultAbiCoder().encode(
+  return ethers.utils.defaultAbiCoder.encode(
     [
       'address',
       'uint256',
@@ -48,14 +48,14 @@ function encodeUserOperation(userOperation: EthUserOperation): string {
     [
       userOperation.sender,
       userOperation.nonce,
-      ethers.keccak256(userOperation.initCode),
-      ethers.keccak256(userOperation.callData),
+      ethers.utils.keccak256(userOperation.initCode),
+      ethers.utils.keccak256(userOperation.callData),
       userOperation.callGasLimit,
       userOperation.verificationGasLimit,
       userOperation.preVerificationGas,
       userOperation.maxFeePerGas,
       userOperation.maxPriorityFeePerGas,
-      ethers.keccak256(userOperation.paymasterAndData),
+      ethers.utils.keccak256(userOperation.paymasterAndData),
     ],
   );
 }

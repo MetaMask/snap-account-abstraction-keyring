@@ -73,24 +73,24 @@ describe('Keyring', () => {
   beforeEach(async () => {
     const signers = await ethers.getSigners();
     aaOwner = signers[0]!;
-    aaOwnerPk = ethers.Wallet.fromPhrase(TEST_MNEMONIC).privateKey;
+    aaOwnerPk = ethers.Wallet.fromMnemonic(TEST_MNEMONIC).privateKey;
     entryPoint = await new EntryPoint__factory(aaOwner).deploy();
 
     verifyingPaymaster = await new VerifyingPaymaster__factory(aaOwner).deploy(
-      await entryPoint.getAddress(),
+      entryPoint.address,
       await aaOwner.getAddress(),
     );
 
     simpleAccountFactory = await new SimpleAccountFactory__factory(
       aaOwner,
-    ).deploy(await entryPoint.getAddress());
+    ).deploy(entryPoint.address);
 
     keyring = new AccountAbstractionKeyring(defaultState);
 
     await keyring.setConfig({
-      simpleAccountFactory: await simpleAccountFactory.getAddress(),
-      entryPoint: await entryPoint.getAddress(),
-      customVerifyingPaymasterAddress: await verifyingPaymaster.getAddress(),
+      simpleAccountFactory: simpleAccountFactory.address,
+      entryPoint: entryPoint.address,
+      customVerifyingPaymasterAddress: verifyingPaymaster.address,
     });
   });
 
@@ -193,9 +193,9 @@ describe('Keyring', () => {
         salt,
       });
 
-      initCode = ethers.concat([
-        ethers.getBytes(await simpleAccountFactory.getAddress()),
-        ethers.getBytes(
+      initCode = ethers.utils.hexConcat([
+        ethers.utils.arrayify(simpleAccountFactory.address),
+        ethers.utils.arrayify(
           simpleAccountFactoryInterface.interface.encodeFunctionData(
             'createAccount',
             [await aaOwner.getAddress(), salt],
@@ -209,7 +209,7 @@ describe('Keyring', () => {
         const intent = {
           to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
           value: '0x00',
-          data: ethers.ZeroHash,
+          data: ethers.constants.HashZero,
         };
         const expectedCallData =
           aaAccountInterface.interface.encodeFunctionData(
@@ -226,7 +226,7 @@ describe('Keyring', () => {
             dummySignature:
               '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c',
             dummyPaymasterAndData: getDummyPaymasterAndData(
-              await verifyingPaymaster.getAddress(),
+              verifyingPaymaster.address,
             ),
             bundlerUrl: expect.any(String),
           },
@@ -249,7 +249,7 @@ describe('Keyring', () => {
         const intent = {
           to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
           value: '0x00',
-          data: ethers.ZeroHash,
+          data: ethers.constants.HashZero,
         };
         const expectedCallData =
           aaAccountInterface.interface.encodeFunctionData(
@@ -266,7 +266,7 @@ describe('Keyring', () => {
             dummySignature:
               '0xfffffffffffffffffffffffffffffff0000000000000000000000000000000007aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa1c',
             dummyPaymasterAndData: getDummyPaymasterAndData(
-              await verifyingPaymaster.getAddress(),
+              verifyingPaymaster.address,
             ),
             bundlerUrl: expect.any(String),
           },
@@ -315,20 +315,20 @@ describe('Keyring', () => {
         })) as { pending: false; result: { paymasterAndData: string } };
 
         const localVerifying = VerifyingPaymaster__factory.connect(
-          await verifyingPaymaster.getAddress(),
+          verifyingPaymaster.address,
+          // @ts-ignore
           ethers.provider,
         );
 
         const hash = await localVerifying.getHash(userOperation, 0, 0);
         const expectedSignature = await aaOwner.signMessage(
-          ethers.getBytes(hash),
+          ethers.utils.arrayify(hash),
         );
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-        const expectedPaymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
-          ethers.AbiCoder.defaultAbiCoder().encode(
-            ['uint48', 'uint48'],
-            [0, 0],
-          ),
+        const expectedPaymasterAndData = `${
+          verifyingPaymaster.address as string
+        }${stripHexPrefix(
+          ethers.utils.defaultAbiCoder.encode(['uint48', 'uint48'], [0, 0]),
         )}${stripHexPrefix(expectedSignature)}`;
 
         expect(operation.result.paymasterAndData).toBe(
@@ -340,14 +340,15 @@ describe('Keyring', () => {
           paymasterAndData: operation.result.paymasterAndData,
         };
 
-        const result = await localVerifying.validatePaymasterUserOp.staticCall(
+        // @ts-ignore
+        const result = await localVerifying.callStatic.validatePaymasterUserOp(
           userOperationWithPaymasterAndData,
           '0x'.padEnd(66, '0'),
           1,
-          { from: await entryPoint.getAddress() },
+          { from: entryPoint.address },
         );
 
-        const packedResult = result[1].toString(16);
+        const packedResult = result[1].toString();
 
         expect(packedResult).toBe('1');
       });
@@ -372,12 +373,12 @@ describe('Keyring', () => {
 
         const userOpHash = getUserOperationHash(
           userOperation,
-          await entryPoint.getAddress(),
+          entryPoint.address,
           chainId.toString(),
         );
 
         const expectedSignature = await aaOwner.signMessage(
-          ethers.getBytes(userOpHash),
+          ethers.utils.arrayify(userOpHash),
         );
 
         const operation = (await keyring.submitRequest({
@@ -396,7 +397,7 @@ describe('Keyring', () => {
       it('should sign a user operation with init code and deploy the account', async () => {
         // Fund the entry point with a deposit
         await entryPoint.depositTo(aaAccount.address, {
-          value: ethers.parseEther('1'),
+          value: ethers.utils.parseEther('1'),
         });
 
         const userOperation: EthUserOperation = {
@@ -417,12 +418,12 @@ describe('Keyring', () => {
 
         const userOpHash = getUserOperationHash(
           userOperation,
-          await entryPoint.getAddress(),
+          entryPoint.address,
           chainId.toString(),
         );
 
         const expectedSignature = await aaOwner.signMessage(
-          ethers.getBytes(userOpHash),
+          ethers.utils.arrayify(userOpHash),
         );
 
         const operation = (await keyring.submitRequest({

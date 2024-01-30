@@ -96,27 +96,21 @@ export class AccountAbstractionKeyring implements Keyring {
     const { chainId } = await provider.getNetwork();
     if (
       config.simpleAccountFactory &&
-      !ethers.isAddress(config.simpleAccountFactory)
+      !ethers.utils.isAddress(config.simpleAccountFactory)
     ) {
       throwError(
-        `[Snap] Invalid Simple Account Factory Address: ${
-          config.simpleAccountFactory as string
-        }`,
+        `[Snap] Invalid Simple Account Factory Address: ${config.simpleAccountFactory}`,
       );
     }
-    if (config.entryPoint && !ethers.isAddress(config.entryPoint)) {
-      throwError(
-        `[Snap] Invalid EntryPoint Address: ${config.entryPoint as string}`,
-      );
+    if (config.entryPoint && !ethers.utils.isAddress(config.entryPoint)) {
+      throwError(`[Snap] Invalid EntryPoint Address: ${config.entryPoint}`);
     }
     if (
       config.customVerifyingPaymasterAddress &&
-      !ethers.isAddress(config.customVerifyingPaymasterAddress)
+      !ethers.utils.isAddress(config.customVerifyingPaymasterAddress)
     ) {
       throwError(
-        `[Snap] Invalid Verifying Paymaster Address: ${
-          config.customVerifyingPaymasterAddress as string
-        }`,
+        `[Snap] Invalid Verifying Paymaster Address: ${config.customVerifyingPaymasterAddress}`,
       );
     }
     const bundlerUrlRegex =
@@ -182,17 +176,17 @@ export class AccountAbstractionKeyring implements Keyring {
 
     // get factory contract by chain
     const aaFactory = await this.#getAAFactory(Number(chainId), signer);
-    logger.info('[Snap] AA Factory Contract Address: ', aaFactory.target);
+    logger.info('[Snap] AA Factory Contract Address: ', aaFactory.address);
 
-    const random = ethers.toBigInt(ethers.randomBytes(32));
+    const random = ethers.BigNumber.from(ethers.utils.randomBytes(32));
     const salt =
       (options.salt as string) ??
-      ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
+      ethers.utils.defaultAbiCoder.encode(['uint256'], [random]);
 
     const aaAddress = await aaFactory.getAccountAddress(admin, salt);
 
-    const initCode = ethers.concat([
-      aaFactory.target as string,
+    const initCode = ethers.utils.hexConcat([
+      aaFactory.address,
       aaFactory.interface.encodeFunctionData('createAccount', [admin, salt]),
     ]);
 
@@ -458,7 +452,7 @@ export class AccountAbstractionKeyring implements Keyring {
     let nonce = '0x0';
     let initCode = '0x';
     try {
-      nonce = `0x${(await aaInstance.getNonce()).toString(16)}`;
+      nonce = `0x${(await aaInstance.getNonce()).toString()}`;
       if (!wallet.chains[chainId.toString()]) {
         wallet.chains[chainId.toString()] = true;
         await this.#saveState();
@@ -476,9 +470,9 @@ export class AccountAbstractionKeyring implements Keyring {
       nonce,
       initCode,
       callData: aaInstance.interface.encodeFunctionData('execute', [
-        transaction.to ?? ethers.ZeroAddress,
+        transaction.to ?? ethers.constants.AddressZero,
         transaction.value ?? '0x00',
-        transaction.data ?? ethers.ZeroHash,
+        transaction.data ?? ethers.constants.HashZero,
       ]),
       dummySignature: DUMMY_SIGNATURE,
       dummyPaymasterAndData: getDummyPaymasterAndData(
@@ -517,10 +511,12 @@ export class AccountAbstractionKeyring implements Keyring {
 
     // Create a hash that doesn't expire
     const hash = await verifyingPaymaster.getHash(userOp, 0, 0);
-    const signature = await verifyingSigner.signMessage(ethers.getBytes(hash));
+    const signature = await verifyingSigner.signMessage(
+      ethers.utils.arrayify(hash),
+    );
     // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    const paymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
-      ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
+    const paymasterAndData = `${verifyingPaymaster.address}${stripHexPrefix(
+      ethers.utils.defaultAbiCoder.encode(['uint48', 'uint48'], [0, 0]),
     )}${stripHexPrefix(signature)}`;
 
     return {
@@ -544,11 +540,13 @@ export class AccountAbstractionKeyring implements Keyring {
     userOp.signature = '0x';
     const userOpHash = getUserOperationHash(
       userOp,
-      await entryPoint.getAddress(),
+      entryPoint.address,
       chainId.toString(10),
     );
 
-    const signature = await signer.signMessage(ethers.getBytes(userOpHash));
+    const signature = await signer.signMessage(
+      ethers.utils.arrayify(userOpHash),
+    );
 
     return signature;
   }
