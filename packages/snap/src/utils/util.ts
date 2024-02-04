@@ -1,5 +1,5 @@
 import type { JsonTx } from '@ethereumjs/tx';
-import type { Json } from '@metamask/utils';
+import { type Json } from '@metamask/snaps-sdk';
 import { hexlify } from 'ethers';
 
 import type { Wallet } from '../keyring';

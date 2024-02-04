@@ -23,7 +23,8 @@ import {
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
+import { type Json, type JsonRpcRequest } from '@metamask/snaps-sdk';
+import { hexToBytes } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import { ethers } from 'ethers';
 import { v4 as uuid } from 'uuid';

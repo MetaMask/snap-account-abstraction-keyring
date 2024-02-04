@@ -23,7 +23,7 @@ template](https://github.com/MetaMask/template-snap-monorepo/generate) and
 setup the development environment:
 
 ```shell
-yarn install && yarn start
+yarn install && yarn build && yarn start
 ```
 
 ## Cloning
