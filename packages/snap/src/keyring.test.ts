@@ -316,7 +316,6 @@ describe('Keyring', () => {
 
         const localVerifying = VerifyingPaymaster__factory.connect(
           verifyingPaymaster.address,
-          // @ts-ignore
           ethers.provider,
         );
 
@@ -326,7 +325,7 @@ describe('Keyring', () => {
         );
         // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         const expectedPaymasterAndData = `${
-          verifyingPaymaster.address as string
+          verifyingPaymaster.address
         }${stripHexPrefix(
           ethers.utils.defaultAbiCoder.encode(['uint48', 'uint48'], [0, 0]),
         )}${stripHexPrefix(expectedSignature)}`;
@@ -340,7 +339,6 @@ describe('Keyring', () => {
           paymasterAndData: operation.result.paymasterAndData,
         };
 
-        // @ts-ignore
         const result = await localVerifying.callStatic.validatePaymasterUserOp(
           userOperationWithPaymasterAndData,
           '0x'.padEnd(66, '0'),
