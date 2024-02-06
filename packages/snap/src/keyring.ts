@@ -99,28 +99,22 @@ export class AccountAbstractionKeyring implements Keyring {
       !ethers.isAddress(config.simpleAccountFactory)
     ) {
       throwError(
-        `[Snap] Invalid Simple Account Factory Address: ${
-          config.simpleAccountFactory as string
-        }`,
+        `[Snap] Invalid Simple Account Factory Address: ${config.simpleAccountFactory}`,
       );
     }
     if (config.entryPoint && !ethers.isAddress(config.entryPoint)) {
-      throwError(
-        `[Snap] Invalid EntryPoint Address: ${config.entryPoint as string}`,
-      );
+      throwError(`[Snap] Invalid EntryPoint Address: ${config.entryPoint}`);
     }
     if (
       config.customVerifyingPaymasterAddress &&
       !ethers.isAddress(config.customVerifyingPaymasterAddress)
     ) {
       throwError(
-        `[Snap] Invalid Verifying Paymaster Address: ${
-          config.customVerifyingPaymasterAddress as string
-        }`,
+        `[Snap] Invalid Verifying Paymaster Address: ${config.customVerifyingPaymasterAddress}`,
       );
     }
     const bundlerUrlRegex =
-      /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?$/u;
+      /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?(\?[\\/\w .\-=]*)?$/u;
     if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
       throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
     }
