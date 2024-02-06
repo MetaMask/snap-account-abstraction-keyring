@@ -70,6 +70,8 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore TODO: fix types
 export const onKeyringRequest: OnKeyringRequestHandler = async ({
   origin,
   request,
