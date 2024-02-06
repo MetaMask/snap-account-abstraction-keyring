@@ -11,16 +11,6 @@ const config: GatsbyConfig = {
     'gatsby-plugin-svgr',
     'gatsby-plugin-styled-components',
     {
-      resolve: 'gatsby-plugin-manifest',
-      options: {
-        name: 'Template Snap',
-        icon: 'src/assets/logo.svg',
-        theme_color: '#6F4CFF',
-        background_color: '#FFFFFF',
-        display: 'standalone',
-      },
-    },
-    {
       // See: <https://www.gatsbyjs.com/plugins/gatsby-plugin-webfonts/>
       resolve: `gatsby-plugin-webfonts`,
       options: {
