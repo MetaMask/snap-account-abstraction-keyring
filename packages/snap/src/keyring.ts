@@ -99,18 +99,24 @@ export class AccountAbstractionKeyring implements Keyring {
       !ethers.isAddress(config.simpleAccountFactory)
     ) {
       throwError(
-        `[Snap] Invalid Simple Account Factory Address: ${config.simpleAccountFactory}`,
+        `[Snap] Invalid Simple Account Factory Address: ${String(
+          config.simpleAccountFactory,
+        )}`,
       );
     }
     if (config.entryPoint && !ethers.isAddress(config.entryPoint)) {
-      throwError(`[Snap] Invalid EntryPoint Address: ${config.entryPoint}`);
+      throwError(
+        `[Snap] Invalid EntryPoint Address: ${String(config.entryPoint)}`,
+      );
     }
     if (
       config.customVerifyingPaymasterAddress &&
       !ethers.isAddress(config.customVerifyingPaymasterAddress)
     ) {
       throwError(
-        `[Snap] Invalid Verifying Paymaster Address: ${config.customVerifyingPaymasterAddress}`,
+        `[Snap] Invalid Verifying Paymaster Address: ${String(
+          config.customVerifyingPaymasterAddress,
+        )}`,
       );
     }
     const bundlerUrlRegex =
@@ -371,7 +377,9 @@ export class AccountAbstractionKeyring implements Keyring {
       () =>
         privateKey
           ? Buffer.from(hexToBytes(addHexPrefix(privateKey)))
-          : Buffer.from(crypto.getRandomValues(new Uint8Array(32))),
+          : // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore - available in snaps
+            Buffer.from(crypto.getRandomValues(new Uint8Array(32))),
       'Invalid private key',
     );
 
