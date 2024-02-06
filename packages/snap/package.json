@@ -27,6 +27,7 @@
     "snap.manifest.json"
   ],
   "scripts": {
+    "allow-scripts": "yarn workspace @metamask/snap-account-abstraction-keyring allow-scripts",
     "compile": "hardhat compile",
     "build": "yarn compile && mm-snap build",
     "build:clean": "yarn clean && yarn build",
