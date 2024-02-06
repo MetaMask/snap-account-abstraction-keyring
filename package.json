@@ -40,6 +40,8 @@
   "devDependencies": {
     "@babel/preset-typescript": "^7.23.3",
     "@jest/globals": "^29.7.0",
+    "@lavamoat/allow-scripts": "^3.0.0",
+    "@lavamoat/preinstall-always-fail": "^2.0.0",
     "@metamask/eslint-config": "^12.2.0",
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
@@ -62,8 +64,14 @@
     "ts-node": "^10.9.2",
     "typescript": "^4.9.5"
   },
-  "packageManager": "yarn@3.6.3",
+  "packageManager": "yarn@3.2.1",
   "engines": {
-    "node": ">=18.0.0"
+    "node": "^18.18 || >=20"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "@lavamoat/preinstall-always-fail": false,
+      "ts-node>@swc/core": false
+    }
   }
 }
