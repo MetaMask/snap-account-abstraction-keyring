@@ -1970,6 +1970,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@danieldietrich/copy@npm:^0.4.2":
+  version: 0.4.2
+  resolution: "@danieldietrich/copy@npm:0.4.2"
+  checksum: 32b40c4e30371f59b0e7df5d947311c353f9f73ca8f7081ab82aaf8fce2c7406de4ab5ec78ad0ddd292936686994654dae7ee22704ab50514c60cfb58fe0fe75
+  languageName: node
+  linkType: hard
+
 "@emotion/babel-plugin@npm:^11.11.0":
   version: 11.11.0
   resolution: "@emotion/babel-plugin@npm:11.11.0"
@@ -4348,6 +4355,7 @@ __metadata:
     eslint-plugin-prettier: ^4.2.1
     eslint-plugin-promise: ^6.1.1
     jest: ^29.7.0
+    postinstall: ^0.9.0
     prettier: ^2.8.4
     ts-jest: ^29.1.1
     ts-node: ^10.9.2
@@ -15131,6 +15139,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"glob@npm:^10.3.10":
+  version: 10.3.10
+  resolution: "glob@npm:10.3.10"
+  dependencies:
+    foreground-child: ^3.1.0
+    jackspeak: ^2.3.5
+    minimatch: ^9.0.1
+    minipass: ^5.0.0 || ^6.0.2 || ^7.0.0
+    path-scurry: ^1.10.1
+  bin:
+    glob: dist/esm/bin.mjs
+  checksum: 4f2fe2511e157b5a3f525a54092169a5f92405f24d2aed3142f4411df328baca13059f4182f1db1bf933e2c69c0bd89e57ae87edd8950cba8c7ccbe84f721cf3
+  languageName: node
+  linkType: hard
+
 "glob@npm:^5.0.15":
   version: 5.0.15
   resolution: "glob@npm:5.0.15"
@@ -16914,6 +16937,19 @@ __metadata:
     "@pkgjs/parseargs":
       optional: true
   checksum: 4313a7c0cc44c7753c4cb9869935f0b06f4cf96827515f63f58ff46b3d2f6e29aba6b3b5151778397c3f5ae67ef8bfc48871967bd10343c27e90cff198ec7808
+  languageName: node
+  linkType: hard
+
+"jackspeak@npm:^2.3.5":
+  version: 2.3.6
+  resolution: "jackspeak@npm:2.3.6"
+  dependencies:
+    "@isaacs/cliui": ^8.0.2
+    "@pkgjs/parseargs": ^0.11.0
+  dependenciesMeta:
+    "@pkgjs/parseargs":
+      optional: true
+  checksum: 57d43ad11eadc98cdfe7496612f6bbb5255ea69fe51ea431162db302c2a11011642f50cfad57288bd0aea78384a0612b16e131944ad8ecd09d619041c8531b54
   languageName: node
   linkType: hard
 
@@ -19272,7 +19308,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimist@npm:^1.1.0, minimist@npm:^1.2.0, minimist@npm:^1.2.3, minimist@npm:^1.2.5, minimist@npm:^1.2.6":
+"minimist@npm:^1.1.0, minimist@npm:^1.2.0, minimist@npm:^1.2.3, minimist@npm:^1.2.5, minimist@npm:^1.2.6, minimist@npm:^1.2.8":
   version: 1.2.8
   resolution: "minimist@npm:1.2.8"
   checksum: 75a6d645fb122dad29c06a7597bddea977258957ed88d7a6df59b5cd3fe4a527e253e9bbf2e783e4b73657f9098b96a5fe96ab8a113655d4109108577ecf85b0
@@ -21653,6 +21689,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"postinstall@npm:^0.9.0":
+  version: 0.9.0
+  resolution: "postinstall@npm:0.9.0"
+  dependencies:
+    "@danieldietrich/copy": ^0.4.2
+    glob: ^10.3.10
+    minimist: ^1.2.8
+    resolve-from: ^5.0.0
+    resolve-pkg: ^2.0.0
+  bin:
+    postinstall: bin/postinstall.js
+  checksum: 1306030e514d88bb11b5e7cd69aabcc4fc7518baa1890443714084a931abd07f91ee1f617f7f976ee5d4f4c803c55354ba7444eec883f2910b1faf057a38a86c
+  languageName: node
+  linkType: hard
+
 "prebuild-install@npm:^7.1.1":
   version: 7.1.1
   resolution: "prebuild-install@npm:7.1.1"
@@ -22774,6 +22825,15 @@ __metadata:
   version: 1.0.0
   resolution: "resolve-pkg-maps@npm:1.0.0"
   checksum: 1012afc566b3fdb190a6309cc37ef3b2dcc35dff5fa6683a9d00cd25c3247edfbc4691b91078c97adc82a29b77a2660c30d791d65dab4fc78bfc473f60289977
+  languageName: node
+  linkType: hard
+
+"resolve-pkg@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "resolve-pkg@npm:2.0.0"
+  dependencies:
+    resolve-from: ^5.0.0
+  checksum: 4a14cc38effed20ff362c8f377719af9a45ebe27ee07d79d4802b4568858cd96033f4edc3a2add7fd27e361d24101a042047297a9ef9476696ba16b72e0a05fc
   languageName: node
   linkType: hard
 

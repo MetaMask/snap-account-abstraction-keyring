@@ -35,7 +35,8 @@
     "lint:misc": "yarn workspaces foreach --parallel --verbose run lint:misc",
     "lint:types": "yarn workspaces foreach --parallel --verbose run lint:types",
     "start": "yarn workspaces foreach --parallel --verbose --interlaced run start",
-    "test": "yarn workspaces foreach --parallel --verbose run test"
+    "test": "yarn workspaces foreach --parallel --verbose run test",
+    "postinstall": "yarn workspace @metamask/snap-account-abstraction-keyring-snap compile"
   },
   "devDependencies": {
     "@babel/preset-typescript": "^7.23.3",
@@ -71,7 +72,11 @@
   "lavamoat": {
     "allowScripts": {
       "@lavamoat/preinstall-always-fail": false,
-      "ts-node>@swc/core": false
+      "ts-node>@swc/core": false,
+      "$root$": false
     }
+  },
+  "dependencies": {
+    "postinstall": "^0.9.0"
   }
 }
