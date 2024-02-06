@@ -27,6 +27,7 @@
     "snap.manifest.json"
   ],
   "scripts": {
+    "allow-scripts": "yarn workspace @metamask/snap-account-abstraction-keyring allow-scripts",
     "compile": "hardhat compile",
     "build": "yarn compile && mm-snap build",
     "build:clean": "yarn clean && yarn build",
@@ -45,7 +46,7 @@
     "@ethereumjs/tx": "^5.1.0",
     "@ethereumjs/util": "^9.0.1",
     "@metamask/keyring-api": "^2.0.0",
-    "@metamask/snaps-types": "^3.1.0",
+    "@metamask/snaps-sdk": "^2.0.0",
     "@metamask/utils": "^8.1.0",
     "@openzeppelin/contracts": "^4.2.0",
     "dotenv": "^16.3.1",

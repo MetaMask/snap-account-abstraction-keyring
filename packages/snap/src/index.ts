@@ -5,7 +5,7 @@ import {
 import type {
   OnKeyringRequestHandler,
   OnRpcRequestHandler,
-} from '@metamask/snaps-types';
+} from '@metamask/snaps-sdk';
 
 import type { ChainConfig } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
@@ -70,6 +70,8 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   }
 };
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore TODO: fix types
 export const onKeyringRequest: OnKeyringRequestHandler = async ({
   origin,
   request,
