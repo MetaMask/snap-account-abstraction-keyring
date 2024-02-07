@@ -28,6 +28,7 @@
     "build": "yarn workspaces foreach --parallel --verbose --topological run build",
     "build:dapp": "yarn workspace @metamask/snap-account-abstraction-keyring-site build",
     "build:snap": "yarn workspace @metamask/snap-account-abstraction-keyring-snap build",
+    "build:docs": "typedoc",
     "postinstall": "yarn workspace @metamask/snap-account-abstraction-keyring-snap compile",
     "lint": "yarn workspaces foreach --parallel --verbose run lint",
     "lint:deps": "yarn workspaces foreach --parallel --verbose run depcheck",
@@ -70,6 +71,7 @@
     "prettier": "^2.8.4",
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.2",
+    "typedoc": "^0.23.15",
     "typescript": "^4.9.5"
   },
   "packageManager": "yarn@3.2.1",
