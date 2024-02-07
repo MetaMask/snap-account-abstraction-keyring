@@ -40,7 +40,8 @@
     "lint:constraints": "yarn constraints",
     "lint:dependencies": "depcheck && yarn dedupe",
     "start": "yarn workspaces foreach --parallel --verbose --interlaced run start",
-    "test": "yarn workspaces foreach --parallel --verbose run test"
+    "test": "yarn workspaces foreach --parallel --verbose run test",
+    "install-chrome": "./scripts/install-chrome.sh"
   },
   "dependencies": {
     "postinstall": "^0.9.0"
