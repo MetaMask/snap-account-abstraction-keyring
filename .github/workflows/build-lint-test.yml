@@ -88,7 +88,7 @@ jobs:
       - name: Install Google Chrome
         run: yarn install-chrome
       - name: Run e2e tests
-        run: yarn workspace snap run test
+        run: yarn workspace @metamask/snap-account-abstraction-keyring run test
       - name: Require clean working directory
         shell: bash
         run: |
