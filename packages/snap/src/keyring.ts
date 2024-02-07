@@ -25,6 +25,7 @@ import {
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
+import type { BigNumberish } from 'ethers';
 import { ethers } from 'ethers';
 import { v4 as uuid } from 'uuid';
 
@@ -460,7 +461,9 @@ export class AccountAbstractionKeyring implements Keyring {
     let nonce = '0x0';
     let initCode = '0x';
     try {
-      nonce = `0x${(await aaInstance.getNonce()).toString(16)}`;
+      nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
+        16,
+      )}`;
       if (!wallet.chains[chainId.toString()]) {
         wallet.chains[chainId.toString()] = true;
         await this.#saveState();
