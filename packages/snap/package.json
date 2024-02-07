@@ -29,7 +29,7 @@
   "scripts": {
     "allow-scripts": "yarn workspace @metamask/snap-account-abstraction-keyring allow-scripts",
     "compile": "hardhat compile",
-    "build": "yarn compile && mm-snap build",
+    "build": "mm-snap build",
     "build:clean": "yarn clean && yarn build",
     "clean": "rimraf dist",
     "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types",
