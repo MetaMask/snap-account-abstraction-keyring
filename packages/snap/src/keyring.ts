@@ -490,7 +490,14 @@ export class AccountAbstractionKeyring implements Keyring {
         verifyingPaymasterAddress,
       ),
       bundlerUrl: chainConfig?.bundlerUrl ?? '',
+      // Note: Update gas limits from 0x0 to use custom gas limits here
+      gasLimits: {
+        callGasLimit: '0x11',
+        verificationGasLimit: '0x11',
+        preVerificationGas: '0x11',
+      },
     };
+    console.log('ethBaseUserOp', ethBaseUserOp);
     return ethBaseUserOp;
   }
 

@@ -229,6 +229,11 @@ describe('Keyring', () => {
               await verifyingPaymaster.getAddress(),
             ),
             bundlerUrl: expect.any(String),
+            // gasLimits: {
+            //   callGasLimit: '0x',
+            //   verificationGasLimit: '0x',
+            //   preVerificationGas: '0x',
+            // },
           },
         };
 
