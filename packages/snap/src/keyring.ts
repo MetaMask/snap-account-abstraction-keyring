@@ -95,48 +95,15 @@ export class AccountAbstractionKeyring implements Keyring {
 
   async setConfig(config: ChainConfig): Promise<ChainConfig> {
     const { chainId } = await provider.getNetwork();
-    if (
-      config.simpleAccountFactory &&
-      !ethers.isAddress(config.simpleAccountFactory)
-    ) {
-      throwError(
-        `[Snap] Invalid Simple Account Factory Address: ${String(
-          config.simpleAccountFactory,
-        )}`,
-      );
-    }
-    if (config.entryPoint && !ethers.isAddress(config.entryPoint)) {
-      throwError(
-        `[Snap] Invalid EntryPoint Address: ${String(config.entryPoint)}`,
-      );
-    }
-    if (
-      config.customVerifyingPaymasterAddress &&
-      !ethers.isAddress(config.customVerifyingPaymasterAddress)
-    ) {
-      throwError(
-        `[Snap] Invalid Verifying Paymaster Address: ${String(
-          config.customVerifyingPaymasterAddress,
-        )}`,
-      );
-    }
-    const bundlerUrlRegex =
-      /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?(\?[\\/\w .\-=]*)?$/u;
-    if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
-      throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
-    }
-    if (config.customVerifyingPaymasterPK) {
-      try {
-        // eslint-disable-next-line no-new -- doing this to validate the pk
-        new ethers.Wallet(config.customVerifyingPaymasterPK);
-      } catch (error) {
-        throwError(
-          `[Snap] Invalid Verifying Paymaster Private Key: ${
-            (error as Error).message
-          }`,
-        );
+
+    console.log(`[Snap] Setting config`, config);
+    for (const [key, value] of Object.entries(config)) {
+      console.log(`[Snap] Setting config ${key}: ${value}`);
+      if (config.hasOwnProperty(key)) {
+        this.#validateConfigOption(key, value);
       }
     }
+
     this.#state.config[Number(chainId)] = {
       ...this.#state.config[Number(chainId)],
       ...config,
@@ -144,6 +111,38 @@ export class AccountAbstractionKeyring implements Keyring {
 
     await this.#saveState();
     return this.#state.config[Number(chainId)]!;
+  }
+
+  #validateConfigOption(key: string, value: string): void {
+    switch (key) {
+      case 'simpleAccountFactory':
+      case 'entryPoint':
+      case 'customVerifyingPaymasterAddress':
+        if (!ethers.isAddress(value)) {
+          throwError(`[Snap] Invalid ${key} Address: ${value}`);
+        }
+        break;
+      case 'bundlerUrl':
+        const bundlerUrlRegex =
+          /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?(\?[\\/\w .\-=]*)?$/u;
+        if (!bundlerUrlRegex.test(value)) {
+          throwError(`[Snap] Invalid Bundler URL: ${value}`);
+        }
+        break;
+      case 'customVerifyingPaymasterPK':
+        try {
+          new ethers.Wallet(value);
+        } catch (error) {
+          throwError(
+            `[Snap] Invalid Verifying Paymaster Private Key: ${
+              (error as Error).message
+            }`,
+          );
+        }
+        break;
+      default:
+        logger.error(`[Snap] Invalid chain configuration key: ${key}`);
+    }
   }
 
   async listAccounts(): Promise<KeyringAccount[]> {

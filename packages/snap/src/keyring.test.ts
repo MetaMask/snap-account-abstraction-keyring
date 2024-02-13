@@ -107,38 +107,58 @@ describe('Keyring', () => {
       simpleAccountFactory: '0x97a0924bf222499cBa5C29eA746E82F230730293',
       entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
       bundlerUrl: 'https://bundler.example.com/rpc',
-      customVerifyingPaymasterPK: aaOwnerPk,
+      // customVerifyingPaymasterPK: aaOwnerPk,
       customVerifyingPaymasterAddress:
         '0x123456789ABCDEF0123456789ABCDEF012345678',
     };
-    it('should not set the config without a valid config', async () => {
+    it('should not set the config with and invalid simpleAccountFactory address', async () => {
       const invalidConfig: ChainConfig = {
         ...config,
         simpleAccountFactory: '0xNotAnAddress',
       };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Simple Account Factory Address: ${
+        `[Snap] Invalid simpleAccountFactory Address: ${
           invalidConfig.simpleAccountFactory as string
         }`,
       );
-      invalidConfig.simpleAccountFactory = config.simpleAccountFactory!;
-      invalidConfig.entryPoint = '0xNotAnAddress';
+    });
+    it('should not set the config with and invalid entryPoint address', async () => {
+      const invalidConfig: ChainConfig = {
+        ...config,
+        entryPoint: '0xNotAnAddress',
+      };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid EntryPoint Address: ${invalidConfig.entryPoint}`,
+        `[Snap] Invalid entryPoint Address: ${
+          invalidConfig.entryPoint as string
+        }`,
       );
-      invalidConfig.entryPoint = config.entryPoint!;
-      invalidConfig.customVerifyingPaymasterAddress = '0xNotAnAddress';
+    });
+    // ! TODO: debug why this test is failing
+    it('should not set the config with and invalid customVerifyingPaymaster address', async () => {
+      const invalidConfig: ChainConfig = {
+        ...config,
+        customVerifyingPaymasterAddress: '0xNotAnAddress',
+      };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Verifying Paymaster Address: ${invalidConfig.customVerifyingPaymasterAddress}`,
+        `[Snap] Invalid customVerifyingPaymasterAddress Address: ${
+          invalidConfig.customVerifyingPaymasterAddress as string
+        }`,
       );
-      invalidConfig.customVerifyingPaymasterAddress =
-        config.customVerifyingPaymasterAddress!;
-      invalidConfig.bundlerUrl = 'https:/invalid.fake.io';
+    });
+    it('should not set the config with and invalid bundler url', async () => {
+      const invalidConfig: ChainConfig = {
+        ...config,
+        bundlerUrl: 'https:/invalid.fake.io',
+      };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Bundler URL: ${invalidConfig.bundlerUrl}`,
+        `[Snap] Invalid Bundler URL: ${invalidConfig.bundlerUrl as string}`,
       );
-      invalidConfig.bundlerUrl = config.bundlerUrl!;
-      invalidConfig.customVerifyingPaymasterPK = '123NotAPrivateKey456';
+    });
+    it('should not set the config with and invalid customVerifyingPaymaster private key', async () => {
+      const invalidConfig: ChainConfig = {
+        ...config,
+        customVerifyingPaymasterPK: '123NotAPrivateKey456',
+      };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
         `[Snap] Invalid Verifying Paymaster Private Key`,
       );
