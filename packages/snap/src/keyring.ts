@@ -96,9 +96,7 @@ export class AccountAbstractionKeyring implements Keyring {
   async setConfig(config: ChainConfig): Promise<ChainConfig> {
     const { chainId } = await provider.getNetwork();
 
-    console.log(`[Snap] Setting config`, config);
     for (const [key, value] of Object.entries(config)) {
-      console.log(`[Snap] Setting config ${key}: ${value}`);
       if (config.hasOwnProperty(key)) {
         this.#validateConfigOption(key, value);
       }
@@ -131,6 +129,7 @@ export class AccountAbstractionKeyring implements Keyring {
         break;
       case 'customVerifyingPaymasterPK':
         try {
+          // eslint-disable-next-line no-new -- doing this to validate the pk
           new ethers.Wallet(value);
         } catch (error) {
           throwError(
