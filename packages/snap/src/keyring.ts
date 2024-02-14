@@ -53,6 +53,7 @@ import {
   runSensitive,
   throwError,
 } from './utils/util';
+import { validateConfig } from './utils/validation';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -96,11 +97,7 @@ export class AccountAbstractionKeyring implements Keyring {
   async setConfig(config: ChainConfig): Promise<ChainConfig> {
     const { chainId } = await provider.getNetwork();
 
-    for (const [key, value] of Object.entries(config)) {
-      if (config.hasOwnProperty(key)) {
-        this.#validateConfigOption(key, value);
-      }
-    }
+    validateConfig(config);
 
     this.#state.config[Number(chainId)] = {
       ...this.#state.config[Number(chainId)],
@@ -109,39 +106,6 @@ export class AccountAbstractionKeyring implements Keyring {
 
     await this.#saveState();
     return this.#state.config[Number(chainId)]!;
-  }
-
-  #validateConfigOption(key: string, value: string): void {
-    switch (key) {
-      case 'simpleAccountFactory':
-      case 'entryPoint':
-      case 'customVerifyingPaymasterAddress':
-        if (!ethers.isAddress(value)) {
-          throwError(`[Snap] Invalid ${key} Address: ${value}`);
-        }
-        break;
-      case 'bundlerUrl':
-        const bundlerUrlRegex =
-          /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?(\?[\\/\w .\-=]*)?$/u;
-        if (!bundlerUrlRegex.test(value)) {
-          throwError(`[Snap] Invalid Bundler URL: ${value}`);
-        }
-        break;
-      case 'customVerifyingPaymasterPK':
-        try {
-          // eslint-disable-next-line no-new -- doing this to validate the pk
-          new ethers.Wallet(value);
-        } catch (error) {
-          throwError(
-            `[Snap] Invalid Verifying Paymaster Private Key: ${
-              (error as Error).message
-            }`,
-          );
-        }
-        break;
-      default:
-        logger.error(`[Snap] Invalid chain configuration key: ${key}`);
-    }
   }
 
   async listAccounts(): Promise<KeyringAccount[]> {
