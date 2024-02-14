@@ -4,9 +4,10 @@ import type { ChainConfig } from 'src/keyring';
 import { throwError } from './util';
 
 /**
- * Validate the chain configuration
+ * Validate the chain configuration.
  *
- * @param config - The chain configuration
+ * @param config - The chain configuration.
+ * @throws If the configuration is invalid.
  */
 export function validateConfig(config: ChainConfig): void {
   validateAddress(
@@ -26,22 +27,22 @@ export function validateConfig(config: ChainConfig): void {
 }
 
 /**
- * Validates an address
+ * Validates an address.
  *
- * @param address - The address to validate
- * @param name - The name of the address (used in the error message)
+ * @param address - The address to validate.
+ * @param name - The name of the address (used in the error message).
  */
 export function validateAddress(address?: string, name = 'Address'): void {
   if (address && !ethers.isAddress(address)) {
-    throwError(`[Snap] Invalid ${name}: ${address}`);
+    throwError(`[Snap] Invalid ${name}: ${String(address)}`);
   }
 }
 
 /**
- * Validates a URL
+ * Validates a URL.
  *
- * @param url - The URL to validate
- * @param name - The name of the URL (used in the error message)
+ * @param url - The URL to validate.
+ * @param name - The name of the URL (used in the error message).
  */
 export function validateUrl(url?: string, name = 'URL'): void {
   const bundlerUrlRegex =
@@ -52,14 +53,15 @@ export function validateUrl(url?: string, name = 'URL'): void {
 }
 
 /**
- * Validates a private key
+ * Validates a private key.
  *
- * @param pk - The private key to validate
- * @param name - The name of the private key (used in the error message)
+ * @param pk - The private key to validate.
+ * @param name - The name of the private key (used in the error message).
  */
 export function validatePrivateKey(pk?: string, name = 'Private Key'): void {
   if (pk) {
     try {
+      // eslint-disable-next-line no-new -- doing this to validate the pk
       new ethers.Wallet(pk);
     } catch (error) {
       throwError(`[Snap] Invalid ${name}: ${(error as Error).message}`);
