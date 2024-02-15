@@ -40,7 +40,8 @@
     "lint:types": "tsc --noEmit",
     "serve": "mm-snap serve",
     "start": "NODE_ENV='development' mm-snap watch",
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles",
+    "test:coverage": "jest --detectOpenHandles --coverage"
   },
   "dependencies": {
     "@ethereumjs/tx": "^5.1.0",
