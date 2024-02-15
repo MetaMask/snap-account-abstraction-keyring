@@ -20,6 +20,7 @@ const PrivateKey = define('PrivateKey', (value) => {
     return false;
   }
   try {
+    // eslint-disable-next-line no-new -- doing this to validate the pk
     new ethers.Wallet(value);
     return true;
   } catch {
@@ -52,19 +53,27 @@ export function validateConfig(config: ChainConfig): void {
         const fieldName = path[0];
         switch (fieldName) {
           case 'simpleAccountFactory':
-            customMessage = `[Snap] Invalid Simple Account Factory Address: ${value}`;
+            customMessage = `[Snap] Invalid Simple Account Factory Address: ${String(
+              value,
+            )}`;
             break;
           case 'entryPoint':
-            customMessage = `[Snap] Invalid Entry Point Address: ${value}`;
+            customMessage = `[Snap] Invalid Entry Point Address: ${String(
+              value,
+            )}`;
             break;
           case 'bundlerUrl':
-            customMessage = `[Snap] Invalid Bundler URL: ${value}`;
+            customMessage = `[Snap] Invalid Bundler URL: ${String(value)}`;
             break;
           case 'customVerifyingPaymasterAddress':
-            customMessage = `[Snap] Invalid Custom Verifying Paymaster Address: ${value}`;
+            customMessage = `[Snap] Invalid Custom Verifying Paymaster Address: ${String(
+              value,
+            )}`;
             break;
           case 'customVerifyingPaymasterPK':
-            customMessage = `[Snap] Invalid Custom Verifying Paymaster Private Key: ${value}`;
+            customMessage = `[Snap] Invalid Custom Verifying Paymaster Private Key: ${String(
+              value,
+            )}`;
             break;
           default:
             break;
