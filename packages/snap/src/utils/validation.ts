@@ -1,7 +1,39 @@
 import { ethers } from 'ethers';
 import type { ChainConfig } from 'src/keyring';
+import { assert, define, object, optional, StructError } from 'superstruct';
 
 import { throwError } from './util';
+
+const EthereumAddress = define(
+  'EthereumAddress',
+  (value) => typeof value === 'string' && ethers.isAddress(value),
+);
+
+const Url = define('Url', (value) => {
+  const urlPattern =
+    /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?(\?[\\/\w .\-=]*)?$/u;
+  return typeof value === 'string' && urlPattern.test(value);
+});
+
+const PrivateKey = define('PrivateKey', (value) => {
+  if (typeof value !== 'string') {
+    return false;
+  }
+  try {
+    new ethers.Wallet(value);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+const ChainConfigStruct = object({
+  simpleAccountFactory: optional(EthereumAddress),
+  entryPoint: optional(EthereumAddress),
+  bundlerUrl: optional(Url),
+  customVerifyingPaymasterAddress: optional(EthereumAddress),
+  customVerifyingPaymasterPK: optional(PrivateKey),
+});
 
 /**
  * Validate the chain configuration.
@@ -10,61 +42,39 @@ import { throwError } from './util';
  * @throws If the configuration is invalid.
  */
 export function validateConfig(config: ChainConfig): void {
-  validateAddress(
-    config.simpleAccountFactory,
-    'Simple Account Factory Address',
-  );
-  validateAddress(config.entryPoint, 'Entry Point Address');
-  validateAddress(
-    config.customVerifyingPaymasterAddress,
-    'Custom Verifying Paymaster Address',
-  );
-  validateUrl(config.bundlerUrl, 'Bundler URL');
-  validatePrivateKey(
-    config.customVerifyingPaymasterPK,
-    'Custom Verifying Paymaster Private Key',
-  );
-}
-
-/**
- * Validates an address.
- *
- * @param address - The address to validate.
- * @param name - The name of the address (used in the error message).
- */
-export function validateAddress(address?: string, name = 'Address'): void {
-  if (address && !ethers.isAddress(address)) {
-    throwError(`[Snap] Invalid ${name}: ${String(address)}`);
-  }
-}
-
-/**
- * Validates a URL.
- *
- * @param url - The URL to validate.
- * @param name - The name of the URL (used in the error message).
- */
-export function validateUrl(url?: string, name = 'URL'): void {
-  const bundlerUrlRegex =
-    /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?(\?[\\/\w .\-=]*)?$/u;
-  if (url && !bundlerUrlRegex.test(url)) {
-    throwError(`[Snap] Invalid ${name}: ${url}`);
-  }
-}
-
-/**
- * Validates a private key.
- *
- * @param pk - The private key to validate.
- * @param name - The name of the private key (used in the error message).
- */
-export function validatePrivateKey(pk?: string, name = 'Private Key'): void {
-  if (pk) {
-    try {
-      // eslint-disable-next-line no-new -- doing this to validate the pk
-      new ethers.Wallet(pk);
-    } catch (error) {
-      throwError(`[Snap] Invalid ${name}: ${(error as Error).message}`);
+  try {
+    assert(config, ChainConfigStruct);
+  } catch (error) {
+    if (error instanceof StructError) {
+      let customMessage = `[Snap] Invalid chain configuration: ${error.message}`;
+      const { path, value } = error;
+      if (path.length > 0) {
+        const fieldName = path[0];
+        switch (fieldName) {
+          case 'simpleAccountFactory':
+            customMessage = `[Snap] Invalid Simple Account Factory Address: ${value}`;
+            break;
+          case 'entryPoint':
+            customMessage = `[Snap] Invalid Entry Point Address: ${value}`;
+            break;
+          case 'bundlerUrl':
+            customMessage = `[Snap] Invalid Bundler URL: ${value}`;
+            break;
+          case 'customVerifyingPaymasterAddress':
+            customMessage = `[Snap] Invalid Custom Verifying Paymaster Address: ${value}`;
+            break;
+          case 'customVerifyingPaymasterPK':
+            customMessage = `[Snap] Invalid Custom Verifying Paymaster Private Key: ${value}`;
+            break;
+          default:
+            break;
+        }
+      }
+      throwError(customMessage);
+    } else {
+      throwError(
+        `[Snap] Chain configuration error: ${(error as Error).message}`,
+      );
     }
   }
 }
