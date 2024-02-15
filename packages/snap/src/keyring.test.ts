@@ -203,6 +203,26 @@ describe('Keyring', () => {
         expectedAddressFromSalt,
       );
     });
+    it.only('should create not create an account already in use', async () => {
+      const salt = '0x123';
+      const expectedAddressFromSalt =
+        await simpleAccountFactory.getAccountAddress(
+          await aaOwner.getAddress(),
+          salt,
+        );
+      const account = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt,
+      });
+      expect(account).toBeDefined();
+      expect(await keyring.getAccount(account.id)).toStrictEqual(account);
+      expect(account.address).toBe(expectedAddressFromSalt);
+      expect(
+        keyring.createAccount({ privateKey: aaOwnerPk, salt }),
+      ).rejects.toThrow(
+        `[Snap] Account abstraction address already in use: ${expectedAddressFromSalt}`,
+      );
+    });
   });
 
   describe('UserOperations Methods', () => {

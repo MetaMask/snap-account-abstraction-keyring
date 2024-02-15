@@ -157,9 +157,6 @@ export class AccountAbstractionKeyring implements Keyring {
       options?.privateKey as string | undefined,
     );
 
-    if (!isUniqueAddress(admin, Object.values(this.#state.wallets))) {
-      throw new Error(`Account address already in use: ${admin}`);
-    }
     // The private key should not be stored in the account options since the
     // account object is exposed to external components, such as MetaMask and
     // the snap UI.
@@ -180,6 +177,12 @@ export class AccountAbstractionKeyring implements Keyring {
       ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
     const aaAddress = await aaFactory.getAccountAddress(admin, salt);
+
+    if (!isUniqueAddress(aaAddress, Object.values(this.#state.wallets))) {
+      throw new Error(
+        `[Snap] Account abstraction address already in use: ${aaAddress}`,
+      );
+    }
 
     const initCode = ethers.concat([
       aaFactory.target as string,
