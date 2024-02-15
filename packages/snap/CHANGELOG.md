@@ -5,6 +5,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Changed
 - Add userop methods and updates account creation ([#4](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/4))
 - Add contract addresses and deployment script ([#2](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/2))
 - Fix regex to support query parameters ([#13](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/13))
