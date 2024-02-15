@@ -34,6 +34,7 @@ const mockAccountId = 'ea747116-767c-4117-a347-0c3f7b19cc5a';
 const TEST_MNEMONIC =
   'test test test test test test test test test test test junk';
 const chainId = '11155111';
+let accountCreationCount = 0;
 
 // This mocks the ethereum global object thats available in the Snaps Execution Environment
 jest.mock('../src/utils/ethers', () => ({
@@ -43,9 +44,16 @@ jest.mock('../src/utils/ethers', () => ({
     new ethers.Wallet(privateKey, ethers.provider),
 }));
 
-jest.mock('uuid', () => ({
-  v4: () => mockAccountId,
-}));
+jest.mock('uuid', () => {
+  return {
+    v4: () => {
+      accountCreationCount++;
+      return accountCreationCount === 1
+        ? mockAccountId
+        : jest.requireActual('uuid').v4();
+    },
+  };
+});
 
 // @ts-expect-error Mocking Snap global object
 global.snap = {
@@ -53,11 +61,11 @@ global.snap = {
   emitEvent: jest.fn(),
 };
 
-const defaultState: KeyringState = {
+const getInitialState = () => ({
   wallets: {},
   pendingRequests: {},
   config: {},
-};
+});
 
 const aaAccountInterface = new SimpleAccount__factory();
 const simpleAccountFactoryInterface = new SimpleAccountFactory__factory();
@@ -85,13 +93,16 @@ describe('Keyring', () => {
       aaOwner,
     ).deploy(await entryPoint.getAddress());
 
-    keyring = new AccountAbstractionKeyring(defaultState);
+    const initialState = getInitialState();
+    keyring = new AccountAbstractionKeyring({ ...initialState });
 
     await keyring.setConfig({
       simpleAccountFactory: await simpleAccountFactory.getAddress(),
       entryPoint: await entryPoint.getAddress(),
       customVerifyingPaymasterAddress: await verifyingPaymaster.getAddress(),
     });
+
+    accountCreationCount = 0;
   });
 
   describe('Constructor', () => {
@@ -203,7 +214,8 @@ describe('Keyring', () => {
         expectedAddressFromSalt,
       );
     });
-    it.only('should create not create an account already in use', async () => {
+
+    it('should create not create an account already in use', async () => {
       const salt = '0x123';
       const expectedAddressFromSalt =
         await simpleAccountFactory.getAccountAddress(
@@ -222,6 +234,26 @@ describe('Keyring', () => {
       ).rejects.toThrow(
         `[Snap] Account abstraction address already in use: ${expectedAddressFromSalt}`,
       );
+    });
+  });
+
+  describe('List Accounts', () => {
+    it('should list the created accounts', async () => {
+      const account1 = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt: '0x123',
+      });
+      const account2 = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt: '0x456',
+      });
+      const account3 = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt: '0x789',
+      });
+
+      const accounts = await keyring.listAccounts();
+      expect(accounts).toStrictEqual([account1, account2, account3]);
     });
   });
 
