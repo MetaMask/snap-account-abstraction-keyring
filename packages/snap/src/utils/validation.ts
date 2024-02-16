@@ -1,4 +1,5 @@
 import { ethers } from 'ethers';
+import { CONFIG_ERROR_MESSAGES, CONFIG_KEYS } from 'src/chainConfig';
 import type { ChainConfig } from 'src/keyring';
 import { assert, define, object, optional, StructError } from 'superstruct';
 
@@ -16,24 +17,15 @@ const Url = define('Url', (value) => {
 });
 
 const PrivateKey = define('PrivateKey', (value) => {
-  if (typeof value !== 'string') {
-    return false;
-  }
-  try {
-    // eslint-disable-next-line no-new -- doing this to validate the pk
-    new ethers.Wallet(value);
-    return true;
-  } catch {
-    return false;
-  }
+  return typeof value === 'string' && ethers.isHexString(value);
 });
 
 const ChainConfigStruct = object({
-  simpleAccountFactory: optional(EthereumAddress),
-  entryPoint: optional(EthereumAddress),
-  bundlerUrl: optional(Url),
-  customVerifyingPaymasterAddress: optional(EthereumAddress),
-  customVerifyingPaymasterPK: optional(PrivateKey),
+  [CONFIG_KEYS.SIMPLE_ACCOUNT_FACTORY]: optional(EthereumAddress),
+  [CONFIG_KEYS.ENTRY_POINT]: optional(EthereumAddress),
+  [CONFIG_KEYS.BUNDLER_URL]: optional(Url),
+  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_ADDRESS]: optional(EthereumAddress),
+  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_PK]: optional(PrivateKey),
 });
 
 /**
@@ -54,34 +46,38 @@ export function validateConfig(config: ChainConfig): void {
           `[Snap] Chain configuration error: ${(error as Error).message}`,
         );
       }
-        const fieldName = path[0];
-        switch (fieldName) {
-          case 'simpleAccountFactory':
-            customMessage = `[Snap] Invalid Simple Account Factory Address: ${String(
-              value,
-            )}`;
-            break;
-          case 'entryPoint':
-            customMessage = `[Snap] Invalid Entry Point Address: ${String(
-              value,
-            )}`;
-            break;
-          case 'bundlerUrl':
-            customMessage = `[Snap] Invalid Bundler URL: ${String(value)}`;
-            break;
-          case 'customVerifyingPaymasterAddress':
-            customMessage = `[Snap] Invalid Custom Verifying Paymaster Address: ${String(
-              value,
-            )}`;
-            break;
-          case 'customVerifyingPaymasterPK':
-            customMessage = `[Snap] Invalid Custom Verifying Paymaster Private Key: ${String(
-              value,
-            )}`;
-            break;
-          default:
-            break;
-        }
+      const fieldName = path[0];
+      switch (fieldName) {
+        case CONFIG_KEYS.SIMPLE_ACCOUNT_FACTORY:
+          customMessage = `${
+            CONFIG_ERROR_MESSAGES.INVALID_SIMPLE_ACCOUNT_FACTORY_ADDRESS
+          } ${String(value)}`;
+          break;
+        case CONFIG_KEYS.ENTRY_POINT:
+          customMessage = `${
+            CONFIG_ERROR_MESSAGES.INVALID_ENTRY_POINT_ADDRESS
+          } ${String(value)}`;
+          break;
+        case CONFIG_KEYS.BUNDLER_URL:
+          customMessage = `${
+            CONFIG_ERROR_MESSAGES.INVALID_BUNDLER_URL
+          } ${String(value)}`;
+          break;
+        case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_ADDRESS:
+          customMessage = `${
+            CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_ADDRESS
+          } ${String(value)}`;
+          break;
+        case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_PK:
+          customMessage = `${
+            CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_PK
+          } ${String(value)}`;
+          break;
+        default:
+          customMessage = `[Snap] Invalid chain configuration for ${fieldName}: ${String(
+            value,
+          )}`;
+          break;
       }
       throwError(customMessage);
     } else {
