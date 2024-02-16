@@ -49,7 +49,11 @@ export function validateConfig(config: ChainConfig): void {
     if (error instanceof StructError) {
       let customMessage = `[Snap] Invalid chain configuration: ${error.message}`;
       const { path, value } = error;
-      if (path.length > 0) {
+      if (path.length === 0) {
+        throwError(
+          `[Snap] Chain configuration error: ${(error as Error).message}`,
+        );
+      }
         const fieldName = path[0];
         switch (fieldName) {
           case 'simpleAccountFactory':
