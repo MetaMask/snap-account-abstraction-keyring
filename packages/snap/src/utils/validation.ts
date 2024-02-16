@@ -1,3 +1,5 @@
+import type { Hex } from '@metamask/utils';
+import { isValidHexAddress } from '@metamask/utils';
 import { ethers } from 'ethers';
 import { CONFIG_ERROR_MESSAGES, CONFIG_KEYS } from 'src/chainConfig';
 import type { ChainConfig } from 'src/keyring';
@@ -7,7 +9,7 @@ import { throwError } from './util';
 
 const EthereumAddress = define(
   'EthereumAddress',
-  (value) => typeof value === 'string' && ethers.isAddress(value),
+  (value) => typeof value === 'string' && isValidHexAddress(value as Hex),
 );
 
 const Url = define('Url', (value) => {
