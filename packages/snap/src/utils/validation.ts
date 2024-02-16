@@ -14,7 +14,7 @@ const EthereumAddress = define(
 
 const Url = define('Url', (value) => {
   const urlPattern =
-    /^(https?:\/\/)?[\w.-]+(:\d{2,6})?(\/[\w\/.-]*)?(\?[\w\/.&=\-%]*)?$/u;
+    /^(https?:\/\/)?[\w.-]+(:\d{2,6})?(\/[\w.-]*)?(\?[\w.&=%-]*)?$/u;
   return typeof value === 'string' && urlPattern.test(value);
 });
 
@@ -76,9 +76,9 @@ export function validateConfig(config: ChainConfig): void {
           } ${String(value)}`;
           break;
         default:
-          customMessage = `[Snap] Invalid chain configuration for ${fieldName}: ${String(
-            value,
-          )}`;
+          customMessage = `[Snap] Invalid chain configuration for ${String(
+            fieldName,
+          )}: ${String(value)}`;
           break;
       }
       throwError(customMessage);
