@@ -1,6 +1,6 @@
 {
   "name": "@metamask/snap-account-abstraction-keyring-site",
-  "version": "0.2.1",
+  "version": "0.2.0",
   "license": "(MIT-0 OR Apache-2.0)",
   "scripts": {
     "allow-scripts": "yarn workspace @metamask/snap-account-abstraction-keyring allow-scripts",
