@@ -6,17 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1]
+
 ## [0.2.0]
 ### Changed
 - Fix updates configs to match template ([#14](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/14))
-
-### Changed
 - Fix chain config for the companion dapp ([#8](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/8))
 
 ## [0.1.0] - 2024-01-15
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/MetaMask/snap-account-abstraction-keyring/releases/tag/v0.1.0
