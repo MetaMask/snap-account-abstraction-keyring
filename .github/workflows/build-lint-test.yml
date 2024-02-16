@@ -65,6 +65,19 @@ jobs:
             echo "Working tree dirty at end of job"
             exit 1
           fi
+      - name: Validate RC changelog
+        if: ${{ startsWith(github.head_ref, 'release/') }}
+        run: yarn workspaces foreach --parallel --topological --verbose run auto-changelog validate --prettier --rc
+      - name: Validate changelog
+        if: ${{ !startsWith(github.head_ref, 'release/') }}
+        run: yarn workspaces foreach --parallel --topological --verbose run auto-changelog validate --prettier
+      - name: Require clean working directory
+        shell: bash
+        run: |
+          if ! git diff --exit-code; then
+            echo "Working tree dirty at end of job"
+            exit 1
+          fi
 
   e2e-test:
     name: End-to-end Test
