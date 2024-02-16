@@ -1,11 +1,11 @@
 import type { Hex } from '@metamask/utils';
 import { isValidHexAddress } from '@metamask/utils';
 import { ethers } from 'ethers';
-import { CONFIG_ERROR_MESSAGES, CONFIG_KEYS } from 'src/chainConfig';
-import type { ChainConfig } from 'src/keyring';
 import { assert, define, object, optional, StructError } from 'superstruct';
 
 import { throwError } from './util';
+import { CONFIG_ERROR_MESSAGES, CONFIG_KEYS } from '../constants/chainConfig';
+import type { ChainConfig } from '../keyring';
 
 const EthereumAddress = define(
   'EthereumAddress',
@@ -14,7 +14,7 @@ const EthereumAddress = define(
 
 const Url = define('Url', (value) => {
   const urlPattern =
-    /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?(\?[\\/\w .\-=]*)?$/u;
+    /^(https?:\/\/)?[\w.-]+(:\d{2,6})?(\/[\w\/.-]*)?(\?[\w\/.&=\-%]*)?$/u;
   return typeof value === 'string' && urlPattern.test(value);
 });
 
