@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fix updates configs to match template ([#14](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/14))
+- Bump keyring-api dependency ([#26](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/26))
 
 ## [0.2.0]
 
