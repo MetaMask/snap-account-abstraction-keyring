@@ -139,7 +139,7 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   /**
-   * Create a new account abstraction keyring account.
+   * Create a new smart contract keyring account.
    * Private key is required to create an account.
    *
    * @param options - The options to use when creating the account (e.g. salt).

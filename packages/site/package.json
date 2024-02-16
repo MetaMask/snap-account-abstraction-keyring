@@ -1,17 +1,18 @@
 {
   "name": "@metamask/snap-account-abstraction-keyring-site",
-  "version": "0.1.0",
+  "version": "0.2.1",
   "private": true,
   "license": "(MIT-0 OR Apache-2.0)",
   "scripts": {
     "allow-scripts": "yarn workspace @metamask/snap-account-abstraction-keyring allow-scripts",
     "build": "rimraf .cache && cross-env GATSBY_TELEMETRY_DISABLED=1 gatsby build --prefix-paths",
     "clean": "rimraf public .cache",
-    "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types",
+    "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types && yarn lint:changelog",
     "lint:deps": "depcheck",
     "lint:eslint": "eslint . --cache --ext js,jsx,ts,tsx",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --check",
+    "lint:changelog": "auto-changelog validate --prettier",
     "lint:types": "tsc --noEmit",
     "start": "rimraf .cache && cross-env GATSBY_TELEMETRY_DISABLED=1 gatsby develop"
   },

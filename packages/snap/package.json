@@ -1,7 +1,6 @@
 {
   "name": "@metamask/snap-account-abstraction-keyring-snap",
-  "version": "0.1.0",
-  "private": true,
+  "version": "0.2.1",
   "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
   "keywords": [
     "metamask",
@@ -32,11 +31,12 @@
     "build": "mm-snap build",
     "build:clean": "yarn clean && yarn build",
     "clean": "rimraf dist",
-    "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types",
+    "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types && yarn lint:changelog",
     "lint:deps": "depcheck --ignores='@openzeppelin/contracts,@lavamoat/allow-scripts,@metamask/auto-changelog'",
     "lint:eslint": "eslint . --cache --ext js,jsx,ts,tsx",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' '!snap.manifest.json' '!artifacts/**/*' '!cache/**/*' '!coverage/**/*' --check",
+    "lint:changelog": "auto-changelog validate --prettier",
     "lint:types": "tsc --noEmit",
     "serve": "mm-snap serve",
     "start": "NODE_ENV='development' mm-snap watch",
@@ -46,7 +46,7 @@
   "dependencies": {
     "@ethereumjs/tx": "^5.1.0",
     "@ethereumjs/util": "^9.0.1",
-    "@metamask/keyring-api": "^2.0.0",
+    "@metamask/keyring-api": "^3.0.0",
     "@metamask/snaps-sdk": "^2.0.0",
     "@metamask/utils": "^8.1.0",
     "@openzeppelin/contracts": "^4.2.0",

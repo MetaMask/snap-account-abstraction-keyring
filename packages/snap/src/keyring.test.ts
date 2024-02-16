@@ -114,12 +114,12 @@ describe('Keyring', () => {
 
   describe('Set Config', () => {
     const config: ChainConfig = {
-      simpleAccountFactory: '0x97a0924bf222499cBa5C29eA746E82F230730293',
-      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+      simpleAccountFactory: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+      entryPoint: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
       bundlerUrl: 'https://bundler.example.com/rpc',
       customVerifyingPaymasterPK: aaOwnerPk,
       customVerifyingPaymasterAddress:
-        '0x123456789ABCDEF0123456789ABCDEF012345678',
+        '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
     };
     it('should not set the config with and invalid simpleAccountFactory address', async () => {
       const invalidConfig: ChainConfig = {
