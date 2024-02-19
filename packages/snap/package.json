@@ -1,5 +1,5 @@
 {
-  "name": "@metamask/snap-account-abstraction-keyring-snap",
+  "name": "@metamask/snap-account-abstraction-keyring",
   "version": "0.2.0",
   "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
   "keywords": [
