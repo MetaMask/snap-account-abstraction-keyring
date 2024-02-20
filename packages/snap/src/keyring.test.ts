@@ -234,11 +234,31 @@ describe('Keyring', () => {
       expect(account).toBeDefined();
       expect(await keyring.getAccount(account.id)).toStrictEqual(account);
       expect(account.address).toBe(expectedAddressFromSalt);
-      expect(
+      await expect(
         keyring.createAccount({ privateKey: aaOwnerPk, salt }),
       ).rejects.toThrow(
         `[Snap] Account abstraction address already in use: ${expectedAddressFromSalt}`,
       );
+    });
+  });
+
+  describe('List Accounts', () => {
+    it('should list the created accounts', async () => {
+      const account1 = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt: '0x123',
+      });
+      const account2 = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt: '0x456',
+      });
+      const account3 = await keyring.createAccount({
+        privateKey: aaOwnerPk,
+        salt: '0x789',
+      });
+
+      const accounts = await keyring.listAccounts();
+      expect(accounts).toStrictEqual([account1, account2, account3]);
     });
   });
 
@@ -313,25 +333,20 @@ describe('Keyring', () => {
     });
   });
 
-  describe('Delete Account', () => {});
+  describe('Delete Account', () => {
+    it('should delete an account', async () => {
+      const account = await keyring.createAccount({ privateKey: aaOwnerPk });
+      await keyring.deleteAccount(account.id);
+      await expect(keyring.getAccount(account.id)).rejects.toThrow(
+        `Account '${account.id}' not found`,
+      );
+      expect(await keyring.listAccounts()).toStrictEqual([]);
+    });
 
-  describe('List Accounts', () => {
-    it('should list the created accounts', async () => {
-      const account1 = await keyring.createAccount({
-        privateKey: aaOwnerPk,
-        salt: '0x123',
-      });
-      const account2 = await keyring.createAccount({
-        privateKey: aaOwnerPk,
-        salt: '0x456',
-      });
-      const account3 = await keyring.createAccount({
-        privateKey: aaOwnerPk,
-        salt: '0x789',
-      });
-
-      const accounts = await keyring.listAccounts();
-      expect(accounts).toStrictEqual([account1, account2, account3]);
+    it('should not throw an error when trying to delete a non-existent account', async () => {
+      await expect(
+        keyring.deleteAccount('non-existent-id'),
+      ).resolves.toBeUndefined();
     });
   });
 
