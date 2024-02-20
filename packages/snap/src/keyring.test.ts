@@ -524,7 +524,7 @@ describe('Keyring', () => {
         expect(accountCode).not.toBe('0x');
       });
 
-      it.only('should throw an error if there is an account collision after deploying an account', async () => {
+      it('should throw an error if there is an account collision after deploying an account', async () => {
         await entryPoint.depositTo(aaAccount.address, {
           value: ethers.parseEther('1'),
         });
