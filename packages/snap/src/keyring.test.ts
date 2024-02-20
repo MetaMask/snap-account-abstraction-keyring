@@ -15,8 +15,10 @@ import {
   DUMMY_SIGNATURE,
   getDummyPaymasterAndData,
 } from './constants/dummy-values';
-import type { ChainConfig, KeyringState } from './keyring';
+import type { ChainConfig } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
+import * as stateManagement from './stateManagement';
+import { saveState } from './stateManagement';
 import type {
   EntryPoint,
   SimpleAccountFactory,
@@ -240,6 +242,17 @@ describe('Keyring', () => {
         `[Snap] Account abstraction address already in use: ${expectedAddressFromSalt}`,
       );
     });
+
+    it('should throw an error when saving state fails', async () => {
+      jest
+        .spyOn(stateManagement, 'saveState')
+        .mockImplementationOnce(async () => {
+          throw new Error('Failed to save state');
+        });
+      await expect(
+        keyring.createAccount({ privateKey: aaOwnerPk }),
+      ).rejects.toThrow('Failed to save state');
+    });
   });
 
   describe('List Accounts', () => {
@@ -331,6 +344,20 @@ describe('Keyring', () => {
         `[Snap] Account does not implement EIP-1271`,
       );
     });
+
+    it('should throw an error when saving state fails', async () => {
+      jest
+        .spyOn(stateManagement, 'saveState')
+        .mockImplementationOnce(async () => {
+          throw new Error('Failed to save state');
+        });
+      await expect(
+        keyring.updateAccount({
+          ...aaAccount,
+          options: { updated: true },
+        }),
+      ).rejects.toThrow('Failed to save state');
+    });
   });
 
   describe('Delete Account', () => {
@@ -347,6 +374,17 @@ describe('Keyring', () => {
       await expect(
         keyring.deleteAccount('non-existent-id'),
       ).resolves.toBeUndefined();
+    });
+
+    it('should throw an error when saving state fails', async () => {
+      jest
+        .spyOn(stateManagement, 'saveState')
+        .mockImplementationOnce(async () => {
+          throw new Error('Failed to save state');
+        });
+      await expect(keyring.deleteAccount(mockAccountId)).rejects.toThrow(
+        'Failed to save state',
+      );
     });
   });
 
