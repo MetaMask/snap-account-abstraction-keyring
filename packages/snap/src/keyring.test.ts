@@ -8,7 +8,7 @@ import type {
   KeyringAccount,
   KeyringRequest,
 } from '@metamask/keyring-api';
-import { EthMethod } from '@metamask/keyring-api';
+import { EthMethod, KeyringEvent } from '@metamask/keyring-api';
 import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import { v4 } from 'uuid';
@@ -390,80 +390,6 @@ describe('Keyring', () => {
     });
   });
 
-  describe('#getRequest', () => {
-    it('should throw an error when a request with a given ID is not found', async () => {
-      const nonExistentRequestId = 'non-existent-id';
-      await expect(keyring.getRequest(nonExistentRequestId)).rejects.toThrow(
-        `Request '${nonExistentRequestId}' not found`,
-      );
-    });
-  });
-
-  describe('#approveRequest', () => {
-    it('should throw an error if trying to approve a non-existent request', async () => {
-      const nonExistentRequestId = 'non-existent-request-id';
-      await expect(
-        keyring.approveRequest(nonExistentRequestId),
-      ).rejects.toThrow(`Request '${nonExistentRequestId}' not found`);
-    });
-  });
-
-  describe('#rejectRequest', () => {
-    it('should throw an error if trying to reject a non-existent request', async () => {
-      const nonExistentRequestId = 'non-existent-request-id';
-      await expect(keyring.rejectRequest(nonExistentRequestId)).rejects.toThrow(
-        `Request '${nonExistentRequestId}' not found`,
-      );
-    });
-  });
-
-  describe('#submitRequest', () => {
-    beforeEach(async () => {
-      await keyring.createAccount({ privateKey: aaOwnerPk });
-    });
-
-    it('should throw an error if the request method is not supported', async () => {
-      const unsupportedMethod = 'unsupported-method';
-      await expect(
-        keyring.submitRequest({
-          id: v4(),
-          scope: '',
-          account: mockAccountId,
-          request: {
-            method: unsupportedMethod,
-            params: [],
-          },
-        }),
-      ).rejects.toThrow(`EVM method '${unsupportedMethod}' not supported`);
-    });
-
-    it('should return the result of setting the config when submitting a set config request', async () => {
-      const mockConfig: ChainConfig = {
-        simpleAccountFactory: '0x07a4E8982B685EC9d706FbF21459e159A141Cfe7',
-        entryPoint: '0x15FC356a6bd6b9915322A43327B9Cc5477568e99',
-        bundlerUrl: 'https://example.com/bundler',
-        customVerifyingPaymasterPK:
-          '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
-        customVerifyingPaymasterAddress:
-          '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-      };
-
-      const requestId = v4();
-      const request: KeyringRequest = {
-        id: requestId,
-        scope: '',
-        account: mockAccountId,
-        request: {
-          method: InternalMethod.SetConfig,
-          params: [mockConfig],
-        },
-      };
-
-      const response = await keyring.submitRequest(request);
-      expect(response).toEqual({ pending: false, result: mockConfig });
-    });
-  });
-
   describe('UserOperations Methods', () => {
     let aaAccount: KeyringAccount;
     let initCode: string;
@@ -730,6 +656,117 @@ describe('Keyring', () => {
         );
         const accountCode = await provider.getCode(aaAccount.address);
         expect(accountCode).not.toBe('0x');
+      });
+    });
+  });
+
+  // TODO: Determine if pending requests can be removed from the state
+  describe.only('Request Methods', () => {
+    describe('#getRequest', () => {
+      it('should throw an error when a request with a given ID is not found', async () => {
+        const nonExistentRequestId = 'non-existent-id';
+        await expect(keyring.getRequest(nonExistentRequestId)).rejects.toThrow(
+          `Request '${nonExistentRequestId}' not found`,
+        );
+      });
+    });
+
+    describe('#approveRequest', () => {
+      let accountId: string;
+      let requestId: string;
+
+      beforeEach(async () => {
+        const account = await keyring.createAccount({ privateKey: aaOwnerPk });
+        accountId = account.id;
+        const userOperation: EthUserOperation = {
+          sender: account.address,
+          nonce: '0x00',
+          initCode: '0x',
+          callData:
+            '0xb61d27f600000000000000000000000097a0924bf222499cba5c29ea746e82f2307302930000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',
+          signature: '0x',
+          paymasterAndData: '0x',
+          callGasLimit: '0x58a83',
+          verificationGasLimit: '0xe8c4',
+          preVerificationGas: '0xc57c',
+          maxFeePerGas: '0x11',
+          maxPriorityFeePerGas: '0x11',
+        };
+
+        const request: KeyringRequest = {
+          id: v4(),
+          scope: '',
+          account: accountId,
+          request: {
+            method: EthMethod.SignUserOperation,
+            params: [userOperation],
+          },
+        };
+        requestId = request.id;
+        await keyring.submitRequest(request);
+      });
+
+      it('should throw an error if trying to approve a non-existent request', async () => {
+        const nonExistentRequestId = 'non-existent-request-id';
+        await expect(
+          keyring.approveRequest(nonExistentRequestId),
+        ).rejects.toThrow(`Request '${nonExistentRequestId}' not found`);
+      });
+    });
+
+    describe('#rejectRequest', () => {
+      it('should throw an error if trying to reject a non-existent request', async () => {
+        const nonExistentRequestId = 'non-existent-request-id';
+        await expect(
+          keyring.rejectRequest(nonExistentRequestId),
+        ).rejects.toThrow(`Request '${nonExistentRequestId}' not found`);
+      });
+    });
+
+    describe('#submitRequest', () => {
+      beforeEach(async () => {
+        await keyring.createAccount({ privateKey: aaOwnerPk });
+      });
+
+      it('should throw an error if the request method is not supported', async () => {
+        const unsupportedMethod = 'unsupported-method';
+        await expect(
+          keyring.submitRequest({
+            id: v4(),
+            scope: '',
+            account: mockAccountId,
+            request: {
+              method: unsupportedMethod,
+              params: [],
+            },
+          }),
+        ).rejects.toThrow(`EVM method '${unsupportedMethod}' not supported`);
+      });
+
+      it('should return the result of setting the config when submitting a set config request', async () => {
+        const mockConfig: ChainConfig = {
+          simpleAccountFactory: '0x07a4E8982B685EC9d706FbF21459e159A141Cfe7',
+          entryPoint: '0x15FC356a6bd6b9915322A43327B9Cc5477568e99',
+          bundlerUrl: 'https://example.com/bundler',
+          customVerifyingPaymasterPK:
+            '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
+          customVerifyingPaymasterAddress:
+            '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
+        };
+
+        const requestId = v4();
+        const request: KeyringRequest = {
+          id: requestId,
+          scope: '',
+          account: mockAccountId,
+          request: {
+            method: InternalMethod.SetConfig,
+            params: [mockConfig],
+          },
+        };
+
+        const response = await keyring.submitRequest(request);
+        expect(response).toEqual({ pending: false, result: mockConfig });
       });
     });
   });
