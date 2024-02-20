@@ -7,6 +7,7 @@ import type {
   EthUserOperation,
   KeyringAccount,
 } from '@metamask/keyring-api';
+import { EthMethod } from '@metamask/keyring-api';
 import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
@@ -241,7 +242,7 @@ describe('Keyring', () => {
     });
   });
 
-  describe('filterAccountChains', () => {
+  describe('Filter Account Chains', () => {
     it('should correctly filter out non-EVM chains', async () => {
       const chains = [
         'eip155:1',
@@ -267,6 +268,52 @@ describe('Keyring', () => {
       expect(filteredChains).toEqual(expectedFilteredChains);
     });
   });
+
+  describe('Update Account', () => {
+    let aaAccount: KeyringAccount;
+
+    beforeEach(async () => {
+      aaAccount = await keyring.createAccount({ privateKey: aaOwnerPk });
+    });
+
+    it('should update an account', async () => {
+      const updatedAccount = { ...aaAccount, options: { updated: true } };
+      await keyring.updateAccount(updatedAccount);
+      const storedAccount = await keyring.getAccount(aaAccount.id);
+      expect(storedAccount.options.updated).toBe(true);
+    });
+
+    it('should throw an error when trying to update a non-existent account', async () => {
+      const nonExistentAccount: KeyringAccount = {
+        id: 'non-existent-id',
+        options: {
+          updated: true,
+        },
+        type: 'eip155:eoa',
+        address: aaAccount.address,
+        methods: aaAccount.methods,
+      };
+      await expect(keyring.updateAccount(nonExistentAccount)).rejects.toThrow(
+        `Account 'non-existent-id' not found`,
+      );
+    });
+
+    it('should throw an error if the account does not implement EIP-1271', async () => {
+      const updatedAccount: KeyringAccount = {
+        ...aaAccount,
+        methods: [EthMethod.PersonalSign],
+      };
+      await expect(keyring.updateAccount(updatedAccount)).rejects.toThrow(
+        `[Snap] Account does not implement EIP-1271`,
+      );
+      updatedAccount.methods = [EthMethod.SignTypedDataV4];
+      await expect(keyring.updateAccount(updatedAccount)).rejects.toThrow(
+        `[Snap] Account does not implement EIP-1271`,
+      );
+    });
+  });
+
+  describe('Delete Account', () => {});
 
   describe('List Accounts', () => {
     it('should list the created accounts', async () => {
