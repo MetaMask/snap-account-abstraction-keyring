@@ -20,7 +20,6 @@ const Url = define('Url', (value) => {
 });
 
 const PrivateKey = define('PrivateKey', (value) => {
-  console.log(`isHexString: ${ethers.isHexString(value, 32)}`);
   return typeof value === 'string' && ethers.isHexString(value, 32);
 });
 

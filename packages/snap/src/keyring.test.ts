@@ -390,7 +390,7 @@ describe('Keyring', () => {
     });
   });
 
-  describe.only('#getRequest', () => {
+  describe('#getRequest', () => {
     it('should throw an error when a request with a given ID is not found', async () => {
       const nonExistentRequestId = 'non-existent-id';
       await expect(keyring.getRequest(nonExistentRequestId)).rejects.toThrow(
