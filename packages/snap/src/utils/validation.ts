@@ -20,7 +20,7 @@ const Url = define('Url', (value) => {
 });
 
 const PrivateKey = define('PrivateKey', (value) => {
-  return typeof value === 'string' && ethers.isHexString(value);
+  return typeof value === 'string' && ethers.isHexString(value, 32);
 });
 
 const ChainConfigStruct = object({
