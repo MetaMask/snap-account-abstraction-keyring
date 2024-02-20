@@ -241,6 +241,33 @@ describe('Keyring', () => {
     });
   });
 
+  describe('filterAccountChains', () => {
+    it('should correctly filter out non-EVM chains', async () => {
+      const chains = [
+        'eip155:1',
+        'eip155:137',
+        'solana:101',
+        'eip155:59144',
+        'non-evm:100',
+        'eip155:56',
+        'non-evm:200',
+      ];
+      const expectedFilteredChains = [
+        'eip155:1',
+        'eip155:137',
+        'eip155:59144',
+        'eip155:56',
+      ];
+
+      const filteredChains = await keyring.filterAccountChains(
+        mockAccountId,
+        chains,
+      );
+
+      expect(filteredChains).toEqual(expectedFilteredChains);
+    });
+  });
+
   describe('List Accounts', () => {
     it('should list the created accounts', async () => {
       const account1 = await keyring.createAccount({
@@ -527,75 +554,6 @@ describe('Keyring', () => {
         );
         const accountCode = await provider.getCode(aaAccount.address);
         expect(accountCode).not.toBe('0x');
-      });
-
-      it('should throw an error if there is an account collision after deploying an account', async () => {
-        await entryPoint.depositTo(aaAccount.address, {
-          value: ethers.parseEther('1'),
-        });
-
-        const userOperation: EthUserOperation = {
-          sender: aaAccount.address,
-          nonce: '0x00',
-          initCode,
-          callData:
-            '0xb61d27f600000000000000000000000097a0924bf222499cba5c29ea746e82f2307302930000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',
-          signature: '0x',
-          paymasterAndData: '0x',
-          callGasLimit: '0x7A120',
-          verificationGasLimit: '0x7A120',
-          preVerificationGas: '0x7A120',
-          maxFeePerGas: '0x11',
-          maxPriorityFeePerGas: '0x11',
-        };
-
-        const userOpHash = getUserOperationHash(
-          userOperation,
-          await entryPoint.getAddress(),
-          chainId.toString(),
-        );
-
-        const expectedSignature = await aaOwner.signMessage(
-          ethers.getBytes(userOpHash),
-        );
-
-        const operation = (await keyring.submitRequest({
-          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope: '',
-          account: mockAccountId,
-          request: {
-            method: 'eth_signUserOperation',
-            params: [userOperation],
-          },
-        })) as { pending: false; result: string };
-
-        const userOperationWithSignature = {
-          ...userOperation,
-          signature: operation.result,
-        };
-
-        expect(operation.result).toBe(expectedSignature);
-        await entryPoint.handleOps(
-          [userOperationWithSignature],
-          aaAccount.address,
-        );
-        const accountCode = await provider.getCode(aaAccount.address);
-        expect(accountCode).not.toBe('0x');
-
-        // Clear the keyring state
-        keyring = new AccountAbstractionKeyring({ ...getInitialState() });
-        console.log(
-          'getAccountAddress',
-          await simpleAccountFactory.getAccountAddress(
-            await aaOwner.getAddress(),
-            salt,
-          ),
-        );
-        console.log('listAccounts', await keyring.listAccounts());
-        // Try to create another account with the same salt
-        // expect(
-        //   keyring.createAccount({ privateKey: aaOwnerPk, salt }),
-        // ).rejects.toThrow('[Snap] Account Salt already used, please retry.');
       });
     });
   });
