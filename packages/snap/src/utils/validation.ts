@@ -1,7 +1,8 @@
+import { exactOptional } from '@metamask/keyring-api';
 import type { Hex } from '@metamask/utils';
 import { isValidHexAddress } from '@metamask/utils';
 import { ethers } from 'ethers';
-import { assert, define, object, optional, StructError } from 'superstruct';
+import { assert, define, object, StructError } from 'superstruct';
 
 import { throwError } from './util';
 import { CONFIG_ERROR_MESSAGES, CONFIG_KEYS } from '../constants/chainConfig';
@@ -23,11 +24,12 @@ const PrivateKey = define('PrivateKey', (value) => {
 });
 
 const ChainConfigStruct = object({
-  [CONFIG_KEYS.SIMPLE_ACCOUNT_FACTORY]: optional(EthereumAddress),
-  [CONFIG_KEYS.ENTRY_POINT]: optional(EthereumAddress),
-  [CONFIG_KEYS.BUNDLER_URL]: optional(Url),
-  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_ADDRESS]: optional(EthereumAddress),
-  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_PK]: optional(PrivateKey),
+  [CONFIG_KEYS.SIMPLE_ACCOUNT_FACTORY]: exactOptional(EthereumAddress),
+  [CONFIG_KEYS.ENTRY_POINT]: exactOptional(EthereumAddress),
+  [CONFIG_KEYS.BUNDLER_URL]: exactOptional(Url),
+  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_ADDRESS]:
+    exactOptional(EthereumAddress),
+  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_PK]: exactOptional(PrivateKey),
 });
 
 /**
