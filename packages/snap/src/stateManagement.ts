@@ -6,7 +6,6 @@ import { logger } from './logger';
  */
 const defaultState: KeyringState = {
   wallets: {},
-  pendingRequests: {},
   config: {},
 };
 

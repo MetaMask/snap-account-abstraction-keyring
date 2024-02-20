@@ -55,7 +55,6 @@ global.snap = {
 
 const defaultState: KeyringState = {
   wallets: {},
-  pendingRequests: {},
   config: {},
 };
 
@@ -98,7 +97,6 @@ describe('Keyring', () => {
     it('should create a new keyring with default state', async () => {
       expect(keyring).toBeDefined();
       expect(await keyring.listAccounts()).toStrictEqual([]);
-      expect(await keyring.listRequests()).toStrictEqual([]);
     });
   });
 
