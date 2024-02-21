@@ -664,6 +664,21 @@ describe('Keyring', () => {
       ).rejects.toThrow(`EVM method '${unsupportedMethod}' not supported`);
     });
 
+    it('should throw an error if the account does not exist', async () => {
+      const accountId = 'non-existent-id';
+      await expect(
+        keyring.submitRequest({
+          id: v4(),
+          scope: '',
+          account: accountId,
+          request: {
+            method: 'eth_signUserOperation',
+            params: [],
+          },
+        }),
+      ).rejects.toThrow(`Account '${accountId}' not found`);
+    });
+
     it('should return the result of setting the config when submitting a set config request', async () => {
       const mockConfig: ChainConfig = {
         simpleAccountFactory: '0x07a4E8982B685EC9d706FbF21459e159A141Cfe7',
