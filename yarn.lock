@@ -4257,6 +4257,7 @@ __metadata:
     prettier: ^2.2.1
     rimraf: ^3.0.2
     solidity-coverage: ^0.8.1
+    superstruct: ^1.0.3
     ts-node: ^10.9.2
     typechain: ^8.3.2
     typescript: ^5.3.3

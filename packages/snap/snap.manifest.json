@@ -7,7 +7,7 @@
     "url": "git+https://github.com/MetaMask/snap-account-abstraction-keyring.git"
   },
   "source": {
-    "shasum": "pt02N6pkR03Z5R//e9KzAHQG4DDycIHqqzfC2LXedTA=",
+    "shasum": "jch88YWKcCJUXlB6Oi7CJ4pmX7MRcF/hRXatY4qH/m8=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",

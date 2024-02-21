@@ -11,8 +11,8 @@ import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
 import {
-  getDummyPaymasterAndData,
   DUMMY_SIGNATURE,
+  getDummyPaymasterAndData,
 } from './constants/dummy-values';
 import type { ChainConfig, KeyringState } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
@@ -103,15 +103,20 @@ describe('Keyring', () => {
   });
 
   describe('Set Config', () => {
-    const config: ChainConfig = {
-      simpleAccountFactory: '0x97a0924bf222499cBa5C29eA746E82F230730293',
-      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-      bundlerUrl: 'https://bundler.example.com/rpc',
-      customVerifyingPaymasterPK: aaOwnerPk,
-      customVerifyingPaymasterAddress:
-        '0x123456789ABCDEF0123456789ABCDEF012345678',
-    };
-    it('should not set the config without a valid config', async () => {
+    let config: ChainConfig;
+
+    beforeEach(async () => {
+      config = {
+        simpleAccountFactory: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+        entryPoint: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+        bundlerUrl: 'https://bundler.example.com/rpc',
+        customVerifyingPaymasterPK: aaOwnerPk,
+        customVerifyingPaymasterAddress:
+          '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+      };
+    });
+
+    it('should not set the config with an invalid simpleAccountFactory address', async () => {
       const invalidConfig: ChainConfig = {
         ...config,
         simpleAccountFactory: '0xNotAnAddress',
@@ -121,26 +126,45 @@ describe('Keyring', () => {
           invalidConfig.simpleAccountFactory as string
         }`,
       );
-      invalidConfig.simpleAccountFactory = config.simpleAccountFactory!;
-      invalidConfig.entryPoint = '0xNotAnAddress';
+    });
+    it('should not set the config with an invalid entryPoint address', async () => {
+      const invalidConfig: ChainConfig = {
+        ...config,
+        entryPoint: '0xNotAnAddress',
+      };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid EntryPoint Address: ${invalidConfig.entryPoint}`,
+        `[Snap] Invalid Entry Point Address: ${
+          invalidConfig.entryPoint as string
+        }`,
       );
-      invalidConfig.entryPoint = config.entryPoint!;
-      invalidConfig.customVerifyingPaymasterAddress = '0xNotAnAddress';
+    });
+    it('should not set the config with an invalid customVerifyingPaymasterAddress', async () => {
+      const invalidConfig: ChainConfig = {
+        ...config,
+        customVerifyingPaymasterAddress: '0xNotAnAddress',
+      };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Verifying Paymaster Address: ${invalidConfig.customVerifyingPaymasterAddress}`,
+        `[Snap] Invalid Custom Verifying Paymaster Address: ${
+          invalidConfig.customVerifyingPaymasterAddress as string
+        }`,
       );
-      invalidConfig.customVerifyingPaymasterAddress =
-        config.customVerifyingPaymasterAddress!;
-      invalidConfig.bundlerUrl = 'https:/invalid.fake.io';
+    });
+    it('should not set the config with an invalid bundlerUrl', async () => {
+      const invalidConfig: ChainConfig = {
+        ...config,
+        bundlerUrl: 'https:/invalid.fake.io',
+      };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Bundler URL: ${invalidConfig.bundlerUrl}`,
+        `[Snap] Invalid Bundler URL: ${invalidConfig.bundlerUrl as string}`,
       );
-      invalidConfig.bundlerUrl = config.bundlerUrl!;
-      invalidConfig.customVerifyingPaymasterPK = '123NotAPrivateKey456';
+    });
+    it('should not set the config with an invalid customVerifyingPaymasterPK', async () => {
+      const invalidConfig: ChainConfig = {
+        ...config,
+        customVerifyingPaymasterPK: '123NotAPrivateKey456',
+      };
       await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Verifying Paymaster Private Key`,
+        `[Snap] Invalid Custom Verifying Paymaster Private Key`,
       );
     });
     it('should set the config', async () => {
@@ -163,11 +187,15 @@ describe('Keyring', () => {
     });
 
     it('should create a new account with salt', async () => {
+      const salt = '0x123';
       const expectedAddressFromSalt =
-        '0x8D621f402F41496807679509521f24a9B3670D2d';
+        await simpleAccountFactory.getAccountAddress(
+          await aaOwner.getAddress(),
+          salt,
+        );
       const account = await keyring.createAccount({
         privateKey: aaOwnerPk,
-        salt: '0x123',
+        salt,
       });
       expect(account).toBeDefined();
       expect(await keyring.getAccount(account.id)).toStrictEqual(account);
