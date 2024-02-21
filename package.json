@@ -1,6 +1,6 @@
 {
-  "name": "@metamask/snap-account-abstraction-keyring",
-  "version": "0.2.1",
+  "name": "@metamask/snap-account-abstraction-keyring-monorepo",
+  "version": "0.2.2",
   "private": true,
   "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
   "keywords": [
@@ -27,9 +27,9 @@
   "scripts": {
     "build": "yarn workspaces foreach --parallel --verbose --topological run build",
     "build:dapp": "yarn workspace @metamask/snap-account-abstraction-keyring-site build",
-    "build:snap": "yarn workspace @metamask/snap-account-abstraction-keyring-snap build",
+    "build:snap": "yarn workspace @metamask/snap-account-abstraction-keyring build",
     "build:docs": "typedoc",
-    "postinstall": "yarn workspace @metamask/snap-account-abstraction-keyring-snap compile",
+    "postinstall": "yarn workspace @metamask/snap-account-abstraction-keyring compile",
     "lint": "yarn workspaces foreach --parallel --verbose run lint",
     "lint:deps": "yarn workspaces foreach --parallel --verbose run depcheck",
     "lint:eslint": "yarn workspaces foreach --parallel --verbose run lint:eslint",
