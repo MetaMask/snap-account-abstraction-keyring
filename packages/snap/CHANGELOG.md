@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Update chain config validation logic ([#20](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/20))
+- Bump @metamask/snaps-sdk from 2.0.0 to 2.1.0 ([#37](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/37))
 
 ## [0.2.1]
 
