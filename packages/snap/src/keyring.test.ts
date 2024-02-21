@@ -156,6 +156,7 @@ describe('Keyring', () => {
     it('should set the config', async () => {
       const keyringConfig = await keyring.setConfig(config);
       expect(keyringConfig).toStrictEqual(config);
+    });
   });
 
   describe('Create Account', () => {
