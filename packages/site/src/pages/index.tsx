@@ -40,7 +40,6 @@ const Index = () => {
   const [salt, setSalt] = useState<string | null>();
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
-  const [requestId, setRequestId] = useState<string | null>(null);
   // UserOp method state
   const [chainConfig, setChainConfigObject] = useState<string | null>();
 
@@ -57,7 +56,6 @@ const Index = () => {
         return;
       }
       const accounts = await client.listAccounts();
-      const pendingRequests = await client.listRequests();
       setSnapState({
         accounts,
       });
