@@ -229,6 +229,13 @@ describe('Keyring', () => {
       );
     });
 
+    it('should not create an account with an invalid private key', async () => {
+      const invalidPrivateKey = '123NotAPrivateKey456';
+      await expect(
+        keyring.createAccount({ privateKey: invalidPrivateKey }),
+      ).rejects.toThrow(`Invalid private key`);
+    });
+
     it('should throw an error when saving state fails', async () => {
       jest
         .spyOn(stateManagement, 'saveState')
