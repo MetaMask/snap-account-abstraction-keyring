@@ -74,7 +74,6 @@ export type ChainConfig = {
 
 export type KeyringState = {
   wallets: Record<string, Wallet>;
-  pendingRequests: Record<string, KeyringRequest>;
   config: Record<number, ChainConfig>;
 };
 
@@ -298,27 +297,6 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   /**
-   * List all pending requests.
-   *
-   * @returns A list of pending requests.
-   */
-  async listRequests(): Promise<KeyringRequest[]> {
-    return Object.values(this.#state.pendingRequests);
-  }
-
-  /**
-   * Get a pending request by its ID.
-   *
-   * @param id - The ID of the request to retrieve.
-   * @returns The pending request with the given ID.
-   */
-  async getRequest(id: string): Promise<KeyringRequest> {
-    return (
-      this.#state.pendingRequests[id] ?? throwError(`Request '${id}' not found`)
-    );
-  }
-
-  /**
    * Submit a request to the keyring.
    *
    * @param request - The keyring request to submit.
@@ -326,47 +304,6 @@ export class AccountAbstractionKeyring implements Keyring {
    */
   async submitRequest(request: KeyringRequest): Promise<SubmitRequestResponse> {
     return this.#syncSubmitRequest(request);
-  }
-
-  /**
-   * Approve a pending request.
-   *
-   * @param id - The ID of the keyring request to approve.
-   * @throws If the request is not found.
-   */
-  async approveRequest(id: string): Promise<void> {
-    const { account, request } =
-      this.#state.pendingRequests[id] ??
-      throwError(`Request '${id}' not found`);
-
-    const result = await this.#handleSigningRequest({
-      account: this.#getWalletById(account).account,
-      method: request.method,
-      params: request.params ?? [],
-    });
-
-    await this.#removePendingRequest(id);
-    await this.#emitEvent(KeyringEvent.RequestApproved, { id, result });
-  }
-
-  /**
-   * Reject a pending request.
-   *
-   * @param id - The ID of the keyring request to reject.
-   * @throws If the request is not found.
-   */
-  async rejectRequest(id: string): Promise<void> {
-    if (this.#state.pendingRequests[id] === undefined) {
-      throw new Error(`Request '${id}' not found`);
-    }
-
-    await this.#removePendingRequest(id);
-    await this.#emitEvent(KeyringEvent.RequestRejected, { id });
-  }
-
-  async #removePendingRequest(id: string): Promise<void> {
-    delete this.#state.pendingRequests[id];
-    await this.#saveState();
   }
 
   async #syncSubmitRequest(
