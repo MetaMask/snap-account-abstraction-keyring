@@ -116,43 +116,37 @@ describe('Keyring', () => {
       };
     });
 
-    const testCases = [
-      {
-        field: 'simpleAccountFactory',
-        value: '0xNotAnAddress',
-        errorMessage: 'Invalid Simple Account Factory Address',
-      },
-      {
-        field: 'entryPoint',
-        value: '0xNotAnAddress',
-        errorMessage: 'Invalid Entry Point Address',
-      },
-      {
-        field: 'customVerifyingPaymasterAddress',
-        value: '0xNotAnAddress',
-        errorMessage: 'Invalid Custom Verifying Paymaster Address',
-      },
-      {
-        field: 'bundlerUrl',
-        value: 'https:/invalid.fake.io',
-        errorMessage: 'Invalid Bundler URL',
-      },
-      {
-        field: 'customVerifyingPaymasterPK',
-        value: '123NotAPrivateKey456',
-        errorMessage: 'Invalid Custom Verifying Paymaster Private Key',
-      },
-    ];
+describe('Set Config', () => {
+  let config: ChainConfig;
 
-    testCases.forEach(({ field, value, errorMessage }) => {
-      it(`should not set the config with an invalid ${field}`, async () => {
-        const invalidConfig = { ...config, [field]: value };
-        await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-          `[Snap] ${errorMessage}: ${value}`,
-        );
-      });
-    });
+  beforeEach(async () => {
+    config = {
+      simpleAccountFactory: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+      entryPoint: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+      bundlerUrl: 'https://bundler.example.com/rpc',
+      customVerifyingPaymasterPK: aaOwnerPk,
+      customVerifyingPaymasterAddress: '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
+    };
+  });
 
+  const testCases = [
+    ['simpleAccountFactory', '0xNotAnAddress', 'Invalid Simple Account Factory Address'],
+    ['entryPoint', '0xNotAnAddress', 'Invalid Entry Point Address'],
+    ['customVerifyingPaymasterAddress', '0xNotAnAddress', 'Invalid Custom Verifying Paymaster Address'],
+    ['bundlerUrl', 'https:/invalid.fake.io', 'Invalid Bundler URL'],
+    ['customVerifyingPaymasterPK', '123NotAPrivateKey456', 'Invalid Custom Verifying Paymaster Private Key'],
+  ];
+
+  it.each(testCases)('should not set the config with an invalid %s', async (field, value, errorMessage) => {
+    const invalidConfig = { ...config, [field]: value };
+    await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(`[Snap] ${errorMessage}: ${value}`);
+  });
+
+  it('should set the config', async () => {
+    const keyringConfig = await keyring.setConfig(config);
+    expect(keyringConfig).toStrictEqual(config);
+  });
+});
     it('should set the config', async () => {
       const keyringConfig = await keyring.setConfig(config);
       expect(keyringConfig).toStrictEqual(config);
