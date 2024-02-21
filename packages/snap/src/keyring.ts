@@ -53,6 +53,7 @@ import {
   runSensitive,
   throwError,
 } from './utils/util';
+import { validateConfig } from './utils/validation';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -73,6 +74,7 @@ export type ChainConfig = {
 
 export type KeyringState = {
   wallets: Record<string, Wallet>;
+  pendingRequests: Record<string, KeyringRequest>;
   config: Record<number, ChainConfig>;
 };
 
@@ -92,50 +94,18 @@ export class AccountAbstractionKeyring implements Keyring {
     this.#state = state;
   }
 
+  /**
+   * Set the configuration options for the current chain.
+   *
+   * @param config - The configuration to set.
+   * @throws If the configuration is invalid.
+   * @returns The updated configuration for the current chain.
+   */
   async setConfig(config: ChainConfig): Promise<ChainConfig> {
     const { chainId } = await provider.getNetwork();
-    if (
-      config.simpleAccountFactory &&
-      !ethers.isAddress(config.simpleAccountFactory)
-    ) {
-      throwError(
-        `[Snap] Invalid Simple Account Factory Address: ${String(
-          config.simpleAccountFactory,
-        )}`,
-      );
-    }
-    if (config.entryPoint && !ethers.isAddress(config.entryPoint)) {
-      throwError(
-        `[Snap] Invalid EntryPoint Address: ${String(config.entryPoint)}`,
-      );
-    }
-    if (
-      config.customVerifyingPaymasterAddress &&
-      !ethers.isAddress(config.customVerifyingPaymasterAddress)
-    ) {
-      throwError(
-        `[Snap] Invalid Verifying Paymaster Address: ${String(
-          config.customVerifyingPaymasterAddress,
-        )}`,
-      );
-    }
-    const bundlerUrlRegex =
-      /^(https?:\/\/)?[\w\\.-]+(:\d{2,6})?(\/[\\/\w \\.-]*)?(\?[\\/\w .\-=]*)?$/u;
-    if (config.bundlerUrl && !bundlerUrlRegex.test(config.bundlerUrl)) {
-      throwError(`[Snap] Invalid Bundler URL: ${config.bundlerUrl}`);
-    }
-    if (config.customVerifyingPaymasterPK) {
-      try {
-        // eslint-disable-next-line no-new -- doing this to validate the pk
-        new ethers.Wallet(config.customVerifyingPaymasterPK);
-      } catch (error) {
-        throwError(
-          `[Snap] Invalid Verifying Paymaster Private Key: ${
-            (error as Error).message
-          }`,
-        );
-      }
-    }
+
+    validateConfig(config);
+
     this.#state.config[Number(chainId)] = {
       ...this.#state.config[Number(chainId)],
       ...config,
@@ -145,10 +115,22 @@ export class AccountAbstractionKeyring implements Keyring {
     return this.#state.config[Number(chainId)]!;
   }
 
+  /**
+   * List all accounts in the keyring.
+   *
+   * @returns A list of accounts.
+   */
   async listAccounts(): Promise<KeyringAccount[]> {
     return Object.values(this.#state.wallets).map((wallet) => wallet.account);
   }
 
+  /**
+   * Get an account by its ID.
+   *
+   * @param id - The ID of the account to retrieve.
+   * @throws If the account is not found.
+   * @returns The keyring account with the given ID.
+   */
   async getAccount(id: string): Promise<KeyringAccount> {
     return (
       this.#state.wallets[id]?.account ??
@@ -156,6 +138,14 @@ export class AccountAbstractionKeyring implements Keyring {
     );
   }
 
+  /**
+   * Create a new smart contract keyring account.
+   * Private key is required to create an account.
+   *
+   * @param options - The options to use when creating the account (e.g. salt).
+   * @throws If the private key is not provided or if the account already exists.
+   * @returns The new keyring account.
+   */
   async createAccount(
     options: Record<string, Json> = {},
   ): Promise<KeyringAccount> {
@@ -241,12 +231,25 @@ export class AccountAbstractionKeyring implements Keyring {
     }
   }
 
+  /**
+   * Filter the EVM chains that an account can be used with.
+   *
+   * @param _id - The ID of the account to filter chains for.
+   * @param chains - CAIP-2 chain IDs to filter.
+   * @returns The filtered list of EVM chains.
+   */
   async filterAccountChains(_id: string, chains: string[]): Promise<string[]> {
     // The `id` argument is not used because all accounts created by this snap
     // are expected to be compatible with any EVM chain.
     return chains.filter((chain) => isEvmChain(chain));
   }
 
+  /**
+   * Update a keyring account.
+   *
+   * @param account - The account to update.
+   * @throws if the account does not exist or if the account does not implement EIP-1271.
+   */
   async updateAccount(account: KeyringAccount): Promise<void> {
     const wallet =
       this.#state.wallets[account.id] ??
@@ -276,6 +279,11 @@ export class AccountAbstractionKeyring implements Keyring {
     }
   }
 
+  /**
+   * Delete a keyring account.
+   *
+   * @param id - The ID of the account to delete.
+   */
   async deleteAccount(id: string): Promise<void> {
     try {
       await this.#emitEvent(KeyringEvent.AccountDeleted, { id });
@@ -286,8 +294,76 @@ export class AccountAbstractionKeyring implements Keyring {
     }
   }
 
+  /**
+   * List all pending requests.
+   *
+   * @returns A list of pending requests.
+   */
+  async listRequests(): Promise<KeyringRequest[]> {
+    return Object.values(this.#state.pendingRequests);
+  }
+
+  /**
+   * Get a pending request by its ID.
+   *
+   * @param id - The ID of the request to retrieve.
+   * @returns The pending request with the given ID.
+   */
+  async getRequest(id: string): Promise<KeyringRequest> {
+    return (
+      this.#state.pendingRequests[id] ?? throwError(`Request '${id}' not found`)
+    );
+  }
+
+  /**
+   * Submit a request to the keyring.
+   *
+   * @param request - The keyring request to submit.
+   * @returns The response to the request.
+   */
   async submitRequest(request: KeyringRequest): Promise<SubmitRequestResponse> {
     return this.#syncSubmitRequest(request);
+  }
+
+  /**
+   * Approve a pending request.
+   *
+   * @param id - The ID of the keyring request to approve.
+   * @throws If the request is not found.
+   */
+  async approveRequest(id: string): Promise<void> {
+    const { account, request } =
+      this.#state.pendingRequests[id] ??
+      throwError(`Request '${id}' not found`);
+
+    const result = await this.#handleSigningRequest({
+      account: this.#getWalletById(account).account,
+      method: request.method,
+      params: request.params ?? [],
+    });
+
+    await this.#removePendingRequest(id);
+    await this.#emitEvent(KeyringEvent.RequestApproved, { id, result });
+  }
+
+  /**
+   * Reject a pending request.
+   *
+   * @param id - The ID of the keyring request to reject.
+   * @throws If the request is not found.
+   */
+  async rejectRequest(id: string): Promise<void> {
+    if (this.#state.pendingRequests[id] === undefined) {
+      throw new Error(`Request '${id}' not found`);
+    }
+
+    await this.#removePendingRequest(id);
+    await this.#emitEvent(KeyringEvent.RequestRejected, { id });
+  }
+
+  async #removePendingRequest(id: string): Promise<void> {
+    delete this.#state.pendingRequests[id];
+    await this.#saveState();
   }
 
   async #syncSubmitRequest(
