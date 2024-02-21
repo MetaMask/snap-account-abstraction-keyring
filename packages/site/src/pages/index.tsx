@@ -16,7 +16,7 @@ import { defaultSnapOrigin } from '../config';
 import { MetamaskActions, MetaMaskContext } from '../hooks';
 import { InputType } from '../types';
 import type { KeyringState } from '../utils';
-import { connectSnap, getSnap, isSynchronousMode } from '../utils';
+import { connectSnap, getSnap } from '../utils';
 
 const snapId = defaultSnapOrigin;
 
@@ -58,11 +58,8 @@ const Index = () => {
       }
       const accounts = await client.listAccounts();
       const pendingRequests = await client.listRequests();
-      const isSynchronous = await isSynchronousMode();
       setSnapState({
         accounts,
-        pendingRequests,
-        useSynchronousApprovals: isSynchronous,
       });
     }
 
@@ -100,7 +97,6 @@ const Index = () => {
     await syncAccounts();
   };
 
-  // UserOp methods (default to send from first AA account created)
   const setChainConfig = async () => {
     if (!chainConfig) {
       return;
@@ -131,16 +127,6 @@ const Index = () => {
       dispatch({ type: MetamaskActions.SetError, payload: error });
     }
   };
-
-  // Note: not using this for now
-  // const handleUseSyncToggle = useCallback(async () => {
-  //   console.log('Toggling synchronous approval');
-  //   await toggleSynchronousApprovals();
-  //   setSnapState({
-  //     ...snapState,
-  //     useSynchronousApprovals: !snapState.useSynchronousApprovals,
-  //   });
-  // }, [snapState]);
 
   const userOpMethods = [
     {
@@ -283,85 +269,6 @@ const Index = () => {
     },
   ];
 
-  const requestMethods = [
-    {
-      name: 'Get request',
-      description: 'Get a pending request by ID',
-      inputs: [
-        {
-          id: 'get-request-request-id',
-          title: 'Request ID',
-          type: InputType.TextField,
-          placeholder: 'E.g. e5156958-16ad-4d5d-9dcd-6a8ba1d34906',
-          onChange: (event: any) => setRequestId(event.currentTarget.value),
-        },
-      ],
-      action: {
-        enabled: Boolean(requestId),
-        callback: async () => await client.getRequest(requestId as string),
-        label: 'Get Request',
-      },
-    },
-    {
-      name: 'List requests',
-      description: 'List pending requests',
-      action: {
-        disabled: false,
-        callback: async () => {
-          const requests = await client.listRequests();
-          setSnapState({
-            ...snapState,
-            pendingRequests: requests,
-          });
-          return requests;
-        },
-        label: 'List Requests',
-      },
-    },
-    {
-      name: 'Approve request',
-      description: 'Approve a pending request by ID',
-      inputs: [
-        {
-          id: 'approve-request-request-id',
-          title: 'Request ID',
-          type: InputType.TextField,
-          placeholder: 'E.g. 6fcbe1b5-f250-452c-8114-683dfa5ea74d',
-          onChange: (event: any) => {
-            setRequestId(event.currentTarget.value);
-          },
-        },
-      ],
-      action: {
-        disabled: !requestId,
-        callback: async () => await client.approveRequest(requestId as string),
-        label: 'Approve Request',
-      },
-      successMessage: 'Request approved',
-    },
-    {
-      name: 'Reject request',
-      description: 'Reject a pending request by ID',
-      inputs: [
-        {
-          id: 'reject-request-request-id',
-          title: 'Request ID',
-          type: InputType.TextField,
-          placeholder: 'E.g. 424ad2ee-56cf-493e-af82-cee79c591117',
-          onChange: (event: any) => {
-            setRequestId(event.currentTarget.value);
-          },
-        },
-      ],
-      action: {
-        disabled: !requestId,
-        callback: async () => await client.rejectRequest(requestId as string),
-        label: 'Reject Request',
-      },
-      successMessage: 'Request Rejected',
-    },
-  ];
-
   return (
     <Container>
       <CardContainer>
@@ -386,23 +293,11 @@ const Index = () => {
       <StyledBox sx={{ flexGrow: 1 }}>
         <Grid container spacing={4} columns={[1, 2, 3]}>
           <Grid item xs={8} sm={4} md={2}>
-            {/* Not using this for now*/}
-            {/* <DividerTitle>Options</DividerTitle>*/}
-            {/* <Toggle*/}
-            {/*  title="Use Synchronous Approval"*/}
-            {/*  defaultChecked={snapState.useSynchronousApprovals}*/}
-            {/*  onToggle={handleUseSyncToggle}*/}
-            {/*  enabled={Boolean(state.installedSnap)}*/}
-            {/*/ >*/}
-            {/* <Divider>&nbsp;</Divider>*/}
             <DividerTitle>Methods</DividerTitle>
             <Accordion items={accountManagementMethods} />
             <Divider />
             <DividerTitle>UserOp Methods</DividerTitle>
             <Accordion items={userOpMethods} />
-            <Divider />
-            <DividerTitle>Request Methods</DividerTitle>
-            <Accordion items={requestMethods} />
             <Divider />
           </Grid>
           <Grid item xs={4} sm={2} md={1}>
