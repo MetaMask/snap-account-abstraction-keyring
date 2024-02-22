@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable camelcase */
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 
 import { VerifyingPaymaster__factory } from '../src/types';
 
@@ -17,7 +17,9 @@ async function main() {
     deployer!.address,
   );
 
-  console.log('Verifying Signer deployed to:', contract.target);
+  console.log(
+    `\nVerifying Signer deployed to ${network.name} network\nAddress: ${contract.target}\n`,
+  );
 }
 
 main().catch((error) => {

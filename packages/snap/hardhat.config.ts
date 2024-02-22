@@ -9,6 +9,7 @@ import type { NetworkUserConfig } from 'hardhat/types';
 
 const { MNEMONIC } = process.env;
 const { INFURA_PROJECT_ID } = process.env;
+const { ETHERSCAN_API_KEY } = process.env;
 
 const networks: Record<string, NetworkUserConfig> = {
   hardhat: {
@@ -23,9 +24,59 @@ const networks: Record<string, NetworkUserConfig> = {
 if (MNEMONIC && INFURA_PROJECT_ID) {
   networks.sepolia = {
     url: `https://sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
-    accounts: {
-      mnemonic: MNEMONIC,
-    },
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.goerli = {
+    url: `https://goerli.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.arbitrumGoerli = {
+    url: `https://arbitrum-goerli.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.arbitrumSepolia = {
+    url: `https://arbitrum-sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.avalancheFuji = {
+    url: `https://avalanche-fuji.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.baseGoerli = {
+    url: `https://base-goerli.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.baseSepolia = {
+    url: `https://base-sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.celoAlfajores = {
+    url: `https://celo-alfajores.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.lineaGoerli = {
+    url: `https://linea-goerli.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.optimismSepolia = {
+    url: `https://optimism-sepolia.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.palmTestnet = {
+    url: `https://palm-testnet.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.polygonAmoy = {
+    url: `https://polygon-amoy.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.polygonMumbai = {
+    url: `https://polygon-mumbai.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
+  };
+  networks.starknetGoerli = {
+    url: `https://starknet-goerli.infura.io/v3/${INFURA_PROJECT_ID}`,
+    accounts: { mnemonic: MNEMONIC },
   };
 }
 
@@ -47,6 +98,15 @@ const config: HardhatUserConfig = {
     dontOverrideCompile: false, // defaults to false
   },
   networks,
+  sourcify: {
+    enabled: true,
+  },
 };
+
+if (ETHERSCAN_API_KEY) {
+  config.etherscan = {
+    apiKey: ETHERSCAN_API_KEY,
+  };
+}
 
 export default config;

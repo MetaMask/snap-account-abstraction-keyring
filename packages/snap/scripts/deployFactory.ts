@@ -1,5 +1,5 @@
 /* eslint-disable camelcase */
-import { ethers } from 'hardhat';
+import { ethers, network } from 'hardhat';
 
 import { SimpleAccountFactory__factory } from '../src/types';
 
@@ -16,7 +16,11 @@ async function main() {
     '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
   );
 
-  console.log('SimpleAccountFactory deployed to:', contract.target);
+  const networkName = network.name;
+
+  console.log(
+    `\nSimpleAccountFactory deployed to ${networkName} network\nAddress: ${contract.target}\n`,
+  );
 }
 
 main().catch((error) => {
