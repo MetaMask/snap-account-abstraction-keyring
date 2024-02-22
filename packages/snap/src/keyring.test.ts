@@ -11,8 +11,8 @@ import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 
 import {
-  getDummyPaymasterAndData,
   DUMMY_SIGNATURE,
+  getDummyPaymasterAndData,
 } from './constants/dummy-values';
 import type { ChainConfig, KeyringState } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
@@ -55,7 +55,6 @@ global.snap = {
 
 const defaultState: KeyringState = {
   wallets: {},
-  pendingRequests: {},
   config: {},
 };
 
@@ -98,51 +97,60 @@ describe('Keyring', () => {
     it('should create a new keyring with default state', async () => {
       expect(keyring).toBeDefined();
       expect(await keyring.listAccounts()).toStrictEqual([]);
-      expect(await keyring.listRequests()).toStrictEqual([]);
     });
   });
 
   describe('Set Config', () => {
-    const config: ChainConfig = {
-      simpleAccountFactory: '0x97a0924bf222499cBa5C29eA746E82F230730293',
-      entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-      bundlerUrl: 'https://bundler.example.com/rpc',
-      customVerifyingPaymasterPK: aaOwnerPk,
-      customVerifyingPaymasterAddress:
-        '0x123456789ABCDEF0123456789ABCDEF012345678',
-    };
-    it('should not set the config without a valid config', async () => {
-      const invalidConfig: ChainConfig = {
-        ...config,
-        simpleAccountFactory: '0xNotAnAddress',
+    let config: ChainConfig;
+
+    beforeEach(async () => {
+      config = {
+        simpleAccountFactory: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+        entryPoint: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
+        bundlerUrl: 'https://bundler.example.com/rpc',
+        customVerifyingPaymasterPK: aaOwnerPk,
+        customVerifyingPaymasterAddress:
+          '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
       };
-      await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Simple Account Factory Address: ${
-          invalidConfig.simpleAccountFactory as string
-        }`,
-      );
-      invalidConfig.simpleAccountFactory = config.simpleAccountFactory!;
-      invalidConfig.entryPoint = '0xNotAnAddress';
-      await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid EntryPoint Address: ${invalidConfig.entryPoint}`,
-      );
-      invalidConfig.entryPoint = config.entryPoint!;
-      invalidConfig.customVerifyingPaymasterAddress = '0xNotAnAddress';
-      await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Verifying Paymaster Address: ${invalidConfig.customVerifyingPaymasterAddress}`,
-      );
-      invalidConfig.customVerifyingPaymasterAddress =
-        config.customVerifyingPaymasterAddress!;
-      invalidConfig.bundlerUrl = 'https:/invalid.fake.io';
-      await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Bundler URL: ${invalidConfig.bundlerUrl}`,
-      );
-      invalidConfig.bundlerUrl = config.bundlerUrl!;
-      invalidConfig.customVerifyingPaymasterPK = '123NotAPrivateKey456';
-      await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
-        `[Snap] Invalid Verifying Paymaster Private Key`,
-      );
     });
+
+    const testCases = [
+      {
+        field: 'simpleAccountFactory',
+        value: '0xNotAnAddress',
+        errorMessage: 'Invalid Simple Account Factory Address',
+      },
+      {
+        field: 'entryPoint',
+        value: '0xNotAnAddress',
+        errorMessage: 'Invalid Entry Point Address',
+      },
+      {
+        field: 'customVerifyingPaymasterAddress',
+        value: '0xNotAnAddress',
+        errorMessage: 'Invalid Custom Verifying Paymaster Address',
+      },
+      {
+        field: 'bundlerUrl',
+        value: 'https:/invalid.fake.io',
+        errorMessage: 'Invalid Bundler URL',
+      },
+      {
+        field: 'customVerifyingPaymasterPK',
+        value: '123NotAPrivateKey456',
+        errorMessage: 'Invalid Custom Verifying Paymaster Private Key',
+      },
+    ];
+
+    testCases.forEach(({ field, value, errorMessage }) => {
+      it(`should not set the config with an invalid ${field}`, async () => {
+        const invalidConfig = { ...config, [field]: value };
+        await expect(keyring.setConfig(invalidConfig)).rejects.toThrow(
+          `[Snap] ${errorMessage}: ${value}`,
+        );
+      });
+    });
+
     it('should set the config', async () => {
       const keyringConfig = await keyring.setConfig(config);
       expect(keyringConfig).toStrictEqual(config);
@@ -163,11 +171,15 @@ describe('Keyring', () => {
     });
 
     it('should create a new account with salt', async () => {
+      const salt = '0x123';
       const expectedAddressFromSalt =
-        '0x8D621f402F41496807679509521f24a9B3670D2d';
+        await simpleAccountFactory.getAccountAddress(
+          await aaOwner.getAddress(),
+          salt,
+        );
       const account = await keyring.createAccount({
         privateKey: aaOwnerPk,
-        salt: '0x123',
+        salt,
       });
       expect(account).toBeDefined();
       expect(await keyring.getAccount(account.id)).toStrictEqual(account);
