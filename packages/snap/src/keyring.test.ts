@@ -52,7 +52,7 @@ jest.mock('../src/utils/ethers', () => ({
 jest.mock('uuid', () => {
   return {
     v4: () => {
-      accountCreationCount++;
+      accountCreationCount += 1;
       return accountCreationCount === 1
         ? mockAccountId
         : jest.requireActual('uuid').v4();
@@ -284,7 +284,7 @@ describe('Keyring', () => {
         chains,
       );
 
-      expect(filteredChains).toEqual(expectedFilteredChains);
+      expect(filteredChains).toStrictEqual(expectedFilteredChains);
     });
   });
 
@@ -357,9 +357,7 @@ describe('Keyring', () => {
     });
 
     it('should not throw an error when trying to delete a non-existent account', async () => {
-      await expect(
-        keyring.deleteAccount('non-existent-id'),
-      ).resolves.toBeUndefined();
+      expect(await keyring.deleteAccount('non-existent-id')).toBeUndefined();
     });
 
     it('should throw an error when saving state fails', async () => {
@@ -494,7 +492,8 @@ describe('Keyring', () => {
           ],
           [],
         ];
-        intents.forEach(async (intent) => {
+
+        for (const intent of intents) {
           await expect(
             keyring.submitRequest({
               id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
@@ -506,7 +505,7 @@ describe('Keyring', () => {
               },
             }),
           ).rejects.toThrow('[Snap] Only one transaction per UserOp supported');
-        });
+        }
       });
     });
 
@@ -757,6 +756,7 @@ describe('Keyring', () => {
         name: 'palm',
         chainId: unsupportedChainId,
         ensAddress: null,
+        // eslint-disable-next-line @typescript-eslint/naming-convention
         _defaultProvider: () => null,
       };
 
@@ -810,7 +810,7 @@ describe('Keyring', () => {
       };
 
       const response = await keyring.submitRequest(request);
-      expect(response).toEqual({ pending: false, result: mockConfig });
+      expect(response).toStrictEqual({ pending: false, result: mockConfig });
     });
 
     describe('#getKeyPair', () => {
@@ -829,6 +829,7 @@ describe('Keyring', () => {
           name: 'palm',
           chainId: unsupportedChainId,
           ensAddress: null,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           _defaultProvider: () => null,
         };
 
@@ -856,6 +857,7 @@ describe('Keyring', () => {
           name: 'palm',
           chainId: unsupportedChainId,
           ensAddress: null,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
           _defaultProvider: () => null,
         };
 
