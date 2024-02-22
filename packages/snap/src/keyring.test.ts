@@ -208,28 +208,6 @@ describe('Keyring', () => {
       );
     });
 
-    it('should throw an error if on an unsupported chain', async () => {
-      const unsupportedChainId = BigInt(11297108109);
-      const mockedNetwork = {
-        name: 'palm',
-        chainId: unsupportedChainId,
-        ensAddress: null,
-        _defaultProvider: () => null,
-      };
-
-      const getNetworkSpy = jest
-        .spyOn(ethers.provider, 'getNetwork')
-        .mockResolvedValue(mockedNetwork as any);
-
-      await expect(
-        keyring.createAccount({ privateKey: aaOwnerPk }),
-      ).rejects.toThrow(
-        `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
-      );
-
-      getNetworkSpy.mockRestore();
-    });
-
     it('should not create an account already in use', async () => {
       const salt = '0x123';
       const expectedAddressFromSalt =
@@ -249,13 +227,6 @@ describe('Keyring', () => {
       ).rejects.toThrow(
         `[Snap] Account abstraction address already in use: ${expectedAddressFromSalt}`,
       );
-    });
-
-    it('should not create an account with an invalid private key', async () => {
-      const invalidPrivateKey = '123NotAPrivateKey456';
-      await expect(
-        keyring.createAccount({ privateKey: invalidPrivateKey }),
-      ).rejects.toThrow('Invalid private key');
     });
 
     it('should throw an error when saving state fails', async () => {
@@ -426,42 +397,6 @@ describe('Keyring', () => {
     });
 
     describe('#prepareUserOperation', () => {
-      it('should throw an error if not on a supported chain', async () => {
-        const unsupportedChainId = BigInt(11297108109);
-        const mockedNetwork = {
-          name: 'palm',
-          chainId: unsupportedChainId,
-          ensAddress: null,
-          _defaultProvider: () => null,
-        };
-
-        const getNetworkSpy = jest
-          .spyOn(ethers.provider, 'getNetwork')
-          .mockResolvedValue(mockedNetwork as any);
-
-        const intent = {
-          to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
-          value: '0x00',
-          data: ethers.ZeroHash,
-        };
-
-        await expect(
-          keyring.submitRequest({
-            id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-            scope: '',
-            account: mockAccountId,
-            request: {
-              method: 'eth_prepareUserOperation',
-              params: [intent],
-            },
-          }),
-        ).rejects.toThrow(
-          `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
-        );
-
-        getNetworkSpy.mockRestore();
-      });
-
       it('should prepare a new user operation', async () => {
         const intent = {
           to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
@@ -816,6 +751,42 @@ describe('Keyring', () => {
       ).rejects.toThrow(`Account '${accountId}' not found`);
     });
 
+    it('should throw an error if not on a supported chain', async () => {
+      const unsupportedChainId = BigInt(11297108109);
+      const mockedNetwork = {
+        name: 'palm',
+        chainId: unsupportedChainId,
+        ensAddress: null,
+        _defaultProvider: () => null,
+      };
+
+      const getNetworkSpy = jest
+        .spyOn(ethers.provider, 'getNetwork')
+        .mockResolvedValue(mockedNetwork as any);
+
+      const intent = {
+        to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+        value: '0x00',
+        data: ethers.ZeroHash,
+      };
+
+      await expect(
+        keyring.submitRequest({
+          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+          scope: '',
+          account: mockAccountId,
+          request: {
+            method: 'eth_prepareUserOperation',
+            params: [intent],
+          },
+        }),
+      ).rejects.toThrow(
+        `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
+      );
+
+      getNetworkSpy.mockRestore();
+    });
+
     it('should return the result of setting the config when submitting a set config request', async () => {
       const mockConfig: ChainConfig = {
         simpleAccountFactory: '0x07a4E8982B685EC9d706FbF21459e159A141Cfe7',
@@ -840,6 +811,89 @@ describe('Keyring', () => {
 
       const response = await keyring.submitRequest(request);
       expect(response).toEqual({ pending: false, result: mockConfig });
+    });
+
+    describe('#getKeyPair', () => {
+      it('should throw an error for an invalid private key', async () => {
+        const invalidPrivateKey = '0xa1b2c3';
+        await expect(
+          keyring.createAccount({ privateKey: invalidPrivateKey }),
+        ).rejects.toThrow('Invalid private key');
+      });
+    });
+
+    describe('#getAAFactory', () => {
+      it('should throw an error if not on a supported chain', async () => {
+        const unsupportedChainId = BigInt(11297108109);
+        const mockedNetwork = {
+          name: 'palm',
+          chainId: unsupportedChainId,
+          ensAddress: null,
+          _defaultProvider: () => null,
+        };
+
+        const getNetworkSpy = jest
+          .spyOn(ethers.provider, 'getNetwork')
+          .mockResolvedValue(mockedNetwork as any);
+
+        await expect(
+          keyring.createAccount({ privateKey: aaOwnerPk }),
+        ).rejects.toThrow(
+          `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
+        );
+
+        getNetworkSpy.mockRestore();
+      });
+    });
+
+    describe('#getEntryPoint', () => {
+      it('should throw an error if not on a supported chain', async () => {
+        const aaAccount = await keyring.createAccount({
+          privateKey: aaOwnerPk,
+        });
+        const unsupportedChainId = BigInt(11297108109);
+        const mockedNetwork = {
+          name: 'palm',
+          chainId: unsupportedChainId,
+          ensAddress: null,
+          _defaultProvider: () => null,
+        };
+
+        const getNetworkSpy = jest
+          .spyOn(ethers.provider, 'getNetwork')
+          .mockResolvedValue(mockedNetwork as any);
+
+        const userOperation: EthUserOperation = {
+          sender: aaAccount.address,
+          nonce: '0x00',
+          initCode: '0x',
+          callData:
+            '0xb61d27f600000000000000000000000097a0924bf222499cba5c29ea746e82f2307302930000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',
+          signature: '0x',
+          paymasterAndData: '0x',
+          callGasLimit: '0x58a83',
+          verificationGasLimit: '0xe8c4',
+          preVerificationGas: '0xc57c',
+          maxFeePerGas: '0x11',
+          maxPriorityFeePerGas: '0x11',
+        };
+
+        await expect(
+          keyring.submitRequest({
+            id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+            scope: '',
+            account: mockAccountId,
+            request: {
+              method: 'eth_signUserOperation',
+              params: [userOperation],
+            },
+          }),
+        ).rejects.toThrow(
+          `Unsupported chain ID: ${unsupportedChainId.toString()}`,
+        );
+
+        getNetworkSpy.mockRestore();
+      });
     });
   });
 });
