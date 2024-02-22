@@ -520,6 +520,37 @@ describe('Keyring', () => {
         expect(op).toStrictEqual(expected);
         expect(op.result.initCode).toBe(initCode);
       });
+
+      it('should throw an error for a number of transactions that is not 1', async () => {
+        const intents = [
+          [
+            {
+              to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+              value: '0x00',
+              data: ethers.ZeroHash,
+            },
+            {
+              to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+              value: '0x00',
+              data: ethers.ZeroHash,
+            },
+          ],
+          [],
+        ];
+        intents.forEach(async (intent) => {
+          await expect(
+            keyring.submitRequest({
+              id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+              scope: '',
+              account: mockAccountId,
+              request: {
+                method: 'eth_prepareUserOperation',
+                params: intent,
+              },
+            }),
+          ).rejects.toThrow('[Snap] Only one transaction per UserOp supported');
+        });
+      });
     });
 
     describe('#patchUserOperation', () => {
