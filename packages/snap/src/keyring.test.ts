@@ -208,6 +208,28 @@ describe('Keyring', () => {
       );
     });
 
+    it('should throw an error if on an unsupported chain', async () => {
+      const unsupportedChainId = BigInt(11297108109);
+      const mockedNetwork = {
+        name: 'palm',
+        chainId: unsupportedChainId,
+        ensAddress: null,
+        _defaultProvider: () => null,
+      };
+
+      const getNetworkSpy = jest
+        .spyOn(ethers.provider, 'getNetwork')
+        .mockResolvedValue(mockedNetwork as any);
+
+      await expect(
+        keyring.createAccount({ privateKey: aaOwnerPk }),
+      ).rejects.toThrow(
+        `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
+      );
+
+      getNetworkSpy.mockRestore();
+    });
+
     it('should not create an account already in use', async () => {
       const salt = '0x123';
       const expectedAddressFromSalt =
@@ -616,6 +638,47 @@ describe('Keyring', () => {
         const packedResult = result[1].toString(16);
 
         expect(packedResult).toBe('1');
+      });
+
+      it("should return '0x' paymasterAndData if 'customVerifyingPaymasterAddress' not set in chain config", async () => {
+        const keyringWithoutCustomVerifyingPaymaster =
+          new AccountAbstractionKeyring({ ...getInitialState() });
+        await keyringWithoutCustomVerifyingPaymaster.setConfig({
+          simpleAccountFactory: await simpleAccountFactory.getAddress(),
+          entryPoint: await entryPoint.getAddress(),
+        });
+        const account =
+          await keyringWithoutCustomVerifyingPaymaster.createAccount({
+            privateKey: aaOwnerPk,
+          });
+
+        const userOperation: EthUserOperation = {
+          sender: account.address,
+          nonce: '0x00',
+          initCode: '0x',
+          callData:
+            '0xb61d27f600000000000000000000000097a0924bf222499cba5c29ea746e82f2307302930000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000',
+          signature: DUMMY_SIGNATURE,
+          paymasterAndData: '0x',
+          callGasLimit: '0x58a83',
+          verificationGasLimit: '0xe8c4',
+          preVerificationGas: '0xc57c',
+          maxFeePerGas: '0x11',
+          maxPriorityFeePerGas: '0x11',
+        };
+
+        const operation =
+          (await keyringWithoutCustomVerifyingPaymaster.submitRequest({
+            id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+            scope: '',
+            account: account.id,
+            request: {
+              method: 'eth_patchUserOperation',
+              params: [userOperation],
+            },
+          })) as { pending: false; result: { paymasterAndData: string } };
+
+        expect(operation.result.paymasterAndData).toBe('0x');
       });
     });
 
