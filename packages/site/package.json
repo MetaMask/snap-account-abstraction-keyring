@@ -31,7 +31,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@metamask/keyring-api": "^3.0.0",
+    "@metamask/keyring-api": "^4.0.0",
     "@metamask/providers": "^14.0.2",
     "@mui/icons-material": "^5.14.0",
     "@mui/material": "^5.14.0",
