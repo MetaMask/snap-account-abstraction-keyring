@@ -17,7 +17,7 @@ import {
   DUMMY_SIGNATURE,
   getDummyPaymasterAndData,
 } from './constants/dummy-values';
-import type { ChainConfig } from './keyring';
+import type { ChainConfig, KeyringState } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
 import { InternalMethod } from './permissions';
 import * as stateManagement from './stateManagement';
@@ -66,7 +66,7 @@ global.snap = {
   emitEvent: jest.fn(),
 };
 
-const getInitialState = () => ({
+const getInitialState = (): KeyringState => ({
   wallets: {},
   config: {},
 });
