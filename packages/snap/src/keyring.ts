@@ -221,7 +221,7 @@ export class AccountAbstractionKeyring implements Keyring {
         account,
         admin, // Address of the admin account from private key
         privateKey,
-        chains: { [chainId.toString()]: false },
+        chains: { [`eip155:${chainId.toString()}`]: false },
         salt,
         initCode,
       };
@@ -372,16 +372,24 @@ export class AccountAbstractionKeyring implements Keyring {
 
   async #handleSigningRequest({
     account,
+    scope,
     method,
     params,
   }: {
     account: KeyringAccount;
+    scope: string;
     method: string;
     params: Json;
   }): Promise<Json> {
     const { chainId } = await provider.getNetwork();
+    if (String(chainId) !== scope.split(':')[1]) {
+      throwError(`[Snap] Chain ID '${chainId}' mismatch with scope '${scope}'`);
+    }
     if (!this.#isSupportedChain(Number(chainId))) {
       throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
+    }
+    if (!this.#doesAccountSupportChain(scope)) {
+      throwError(`[Snap] Account does not support chain: ${scope}`);
     }
 
     switch (method) {
@@ -441,7 +449,7 @@ export class AccountAbstractionKeyring implements Keyring {
         16,
       )}`;
       if (!wallet.chains[chainId.toString()]) {
-        wallet.chains[chainId.toString()] = true;
+        wallet.chains[`eip155:${chainId.toString()}`] = true;
         await this.#saveState();
       }
     } catch (error) {
@@ -578,6 +586,10 @@ export class AccountAbstractionKeyring implements Keyring {
       Object.values(CHAIN_IDS).includes(chainId) ||
       Boolean(this.#state.config[chainId])
     );
+  }
+
+  #doesAccountSupportChain(scope: string): boolean {
+    return Boolean(this.#state.wallets[scope]);
   }
 
   async #saveState(): Promise<void> {

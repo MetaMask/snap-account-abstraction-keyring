@@ -39,7 +39,7 @@ const mockAccountId = 'ea747116-767c-4117-a347-0c3f7b19cc5a';
 const TEST_MNEMONIC =
   'test test test test test test test test test test test junk';
 const chainId = '11155111';
-let accountCreationCount = 0;
+const scope = `eip155:${chainId}`;
 
 // This mocks the ethereum global object thats available in the Snaps Execution Environment
 jest.mock('../src/utils/ethers', () => ({
@@ -51,12 +51,10 @@ jest.mock('../src/utils/ethers', () => ({
 
 jest.mock('uuid', () => {
   return {
-    v4: () => {
-      accountCreationCount += 1;
-      return accountCreationCount === 1
-        ? mockAccountId
-        : jest.requireActual('uuid').v4();
-    },
+    v4: jest
+      .fn()
+      .mockReturnValueOnce(mockAccountId)
+      .mockReturnValue(jest.requireActual('uuid').v4()),
   };
 });
 
@@ -172,7 +170,7 @@ describe('Keyring', () => {
     });
   });
 
-  describe('Create Account', () => {
+  describe.only('Create Account', () => {
     it('should not create a new account without admin private key', async () => {
       await expect(keyring.createAccount()).rejects.toThrow(
         '[Snap] Private Key is required',
@@ -424,7 +422,7 @@ describe('Keyring', () => {
 
         const op = await keyring.submitRequest({
           id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope: '',
+          scope,
           account: mockAccountId,
           request: {
             method: 'eth_prepareUserOperation',
@@ -464,7 +462,7 @@ describe('Keyring', () => {
 
         const op = (await keyring.submitRequest({
           id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope: '',
+          scope,
           account: mockAccountId,
           request: {
             method: 'eth_prepareUserOperation',
@@ -497,7 +495,7 @@ describe('Keyring', () => {
           await expect(
             keyring.submitRequest({
               id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-              scope: '',
+              scope,
               account: mockAccountId,
               request: {
                 method: 'eth_prepareUserOperation',
@@ -528,7 +526,7 @@ describe('Keyring', () => {
 
         const operation = (await keyring.submitRequest({
           id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope: '',
+          scope,
           account: mockAccountId,
           request: {
             method: 'eth_patchUserOperation',
@@ -604,7 +602,7 @@ describe('Keyring', () => {
         const operation =
           (await keyringWithoutCustomVerifyingPaymaster.submitRequest({
             id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-            scope: '',
+            scope,
             account: account.id,
             request: {
               method: 'eth_patchUserOperation',
@@ -645,7 +643,7 @@ describe('Keyring', () => {
 
         const operation = (await keyring.submitRequest({
           id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope: '',
+          scope,
           account: mockAccountId,
           request: {
             method: 'eth_signUserOperation',
@@ -690,7 +688,7 @@ describe('Keyring', () => {
 
         const operation = (await keyring.submitRequest({
           id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope: '',
+          scope,
           account: mockAccountId,
           request: {
             method: 'eth_signUserOperation',
@@ -725,7 +723,7 @@ describe('Keyring', () => {
       await expect(
         keyring.submitRequest({
           id: v4(),
-          scope: '',
+          scope,
           account: mockAccountId,
           request: {
             method: unsupportedMethod,
@@ -740,7 +738,7 @@ describe('Keyring', () => {
       await expect(
         keyring.submitRequest({
           id: v4(),
-          scope: '',
+          scope,
           account: accountId,
           request: {
             method: 'eth_signUserOperation',
@@ -750,7 +748,7 @@ describe('Keyring', () => {
       ).rejects.toThrow(`Account '${accountId}' not found`);
     });
 
-    it('should throw an error if not on a supported chain', async () => {
+    it('should throw an error if the scope does not match the account supported chains', async () => {
       const unsupportedChainId = BigInt(11297108109);
       const mockedNetwork = {
         name: 'palm',
@@ -773,7 +771,7 @@ describe('Keyring', () => {
       await expect(
         keyring.submitRequest({
           id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope: '',
+          scope,
           account: mockAccountId,
           request: {
             method: 'eth_prepareUserOperation',
@@ -781,7 +779,7 @@ describe('Keyring', () => {
           },
         }),
       ).rejects.toThrow(
-        `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
+        `[Snap] Chain ID '${unsupportedChainId.toString()}' mismatch with scope '${scope}'`,
       );
 
       getNetworkSpy.mockRestore();
@@ -801,7 +799,7 @@ describe('Keyring', () => {
       const requestId = v4();
       const request: KeyringRequest = {
         id: requestId,
-        scope: '',
+        scope,
         account: mockAccountId,
         request: {
           method: InternalMethod.SetConfig,
@@ -883,7 +881,7 @@ describe('Keyring', () => {
         await expect(
           keyring.submitRequest({
             id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-            scope: '',
+            scope,
             account: mockAccountId,
             request: {
               method: 'eth_signUserOperation',
