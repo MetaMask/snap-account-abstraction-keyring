@@ -21,6 +21,10 @@ export const DEFAULT_ENTRYPOINTS = {
     version: '0.6.0',
     address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
   },
+  [CHAIN_IDS.LINEA]: {
+    version: '0.6.0',
+    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+  },
 
   // TESTNETS
   [CHAIN_IDS.SEPOLIA]: {
@@ -31,7 +35,7 @@ export const DEFAULT_ENTRYPOINTS = {
     version: '0.6.0',
     address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
   },
-  [CHAIN_IDS.POLYGON_MUMBAI]: {
+  [CHAIN_IDS.LINEA_GOERLI]: {
     version: '0.6.0',
     address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
   },
@@ -39,7 +43,15 @@ export const DEFAULT_ENTRYPOINTS = {
     version: '0.6.0',
     address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
   },
-  [CHAIN_IDS.OPTMIISM_GOERLI]: {
+  [CHAIN_IDS.ARBITRUM_SEPOLIA]: {
+    version: '0.6.0',
+    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+  },
+  [CHAIN_IDS.OPTMIISM_SEPOLIA]: {
+    version: '0.6.0',
+    address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+  },
+  [CHAIN_IDS.CELO_ALFAJORES]: {
     version: '0.6.0',
     address: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
   },
