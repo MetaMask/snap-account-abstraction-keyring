@@ -49,15 +49,6 @@ jest.mock('../src/utils/ethers', () => ({
     new ethers.Wallet(privateKey, ethers.provider),
 }));
 
-jest.mock('uuid', () => {
-  return {
-    v4: jest
-      .fn()
-      .mockReturnValueOnce(mockAccountId)
-      .mockReturnValue(jest.requireActual('uuid').v4()),
-  };
-});
-
 // @ts-expect-error Mocking Snap global object
 global.snap = {
   request: jest.fn(),
@@ -81,6 +72,15 @@ describe('Keyring', () => {
   let verifyingPaymaster: VerifyingPaymaster;
 
   beforeEach(async () => {
+    jest.mock('uuid', () => {
+      return {
+        v4: jest
+          .fn()
+          .mockReturnValueOnce(mockAccountId)
+          .mockReturnValue(jest.requireActual('uuid').v4()),
+      };
+    });
+
     const signers = await ethers.getSigners();
     aaOwner = signers[0]!;
     aaOwnerPk = ethers.Wallet.fromPhrase(TEST_MNEMONIC).privateKey;
@@ -102,8 +102,6 @@ describe('Keyring', () => {
       entryPoint: await entryPoint.getAddress(),
       customVerifyingPaymasterAddress: await verifyingPaymaster.getAddress(),
     });
-
-    accountCreationCount = 0;
   });
 
   describe('Constructor', () => {

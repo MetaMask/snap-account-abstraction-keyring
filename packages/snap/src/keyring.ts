@@ -320,6 +320,7 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const signature = await this.#handleSigningRequest({
       account: this.#getWalletById(request.account).account,
+      scope: request.scope,
       method,
       params,
     });
