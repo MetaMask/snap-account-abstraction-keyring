@@ -101,7 +101,7 @@ const Index = () => {
     }
     const request: KeyringRequest = {
       id: uuid.v4(),
-      scope: `eip155:${window.ethereum.chainId}`,
+      scope: `eip155:${window.ethereum.chainId ?? ''}`,
       account: uuid.v4(),
       request: {
         method: 'snap.internal.setConfig',

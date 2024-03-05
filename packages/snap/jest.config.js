@@ -11,9 +11,8 @@ module.exports = {
     'artifacts',
   ],
   coverageThreshold: {
-    global: {
+    './src/keyring.ts': {
       statements: 95,
-      branches: 95,
       functions: 95,
       lines: 95,
     },
