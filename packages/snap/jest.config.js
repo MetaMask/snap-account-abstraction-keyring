@@ -10,7 +10,7 @@ module.exports = {
     'contracts',
     'artifacts',
   ],
-  threshold: {
+  coverageThreshold: {
     global: {
       statements: 95,
       branches: 95,

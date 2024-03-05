@@ -40,6 +40,7 @@ const TEST_MNEMONIC =
   'test test test test test test test test test test test junk';
 const chainId = '11155111';
 const scope = `eip155:${chainId}`;
+let accountCreationCount = 0;
 
 // This mocks the ethereum global object thats available in the Snaps Execution Environment
 jest.mock('../src/utils/ethers', () => ({
@@ -48,6 +49,17 @@ jest.mock('../src/utils/ethers', () => ({
   getSigner: (privateKey: string) =>
     new ethers.Wallet(privateKey, ethers.provider),
 }));
+
+jest.mock('uuid', () => {
+  return {
+    v4: () => {
+      accountCreationCount += 1;
+      return accountCreationCount === 1
+        ? mockAccountId
+        : jest.requireActual('uuid').v4();
+    },
+  };
+});
 
 // @ts-expect-error Mocking Snap global object
 global.snap = {
@@ -72,15 +84,6 @@ describe('Keyring', () => {
   let verifyingPaymaster: VerifyingPaymaster;
 
   beforeEach(async () => {
-    jest.mock('uuid', () => {
-      return {
-        v4: jest
-          .fn()
-          .mockReturnValueOnce(mockAccountId)
-          .mockReturnValue(jest.requireActual('uuid').v4()),
-      };
-    });
-
     const signers = await ethers.getSigners();
     aaOwner = signers[0]!;
     aaOwnerPk = ethers.Wallet.fromPhrase(TEST_MNEMONIC).privateKey;
@@ -102,6 +105,10 @@ describe('Keyring', () => {
       entryPoint: await entryPoint.getAddress(),
       customVerifyingPaymasterAddress: await verifyingPaymaster.getAddress(),
     });
+  });
+
+  afterEach(() => {
+    accountCreationCount = 0;
   });
 
   describe('Constructor', () => {
@@ -168,7 +175,7 @@ describe('Keyring', () => {
     });
   });
 
-  describe.only('Create Account', () => {
+  describe('Create Account', () => {
     it('should not create a new account without admin private key', async () => {
       await expect(keyring.createAccount()).rejects.toThrow(
         '[Snap] Private Key is required',
@@ -390,7 +397,7 @@ describe('Keyring', () => {
       ]);
     });
 
-    describe('#prepareUserOperation', () => {
+    describe.only('#prepareUserOperation', () => {
       it('should prepare a new user operation', async () => {
         const intent = {
           to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
