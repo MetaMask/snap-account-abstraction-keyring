@@ -591,7 +591,7 @@ export class AccountAbstractionKeyring implements Keyring {
 
   #doesAccountSupportChain(accountId: string, scope: string): boolean {
     const wallet = this.#getWalletById(accountId);
-    return wallet.chains.hasOwnProperty(scope);
+    return Object.prototype.hasOwnProperty.call(wallet.chains, scope);
   }
 
   async #saveState(): Promise<void> {
