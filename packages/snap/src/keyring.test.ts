@@ -397,7 +397,7 @@ describe('Keyring', () => {
       ]);
     });
 
-    describe.only('#prepareUserOperation', () => {
+    describe('#prepareUserOperation', () => {
       it('should prepare a new user operation', async () => {
         const intent = {
           to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
@@ -855,6 +855,7 @@ describe('Keyring', () => {
         const aaAccount = await keyring.createAccount({
           privateKey: aaOwnerPk,
         });
+
         const unsupportedChainId = BigInt(11297108109);
         const mockedNetwork = {
           name: 'palm',
@@ -886,7 +887,7 @@ describe('Keyring', () => {
         await expect(
           keyring.submitRequest({
             id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-            scope,
+            scope: `eip155:${unsupportedChainId.toString()}`,
             account: mockAccountId,
             request: {
               method: 'eth_signUserOperation',

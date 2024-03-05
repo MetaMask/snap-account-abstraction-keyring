@@ -389,7 +389,7 @@ export class AccountAbstractionKeyring implements Keyring {
     if (!this.#isSupportedChain(Number(chainId))) {
       throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
     }
-    if (!this.#doesAccountSupportChain(scope)) {
+    if (!this.#doesAccountSupportChain(account.id, scope)) {
       throwError(`[Snap] Account does not support chain: ${scope}`);
     }
 
@@ -589,8 +589,9 @@ export class AccountAbstractionKeyring implements Keyring {
     );
   }
 
-  #doesAccountSupportChain(scope: string): boolean {
-    return Boolean(this.#state.wallets[scope]);
+  #doesAccountSupportChain(accountId: string, scope: string): boolean {
+    const wallet = this.#getWalletById(accountId);
+    return wallet.chains.hasOwnProperty(scope);
   }
 
   async #saveState(): Promise<void> {
