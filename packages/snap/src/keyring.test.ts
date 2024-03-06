@@ -39,6 +39,7 @@ import { provider } from './utils/ethers';
 expect.extend(jestExtended);
 
 const mockAccountId = 'ea747116-767c-4117-a347-0c3f7b19cc5a';
+const nonExistentAccountId = 'non-existent-id';
 const TEST_MNEMONIC =
   'test test test test test test test test test test test junk';
 const chainId = '11155111';
@@ -343,9 +344,8 @@ describe('Keyring', () => {
     });
 
     it('should throw an error when trying to update a non-existent account', async () => {
-      const id = 'non-existent-id';
       const nonExistentAccount: KeyringAccount = {
-        id,
+        id: nonExistentAccountId,
         options: {
           updated: true,
         },
@@ -354,7 +354,7 @@ describe('Keyring', () => {
         methods: aaAccount.methods,
       };
       await expect(keyring.updateAccount(nonExistentAccount)).rejects.toThrow(
-        `Account '${id}' not found`,
+        `Account '${nonExistentAccountId}' not found`,
       );
     });
 
@@ -398,7 +398,7 @@ describe('Keyring', () => {
     });
 
     it('should not throw an error when trying to delete a non-existent account', async () => {
-      expect(await keyring.deleteAccount('non-existent-id')).toBeUndefined();
+      expect(await keyring.deleteAccount(nonExistentAccountId)).toBeUndefined();
     });
 
     it('should throw an error when saving state fails', async () => {
@@ -777,18 +777,17 @@ describe('Keyring', () => {
     });
 
     it('should throw an error if the account does not exist', async () => {
-      const accountId = 'non-existent-id';
       await expect(
         keyring.submitRequest({
           id: v4(),
           scope,
-          account: accountId,
+          account: nonExistentAccountId,
           request: {
             method: 'eth_signUserOperation',
             params: [],
           },
         }),
-      ).rejects.toThrow(`Account '${accountId}' not found`);
+      ).rejects.toThrow(`Account '${nonExistentAccountId}' not found`);
     });
 
     it('should return the result of setting the config when submitting a set config request', async () => {
