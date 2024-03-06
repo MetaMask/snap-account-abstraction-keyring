@@ -76,6 +76,13 @@ const getInitialState = (): KeyringState => ({
   config: {},
 });
 
+const saveStateWillThrow = (message: string) => {
+  jest.spyOn(stateManagement, 'saveState').mockImplementationOnce(async () => {
+    throw new Error(message);
+  });
+};
+const failedToSaveStateError = 'Failed to save state';
+
 const aaAccountInterface = new SimpleAccount__factory();
 const simpleAccountFactoryInterface = new SimpleAccountFactory__factory();
 
@@ -237,14 +244,10 @@ describe('Keyring', () => {
     });
 
     it('should throw an error when saving state fails', async () => {
-      jest
-        .spyOn(stateManagement, 'saveState')
-        .mockImplementationOnce(async () => {
-          throw new Error('Failed to save state');
-        });
+      saveStateWillThrow(failedToSaveStateError);
       await expect(
         keyring.createAccount({ privateKey: aaOwnerSk }),
-      ).rejects.toThrow('Failed to save state');
+      ).rejects.toThrow(failedToSaveStateError);
     });
 
     describe('#getKeyPair', () => {
@@ -373,17 +376,13 @@ describe('Keyring', () => {
     });
 
     it('should throw an error when saving state fails', async () => {
-      jest
-        .spyOn(stateManagement, 'saveState')
-        .mockImplementationOnce(async () => {
-          throw new Error('Failed to save state');
-        });
+      saveStateWillThrow(failedToSaveStateError);
       await expect(
         keyring.updateAccount({
           ...aaAccount,
           options: { updated: true },
         }),
-      ).rejects.toThrow('Failed to save state');
+      ).rejects.toThrow(failedToSaveStateError);
     });
   });
 
@@ -402,13 +401,9 @@ describe('Keyring', () => {
     });
 
     it('should throw an error when saving state fails', async () => {
-      jest
-        .spyOn(stateManagement, 'saveState')
-        .mockImplementationOnce(async () => {
-          throw new Error('Failed to save state');
-        });
+      saveStateWillThrow(failedToSaveStateError);
       await expect(keyring.deleteAccount(mockAccountId)).rejects.toThrow(
-        'Failed to save state',
+        failedToSaveStateError,
       );
     });
   });
