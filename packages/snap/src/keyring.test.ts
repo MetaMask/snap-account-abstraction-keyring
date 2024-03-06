@@ -343,8 +343,9 @@ describe('Keyring', () => {
     });
 
     it('should throw an error when trying to update a non-existent account', async () => {
+      const id = 'non-existent-id';
       const nonExistentAccount: KeyringAccount = {
-        id: 'non-existent-id',
+        id,
         options: {
           updated: true,
         },
@@ -353,7 +354,7 @@ describe('Keyring', () => {
         methods: aaAccount.methods,
       };
       await expect(keyring.updateAccount(nonExistentAccount)).rejects.toThrow(
-        `Account 'non-existent-id' not found`,
+        `Account '${id}' not found`,
       );
     });
 
