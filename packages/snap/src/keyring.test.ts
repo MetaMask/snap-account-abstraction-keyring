@@ -753,6 +753,28 @@ describe('Keyring', () => {
       ).rejects.toThrow(`Account '${accountId}' not found`);
     });
 
+    it.only('should throw an error if the scope is invalid', async () => {
+      const invalidScope = 'foobarbazquz:1';
+      const intent = {
+        to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+        value: '0x00',
+        data: ethers.ZeroHash,
+      };
+      await expect(
+        keyring.submitRequest({
+          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+          scope: invalidScope,
+          account: mockAccountId,
+          request: {
+            method: 'eth_prepareUserOperation',
+            params: [intent],
+          },
+        }),
+      ).rejects.toThrow(
+        `[Snap] Error parsing request scope '${invalidScope}': Invalid CAIP chain ID.`,
+      );
+    });
+
     it('should throw an error if the scope does not match the account supported chains', async () => {
       const unsupportedChainId = BigInt(11297108109);
       const mockedNetwork = {

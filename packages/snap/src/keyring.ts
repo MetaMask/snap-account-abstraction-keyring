@@ -23,7 +23,12 @@ import {
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
+import {
+  hexToBytes,
+  parseCaipChainId,
+  type Json,
+  type JsonRpcRequest,
+} from '@metamask/utils';
 import { Buffer } from 'buffer';
 import type { BigNumberish } from 'ethers';
 import { ethers } from 'ethers';
@@ -383,8 +388,19 @@ export class AccountAbstractionKeyring implements Keyring {
     params: Json;
   }): Promise<Json> {
     const { chainId } = await provider.getNetwork();
-    if (String(chainId) !== scope.split(':')[1]) {
-      throwError(`[Snap] Chain ID '${chainId}' mismatch with scope '${scope}'`);
+    try {
+      const parsedScope = parseCaipChainId(scope as `${string}:${string}`);
+      if (String(chainId) !== parsedScope.reference) {
+        throwError(
+          `[Snap] Chain ID '${chainId}' mismatch with scope '${scope}'`,
+        );
+      }
+    } catch (error) {
+      throwError(
+        `[Snap] Error parsing request scope '${scope}': ${
+          (error as Error).message
+        }`,
+      );
     }
     if (!this.#isSupportedChain(Number(chainId))) {
       throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
