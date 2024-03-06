@@ -1,5 +1,9 @@
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
+import {
+  CaipNamespaces,
+  toCaipChainId,
+} from '@metamask/snap-account-abstraction-keyring/src/utils/caip';
 import Grid from '@mui/material/Grid';
 import React, { useContext, useEffect, useState } from 'react';
 import * as uuid from 'uuid';
@@ -99,9 +103,13 @@ const Index = () => {
     if (!chainConfig) {
       return;
     }
+    const reference = window.ethereum.chainId;
+    if (!reference) {
+      throw new Error('No chain ID found');
+    }
     const request: KeyringRequest = {
       id: uuid.v4(),
-      scope: `eip155:${window.ethereum.chainId ?? ''}`,
+      scope: `${toCaipChainId(CaipNamespaces.Eip155, reference)}`,
       account: uuid.v4(),
       request: {
         method: 'snap.internal.setConfig',

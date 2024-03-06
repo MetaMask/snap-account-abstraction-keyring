@@ -23,12 +23,8 @@ import {
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import {
-  hexToBytes,
-  parseCaipChainId,
-  type Json,
-  type JsonRpcRequest,
-} from '@metamask/utils';
+import { hexToBytes, parseCaipChainId } from '@metamask/utils';
+import type { CaipChainId, Json, JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import type { BigNumberish } from 'ethers';
 import { ethers } from 'ethers';
@@ -50,14 +46,10 @@ import {
   SimpleAccountFactory__factory,
   VerifyingPaymaster__factory,
 } from './types';
+import { isEvmChain } from './utils/caip';
 import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
-import {
-  isEvmChain,
-  isUniqueAddress,
-  runSensitive,
-  throwError,
-} from './utils/util';
+import { isUniqueAddress, runSensitive, throwError } from './utils/util';
 import { validateConfig } from './utils/validation';
 
 const unsupportedAAMethods = [
@@ -389,7 +381,7 @@ export class AccountAbstractionKeyring implements Keyring {
   }): Promise<Json> {
     const { chainId } = await provider.getNetwork();
     try {
-      const parsedScope = parseCaipChainId(scope as `${string}:${string}`);
+      const parsedScope = parseCaipChainId(scope as CaipChainId);
       if (String(chainId) !== parsedScope.reference) {
         throwError(
           `[Snap] Chain ID '${chainId}' mismatch with scope '${scope}'`,

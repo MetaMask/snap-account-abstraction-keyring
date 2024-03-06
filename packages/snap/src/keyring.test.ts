@@ -242,6 +242,40 @@ describe('Keyring', () => {
         keyring.createAccount({ privateKey: aaOwnerPk }),
       ).rejects.toThrow('Failed to save state');
     });
+
+    describe('#getKeyPair', () => {
+      it('should throw an error for an invalid private key', async () => {
+        const invalidPrivateKey = '0xa1b2c3';
+        await expect(
+          keyring.createAccount({ privateKey: invalidPrivateKey }),
+        ).rejects.toThrow('Invalid private key');
+      });
+    });
+
+    describe('#getAAFactory', () => {
+      it('should throw an error if not on a supported chain', async () => {
+        const unsupportedChainId = BigInt(11297108109);
+        const mockedNetwork = {
+          name: 'palm',
+          chainId: unsupportedChainId,
+          ensAddress: null,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          _defaultProvider: () => null,
+        };
+
+        const getNetworkSpy = jest
+          .spyOn(ethers.provider, 'getNetwork')
+          .mockResolvedValue(mockedNetwork as any);
+
+        await expect(
+          keyring.createAccount({ privateKey: aaOwnerPk }),
+        ).rejects.toThrow(
+          `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
+        );
+
+        getNetworkSpy.mockRestore();
+      });
+    });
   });
 
   describe('List Accounts', () => {
@@ -753,65 +787,6 @@ describe('Keyring', () => {
       ).rejects.toThrow(`Account '${accountId}' not found`);
     });
 
-    it.only('should throw an error if the scope is invalid', async () => {
-      const invalidScope = 'foobarbazquz:1';
-      const intent = {
-        to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
-        value: '0x00',
-        data: ethers.ZeroHash,
-      };
-      await expect(
-        keyring.submitRequest({
-          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope: invalidScope,
-          account: mockAccountId,
-          request: {
-            method: 'eth_prepareUserOperation',
-            params: [intent],
-          },
-        }),
-      ).rejects.toThrow(
-        `[Snap] Error parsing request scope '${invalidScope}': Invalid CAIP chain ID.`,
-      );
-    });
-
-    it('should throw an error if the scope does not match the account supported chains', async () => {
-      const unsupportedChainId = BigInt(11297108109);
-      const mockedNetwork = {
-        name: 'palm',
-        chainId: unsupportedChainId,
-        ensAddress: null,
-        // eslint-disable-next-line @typescript-eslint/naming-convention
-        _defaultProvider: () => null,
-      };
-
-      const getNetworkSpy = jest
-        .spyOn(ethers.provider, 'getNetwork')
-        .mockResolvedValue(mockedNetwork as any);
-
-      const intent = {
-        to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
-        value: '0x00',
-        data: ethers.ZeroHash,
-      };
-
-      await expect(
-        keyring.submitRequest({
-          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-          scope,
-          account: mockAccountId,
-          request: {
-            method: 'eth_prepareUserOperation',
-            params: [intent],
-          },
-        }),
-      ).rejects.toThrow(
-        `[Snap] Chain ID '${unsupportedChainId.toString()}' mismatch with scope '${scope}'`,
-      );
-
-      getNetworkSpy.mockRestore();
-    });
-
     it('should return the result of setting the config when submitting a set config request', async () => {
       const mockConfig: ChainConfig = {
         simpleAccountFactory: '0x07a4E8982B685EC9d706FbF21459e159A141Cfe7',
@@ -836,40 +811,6 @@ describe('Keyring', () => {
 
       const response = await keyring.submitRequest(request);
       expect(response).toStrictEqual({ pending: false, result: mockConfig });
-    });
-
-    describe('#getKeyPair', () => {
-      it('should throw an error for an invalid private key', async () => {
-        const invalidPrivateKey = '0xa1b2c3';
-        await expect(
-          keyring.createAccount({ privateKey: invalidPrivateKey }),
-        ).rejects.toThrow('Invalid private key');
-      });
-    });
-
-    describe('#getAAFactory', () => {
-      it('should throw an error if not on a supported chain', async () => {
-        const unsupportedChainId = BigInt(11297108109);
-        const mockedNetwork = {
-          name: 'palm',
-          chainId: unsupportedChainId,
-          ensAddress: null,
-          // eslint-disable-next-line @typescript-eslint/naming-convention
-          _defaultProvider: () => null,
-        };
-
-        const getNetworkSpy = jest
-          .spyOn(ethers.provider, 'getNetwork')
-          .mockResolvedValue(mockedNetwork as any);
-
-        await expect(
-          keyring.createAccount({ privateKey: aaOwnerPk }),
-        ).rejects.toThrow(
-          `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
-        );
-
-        getNetworkSpy.mockRestore();
-      });
     });
 
     describe('#getEntryPoint', () => {
@@ -921,6 +862,98 @@ describe('Keyring', () => {
         );
 
         getNetworkSpy.mockRestore();
+      });
+    });
+
+    describe('Scope validation', () => {
+      it('should throw an error if the scope is invalid', async () => {
+        const invalidScope = 'foobarbazquz:1';
+        const intent = {
+          to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+          value: '0x00',
+          data: ethers.ZeroHash,
+        };
+        await expect(
+          keyring.submitRequest({
+            id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+            scope: invalidScope,
+            account: mockAccountId,
+            request: {
+              method: 'eth_prepareUserOperation',
+              params: [intent],
+            },
+          }),
+        ).rejects.toThrow(
+          `[Snap] Error parsing request scope '${invalidScope}': Invalid CAIP chain ID.`,
+        );
+      });
+
+      it('should throw an error if the scope does not match the current chain', async () => {
+        const differentScope = 'eip155:1';
+        const intent = {
+          to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+          value: '0x00',
+          data: ethers.ZeroHash,
+        };
+
+        await expect(
+          keyring.submitRequest({
+            id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+            scope: differentScope,
+            account: mockAccountId,
+            request: {
+              method: 'eth_prepareUserOperation',
+              params: [intent],
+            },
+          }),
+        ).rejects.toThrow(
+          `[Snap] Chain ID '${chainId}' mismatch with scope '${differentScope}'`,
+        );
+      });
+
+      it('should throw an error if the account does not support the scope', async () => {
+        const mockedNetwork = {
+          name: 'mainnet',
+          chainId: BigInt(1),
+          ensAddress: null,
+          // eslint-disable-next-line @typescript-eslint/naming-convention
+          _defaultProvider: () => null,
+        };
+        const getNetworkSpy = jest
+          .spyOn(ethers.provider, 'getNetwork')
+          .mockResolvedValue(mockedNetwork as any);
+
+        await keyring.setConfig({
+          simpleAccountFactory: await simpleAccountFactory.getAddress(),
+          entryPoint: await entryPoint.getAddress(),
+          customVerifyingPaymasterAddress:
+            await verifyingPaymaster.getAddress(),
+        });
+
+        // Create an account for a different chain
+        const aaAccount = await keyring.createAccount({
+          privateKey: aaOwnerPk,
+        });
+
+        getNetworkSpy.mockRestore();
+
+        const intent = {
+          to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
+          value: '0x00',
+          data: ethers.ZeroHash,
+        };
+
+        await expect(
+          keyring.submitRequest({
+            id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+            scope, // current chain
+            account: aaAccount.id,
+            request: {
+              method: 'eth_prepareUserOperation',
+              params: [intent],
+            },
+          }),
+        ).rejects.toThrow(`[Snap] Account does not support chain: ${scope}`);
       });
     });
   });
