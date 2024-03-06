@@ -45,7 +45,7 @@
   "dependencies": {
     "@ethereumjs/tx": "^5.1.0",
     "@ethereumjs/util": "^9.0.1",
-    "@metamask/keyring-api": "^3.0.0",
+    "@metamask/keyring-api": "^4.0.1",
     "@metamask/snaps-sdk": "^2.0.0",
     "@metamask/utils": "^8.1.0",
     "@openzeppelin/contracts": "^4.2.0",
