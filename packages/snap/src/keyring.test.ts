@@ -77,7 +77,7 @@ const simpleAccountFactoryInterface = new SimpleAccountFactory__factory();
 
 describe('Keyring', () => {
   let aaOwner: Signer;
-  let aaOwnerPk: string;
+  let aaOwnerSk: string;
   let keyring: AccountAbstractionKeyring;
   let simpleAccountFactory: SimpleAccountFactory;
   let entryPoint: EntryPoint;
@@ -86,7 +86,7 @@ describe('Keyring', () => {
   beforeEach(async () => {
     const signers = await ethers.getSigners();
     aaOwner = signers[0]!;
-    aaOwnerPk = ethers.Wallet.fromPhrase(TEST_MNEMONIC).privateKey;
+    aaOwnerSk = ethers.Wallet.fromPhrase(TEST_MNEMONIC).privateKey;
     entryPoint = await new EntryPoint__factory(aaOwner).deploy();
 
     verifyingPaymaster = await new VerifyingPaymaster__factory(aaOwner).deploy(
@@ -126,7 +126,7 @@ describe('Keyring', () => {
         simpleAccountFactory: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         entryPoint: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
         bundlerUrl: 'https://bundler.example.com/rpc',
-        customVerifyingPaymasterPK: aaOwnerPk,
+        customVerifyingPaymasterPK: aaOwnerSk,
         customVerifyingPaymasterAddress:
           '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
       };
@@ -183,7 +183,7 @@ describe('Keyring', () => {
     });
 
     it('should create a new account', async () => {
-      const account = await keyring.createAccount({ privateKey: aaOwnerPk });
+      const account = await keyring.createAccount({ privateKey: aaOwnerSk });
       expect(account).toBeDefined();
       expect(await keyring.getAccount(account.id)).toStrictEqual(account);
     });
@@ -196,14 +196,14 @@ describe('Keyring', () => {
           salt,
         );
       const account = await keyring.createAccount({
-        privateKey: aaOwnerPk,
+        privateKey: aaOwnerSk,
         salt,
       });
       expect(account).toBeDefined();
       expect(await keyring.getAccount(account.id)).toStrictEqual(account);
       expect(account.address).toBe(expectedAddressFromSalt);
       const accountFromDifferentSalt = await keyring.createAccount({
-        privateKey: aaOwnerPk,
+        privateKey: aaOwnerSk,
         salt: '0x124',
       });
       expect(accountFromDifferentSalt.address).not.toBe(
@@ -219,14 +219,14 @@ describe('Keyring', () => {
           salt,
         );
       const account = await keyring.createAccount({
-        privateKey: aaOwnerPk,
+        privateKey: aaOwnerSk,
         salt,
       });
       expect(account).toBeDefined();
       expect(await keyring.getAccount(account.id)).toStrictEqual(account);
       expect(account.address).toBe(expectedAddressFromSalt);
       await expect(
-        keyring.createAccount({ privateKey: aaOwnerPk, salt }),
+        keyring.createAccount({ privateKey: aaOwnerSk, salt }),
       ).rejects.toThrow(
         `[Snap] Account abstraction address already in use: ${expectedAddressFromSalt}`,
       );
@@ -239,7 +239,7 @@ describe('Keyring', () => {
           throw new Error('Failed to save state');
         });
       await expect(
-        keyring.createAccount({ privateKey: aaOwnerPk }),
+        keyring.createAccount({ privateKey: aaOwnerSk }),
       ).rejects.toThrow('Failed to save state');
     });
 
@@ -268,7 +268,7 @@ describe('Keyring', () => {
           .mockResolvedValue(mockedNetwork as any);
 
         await expect(
-          keyring.createAccount({ privateKey: aaOwnerPk }),
+          keyring.createAccount({ privateKey: aaOwnerSk }),
         ).rejects.toThrow(
           `[Snap] Unsupported chain ID: ${unsupportedChainId.toString()}`,
         );
@@ -281,15 +281,15 @@ describe('Keyring', () => {
   describe('List Accounts', () => {
     it('should list the created accounts', async () => {
       const account1 = await keyring.createAccount({
-        privateKey: aaOwnerPk,
+        privateKey: aaOwnerSk,
         salt: '0x123',
       });
       const account2 = await keyring.createAccount({
-        privateKey: aaOwnerPk,
+        privateKey: aaOwnerSk,
         salt: '0x456',
       });
       const account3 = await keyring.createAccount({
-        privateKey: aaOwnerPk,
+        privateKey: aaOwnerSk,
         salt: '0x789',
       });
 
@@ -329,7 +329,7 @@ describe('Keyring', () => {
     let aaAccount: KeyringAccount;
 
     beforeEach(async () => {
-      aaAccount = await keyring.createAccount({ privateKey: aaOwnerPk });
+      aaAccount = await keyring.createAccount({ privateKey: aaOwnerSk });
     });
 
     it('should update an account', async () => {
@@ -385,7 +385,7 @@ describe('Keyring', () => {
 
   describe('Delete Account', () => {
     it('should delete an account', async () => {
-      const account = await keyring.createAccount({ privateKey: aaOwnerPk });
+      const account = await keyring.createAccount({ privateKey: aaOwnerSk });
       await keyring.deleteAccount(account.id);
       await expect(keyring.getAccount(account.id)).rejects.toThrow(
         `Account '${account.id}' not found`,
@@ -416,7 +416,7 @@ describe('Keyring', () => {
 
     beforeEach(async () => {
       aaAccount = await keyring.createAccount({
-        privateKey: aaOwnerPk,
+        privateKey: aaOwnerSk,
         salt,
       });
 
@@ -620,7 +620,7 @@ describe('Keyring', () => {
         });
         const account =
           await keyringWithoutCustomVerifyingPaymaster.createAccount({
-            privateKey: aaOwnerPk,
+            privateKey: aaOwnerSk,
           });
 
         const userOperation: EthUserOperation = {
@@ -754,7 +754,7 @@ describe('Keyring', () => {
 
   describe('#submitRequest', () => {
     beforeEach(async () => {
-      await keyring.createAccount({ privateKey: aaOwnerPk });
+      await keyring.createAccount({ privateKey: aaOwnerSk });
     });
 
     it('should throw an error if the request method is not supported', async () => {
@@ -816,7 +816,7 @@ describe('Keyring', () => {
     describe('#getEntryPoint', () => {
       it('should throw an error if not on a supported chain', async () => {
         const aaAccount = await keyring.createAccount({
-          privateKey: aaOwnerPk,
+          privateKey: aaOwnerSk,
         });
 
         const unsupportedChainId = BigInt(11297108109);
@@ -932,7 +932,7 @@ describe('Keyring', () => {
 
         // Create an account for a different chain
         const aaAccount = await keyring.createAccount({
-          privateKey: aaOwnerPk,
+          privateKey: aaOwnerSk,
         });
 
         getNetworkSpy.mockRestore();
