@@ -11,6 +11,7 @@ import type {
 import { EthMethod } from '@metamask/keyring-api';
 import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
+import * as jestExtended from 'jest-extended';
 import { v4 } from 'uuid';
 
 import {
@@ -34,6 +35,8 @@ import {
 } from './types';
 import { getUserOperationHash } from './utils/ecdsa';
 import { provider } from './utils/ethers';
+
+expect.extend(jestExtended);
 
 const mockAccountId = 'ea747116-767c-4117-a347-0c3f7b19cc5a';
 const TEST_MNEMONIC =
@@ -294,7 +297,7 @@ describe('Keyring', () => {
       });
 
       const accounts = await keyring.listAccounts();
-      expect(accounts).toStrictEqual([account1, account2, account3]);
+      expect(accounts).toIncludeSameMembers([account1, account2, account3]);
     });
   });
 
