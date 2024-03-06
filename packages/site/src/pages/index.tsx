@@ -5,6 +5,7 @@ import React, { useContext, useEffect, useState } from 'react';
 import * as uuid from 'uuid';
 
 import { Accordion, AccountList, Card, ConnectButton } from '../components';
+import { ChainConfig } from '../components/ChainConfig';
 import {
   CardContainer,
   Container,
@@ -125,37 +126,6 @@ const Index = () => {
       dispatch({ type: MetamaskActions.SetError, payload: error });
     }
   };
-
-  const userOpMethods = [
-    {
-      name: 'Set Chain Config',
-      description:
-        'Set account abstraction configuration options for the current chain.',
-      inputs: [
-        {
-          id: 'set-chain-config-chain-config-object',
-          title: 'Chain Config Object',
-          type: InputType.TextArea,
-          placeholder:
-            '{\n' +
-            '    "simpleAccountFactory": "0x97a0924bf222499cBa5C29eA746E82F230730293",\n' +
-            '    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",\n' +
-            '    "bundlerUrl": "https://bundler.example.com/rpc",\n' +
-            '    "customVerifyingPaymasterPK": "abcd1234qwer5678tyui9012ghjk3456zxcv7890",\n' +
-            '    "customVerifyingPaymasterAddress": "0x123456789ABCDEF0123456789ABCDEF012345678"\n' +
-            '}',
-          onChange: (event: any) =>
-            setChainConfigObject(event.currentTarget.value),
-        },
-      ],
-      action: {
-        disabled: Boolean(accountId),
-        callback: async () => await setChainConfig(),
-        label: 'Set Chain Configs',
-      },
-      successMessage: 'Chain Config Set',
-    },
-  ];
 
   const accountManagementMethods = [
     {
@@ -294,8 +264,8 @@ const Index = () => {
             <DividerTitle>Methods</DividerTitle>
             <Accordion items={accountManagementMethods} />
             <Divider />
-            <DividerTitle>UserOp Methods</DividerTitle>
-            <Accordion items={userOpMethods} />
+            <DividerTitle>Snap Configuration</DividerTitle>
+            <ChainConfig client={client} />
             <Divider />
           </Grid>
           <Grid item xs={4} sm={2} md={1}>

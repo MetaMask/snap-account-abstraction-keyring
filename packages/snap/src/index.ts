@@ -64,6 +64,10 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       return (await getKeyring()).setConfig(request.params as ChainConfig);
     }
 
+    case InternalMethod.GetConfigs: {
+      return (await getKeyring()).getConfigs();
+    }
+
     default: {
       throw new MethodNotSupportedError(request.method);
     }

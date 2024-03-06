@@ -4,6 +4,7 @@ export enum InternalMethod {
   ToggleSyncApprovals = 'snap.internal.toggleSynchronousApprovals',
   IsSynchronousMode = 'snap.internal.isSynchronousMode',
   SetConfig = 'snap.internal.setConfig',
+  GetConfigs = 'snap.internal.getConfigs',
 }
 
 export const originPermissions = new Map<string, string[]>([
@@ -39,6 +40,7 @@ export const originPermissions = new Map<string, string[]>([
       KeyringRpcMethod.RejectRequest,
       // Custom methods
       InternalMethod.SetConfig,
+      InternalMethod.GetConfigs,
     ],
   ],
   [
@@ -59,6 +61,7 @@ export const originPermissions = new Map<string, string[]>([
       KeyringRpcMethod.RejectRequest,
       // Custom methods
       InternalMethod.SetConfig,
+      InternalMethod.GetConfigs,
     ],
   ],
 ]);

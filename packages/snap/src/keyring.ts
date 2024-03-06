@@ -72,9 +72,11 @@ export type ChainConfig = {
   customVerifyingPaymasterAddress?: string;
 };
 
+export type ChainConfigs = Record<string, ChainConfig>;
+
 export type KeyringState = {
   wallets: Record<string, Wallet>;
-  config: Record<number, ChainConfig>;
+  config: ChainConfigs;
 };
 
 export type Wallet = {
@@ -112,6 +114,10 @@ export class AccountAbstractionKeyring implements Keyring {
 
     await this.#saveState();
     return this.#state.config[Number(chainId)]!;
+  }
+
+  async getConfigs(): Promise<ChainConfigs> {
+    return this.#state.config;
   }
 
   /**
@@ -308,22 +314,31 @@ export class AccountAbstractionKeyring implements Keyring {
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
 
-    if (method === InternalMethod.SetConfig) {
-      return {
-        pending: false,
-        result: await this.setConfig((params as [ChainConfig])[0]),
-      };
+    switch (method) {
+      case InternalMethod.GetConfig: {
+        return {
+          pending: false,
+          result: await this.getConfigs(),
+        };
+      }
+      case InternalMethod.SetConfig: {
+        return {
+          pending: false,
+          result: await this.setConfig((params as [ChainConfig])[0]),
+        };
+      }
+      default: {
+        const signature = await this.#handleSigningRequest({
+          account: this.#getWalletById(request.account).account,
+          method,
+          params,
+        });
+        return {
+          pending: false,
+          result: signature,
+        };
+      }
     }
-
-    const signature = await this.#handleSigningRequest({
-      account: this.#getWalletById(request.account).account,
-      method,
-      params,
-    });
-    return {
-      pending: false,
-      result: signature,
-    };
   }
 
   #getWalletById(accountId: string): Wallet {
