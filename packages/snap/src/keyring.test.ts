@@ -33,6 +33,7 @@ import {
   SimpleAccountFactory__factory,
   VerifyingPaymaster__factory,
 } from './types';
+import { CaipNamespaces, toCaipChainId } from './utils/caip';
 import { getUserOperationHash } from './utils/ecdsa';
 import { provider } from './utils/ethers';
 
@@ -43,7 +44,7 @@ const nonExistentAccountId = 'non-existent-id';
 const TEST_MNEMONIC =
   'test test test test test test test test test test test junk';
 const chainId = '11155111';
-const scope = `eip155:${chainId}`;
+const scope = toCaipChainId(CaipNamespaces.Eip155, chainId);
 let accountCreationCount = 0;
 
 // This mocks the ethereum global object thats available in the Snaps Execution Environment
@@ -887,7 +888,7 @@ describe('Keyring', () => {
       });
 
       it('should throw an error if the scope does not match the current chain', async () => {
-        const differentScope = 'eip155:1';
+        const differentScope = toCaipChainId(CaipNamespaces.Eip155, '1');
         const intent = {
           to: '0x97a0924bf222499cBa5C29eA746E82F230730293',
           value: '0x00',

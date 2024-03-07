@@ -23,8 +23,8 @@ import {
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import { hexToBytes, parseCaipChainId } from '@metamask/utils';
 import type { CaipChainId, Json, JsonRpcRequest } from '@metamask/utils';
+import { hexToBytes, parseCaipChainId } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import type { BigNumberish } from 'ethers';
 import { ethers } from 'ethers';
@@ -46,7 +46,7 @@ import {
   SimpleAccountFactory__factory,
   VerifyingPaymaster__factory,
 } from './types';
-import { isEvmChain } from './utils/caip';
+import { CaipNamespaces, isEvmChain, toCaipChainId } from './utils/caip';
 import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
 import { isUniqueAddress, runSensitive, throwError } from './utils/util';
@@ -218,7 +218,9 @@ export class AccountAbstractionKeyring implements Keyring {
         account,
         admin, // Address of the admin account from private key
         privateKey,
-        chains: { [`eip155:${chainId.toString()}`]: false },
+        chains: {
+          [toCaipChainId(CaipNamespaces.Eip155, chainId.toString())]: false,
+        },
         salt,
         initCode,
       };
@@ -458,7 +460,9 @@ export class AccountAbstractionKeyring implements Keyring {
         16,
       )}`;
       if (!wallet.chains[chainId.toString()]) {
-        wallet.chains[`eip155:${chainId.toString()}`] = true;
+        wallet.chains[
+          toCaipChainId(CaipNamespaces.Eip155, chainId.toString())
+        ] = true;
         await this.#saveState();
       }
     } catch (error) {
