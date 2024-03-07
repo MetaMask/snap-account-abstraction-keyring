@@ -849,7 +849,10 @@ describe('Keyring', () => {
         await expect(
           keyring.submitRequest({
             id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
-            scope: `eip155:${unsupportedChainId.toString()}`,
+            scope: toCaipChainId(
+              CaipNamespaces.Eip155,
+              unsupportedChainId.toString(),
+            ),
             account: mockAccountId,
             request: {
               method: 'eth_signUserOperation',
