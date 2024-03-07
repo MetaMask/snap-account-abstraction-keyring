@@ -459,10 +459,9 @@ export class AccountAbstractionKeyring implements Keyring {
       nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
         16,
       )}`;
-      if (!wallet.chains[chainId.toString()]) {
-        wallet.chains[
-          toCaipChainId(CaipNamespaces.Eip155, chainId.toString())
-        ] = true;
+      const scope = toCaipChainId(CaipNamespaces.Eip155, chainId.toString());
+      if (!Object.prototype.hasOwnProperty.call(wallet.chains, scope)) {
+        wallet.chains[scope] = true;
         await this.#saveState();
       }
     } catch (error) {
