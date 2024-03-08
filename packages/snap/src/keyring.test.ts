@@ -55,6 +55,7 @@ jest.mock('../src/utils/ethers', () => ({
     new ethers.Wallet(privateKey, ethers.provider),
 }));
 
+// This mocks the uuid library to generate a predictable mock account ID for the first account created and a random one for the rest
 jest.mock('uuid', () => {
   return {
     v4: () => {
