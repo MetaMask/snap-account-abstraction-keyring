@@ -33,6 +33,7 @@
     "@emotion/styled": "^11.11.0",
     "@metamask/keyring-api": "^3.0.0",
     "@metamask/providers": "^14.0.2",
+    "@metamask/snap-account-abstraction-keyring": "workspace:^",
     "@mui/icons-material": "^5.14.0",
     "@mui/material": "^5.14.0",
     "@types/react-helmet": "^6.1.6",

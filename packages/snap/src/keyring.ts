@@ -23,7 +23,8 @@ import {
   EthMethod,
 } from '@metamask/keyring-api';
 import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
+import type { CaipChainId, Json, JsonRpcRequest } from '@metamask/utils';
+import { hexToBytes, parseCaipChainId } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import type { BigNumberish } from 'ethers';
 import { ethers } from 'ethers';
@@ -45,14 +46,10 @@ import {
   SimpleAccountFactory__factory,
   VerifyingPaymaster__factory,
 } from './types';
+import { CaipNamespaces, isEvmChain, toCaipChainId } from './utils/caip';
 import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
-import {
-  isEvmChain,
-  isUniqueAddress,
-  runSensitive,
-  throwError,
-} from './utils/util';
+import { isUniqueAddress, runSensitive, throwError } from './utils/util';
 import { validateConfig } from './utils/validation';
 
 const unsupportedAAMethods = [
@@ -156,9 +153,6 @@ export class AccountAbstractionKeyring implements Keyring {
       options?.privateKey as string | undefined,
     );
 
-    if (!isUniqueAddress(admin, Object.values(this.#state.wallets))) {
-      throw new Error(`Account address already in use: ${admin}`);
-    }
     // The private key should not be stored in the account options since the
     // account object is exposed to external components, such as MetaMask and
     // the snap UI.
@@ -179,6 +173,12 @@ export class AccountAbstractionKeyring implements Keyring {
       ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
     const aaAddress = await aaFactory.getAccountAddress(admin, salt);
+
+    if (!isUniqueAddress(aaAddress, Object.values(this.#state.wallets))) {
+      throw new Error(
+        `[Snap] Account abstraction address already in use: ${aaAddress}`,
+      );
+    }
 
     const initCode = ethers.concat([
       aaFactory.target as string,
@@ -218,7 +218,9 @@ export class AccountAbstractionKeyring implements Keyring {
         account,
         admin, // Address of the admin account from private key
         privateKey,
-        chains: { [chainId.toString()]: false },
+        chains: {
+          [toCaipChainId(CaipNamespaces.Eip155, chainId.toString())]: false,
+        },
         salt,
         initCode,
       };
@@ -317,6 +319,7 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const signature = await this.#handleSigningRequest({
       account: this.#getWalletById(request.account).account,
+      scope: request.scope,
       method,
       params,
     });
@@ -369,16 +372,35 @@ export class AccountAbstractionKeyring implements Keyring {
 
   async #handleSigningRequest({
     account,
+    scope,
     method,
     params,
   }: {
     account: KeyringAccount;
+    scope: string;
     method: string;
     params: Json;
   }): Promise<Json> {
     const { chainId } = await provider.getNetwork();
+    try {
+      const parsedScope = parseCaipChainId(scope as CaipChainId);
+      if (String(chainId) !== parsedScope.reference) {
+        throwError(
+          `[Snap] Chain ID '${chainId}' mismatch with scope '${scope}'`,
+        );
+      }
+    } catch (error) {
+      throwError(
+        `[Snap] Error parsing request scope '${scope}': ${
+          (error as Error).message
+        }`,
+      );
+    }
     if (!this.#isSupportedChain(Number(chainId))) {
       throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
+    }
+    if (!this.#doesAccountSupportChain(account.id, scope)) {
+      throwError(`[Snap] Account does not support chain: ${scope}`);
     }
 
     switch (method) {
@@ -437,8 +459,9 @@ export class AccountAbstractionKeyring implements Keyring {
       nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
         16,
       )}`;
-      if (!wallet.chains[chainId.toString()]) {
-        wallet.chains[chainId.toString()] = true;
+      const scope = toCaipChainId(CaipNamespaces.Eip155, chainId.toString());
+      if (!Object.prototype.hasOwnProperty.call(wallet.chains, scope)) {
+        wallet.chains[scope] = true;
         await this.#saveState();
       }
     } catch (error) {
@@ -575,6 +598,11 @@ export class AccountAbstractionKeyring implements Keyring {
       Object.values(CHAIN_IDS).includes(chainId) ||
       Boolean(this.#state.config[chainId])
     );
+  }
+
+  #doesAccountSupportChain(accountId: string, scope: string): boolean {
+    const wallet = this.#getWalletById(accountId);
+    return Object.prototype.hasOwnProperty.call(wallet.chains, scope);
   }
 
   async #saveState(): Promise<void> {

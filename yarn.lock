@@ -4120,6 +4120,7 @@ __metadata:
     "@metamask/eslint-config-typescript": ^12.1.0
     "@metamask/keyring-api": ^3.0.0
     "@metamask/providers": ^14.0.2
+    "@metamask/snap-account-abstraction-keyring": "workspace:^"
     "@mui/icons-material": ^5.14.0
     "@mui/material": ^5.14.0
     "@svgr/webpack": ^6.5.1
@@ -4159,7 +4160,7 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@metamask/snap-account-abstraction-keyring@workspace:packages/snap":
+"@metamask/snap-account-abstraction-keyring@workspace:^, @metamask/snap-account-abstraction-keyring@workspace:packages/snap":
   version: 0.0.0-use.local
   resolution: "@metamask/snap-account-abstraction-keyring@workspace:packages/snap"
   dependencies:
@@ -4203,6 +4204,7 @@ __metadata:
     hardhat: ^2.19.4
     hardhat-gas-reporter: ^1.0.8
     jest: ^29.7.0
+    jest-extended: ^4.0.2
     prettier: ^2.2.1
     rimraf: ^3.0.2
     solidity-coverage: ^0.8.1
@@ -16996,7 +16998,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-diff@npm:^29.7.0":
+"jest-diff@npm:^29.0.0, jest-diff@npm:^29.7.0":
   version: 29.7.0
   resolution: "jest-diff@npm:29.7.0"
   dependencies:
@@ -17095,6 +17097,21 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jest-extended@npm:^4.0.2":
+  version: 4.0.2
+  resolution: "jest-extended@npm:4.0.2"
+  dependencies:
+    jest-diff: ^29.0.0
+    jest-get-type: ^29.0.0
+  peerDependencies:
+    jest: ">=27.2.5"
+  peerDependenciesMeta:
+    jest:
+      optional: true
+  checksum: afdc255eec7caa173f9e805e94562273d8b8aa4c7ab9b396668f018c18ea5236270a6ac499ca84b8c60e90ccbe9ccb4aebf998daef13aec9542c426df1df6079
+  languageName: node
+  linkType: hard
+
 "jest-get-type@npm:^27.5.1":
   version: 27.5.1
   resolution: "jest-get-type@npm:27.5.1"
@@ -17102,7 +17119,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"jest-get-type@npm:^29.6.3":
+"jest-get-type@npm:^29.0.0, jest-get-type@npm:^29.6.3":
   version: 29.6.3
   resolution: "jest-get-type@npm:29.6.3"
   checksum: 88ac9102d4679d768accae29f1e75f592b760b44277df288ad76ce5bf038c3f5ce3719dea8aa0f035dac30e9eb034b848ce716b9183ad7cc222d029f03e92205

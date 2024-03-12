@@ -66,16 +66,6 @@ export function isUniqueAddress(address: string, wallets: Wallet[]): boolean {
 }
 
 /**
- * Determines whether the given CAIP-2 chain ID represents an EVM-based chain.
- *
- * @param chain - The CAIP-2 chain ID to check.
- * @returns Returns true if the chain is EVM-based, otherwise false.
- */
-export function isEvmChain(chain: string): boolean {
-  return chain.startsWith('eip155:');
-}
-
-/**
  * Throws an error with the specified message.
  *
  * @param message - The error message.
