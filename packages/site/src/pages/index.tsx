@@ -1,8 +1,7 @@
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
 import Grid from '@mui/material/Grid';
-import React, { useContext, useEffect, useState } from 'react';
-import * as uuid from 'uuid';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 
 import { Accordion, AccountList, Card, ConnectButton } from '../components';
 import { ChainConfig } from '../components/ChainConfig';
@@ -17,18 +16,18 @@ import { defaultSnapOrigin } from '../config';
 import { MetamaskActions, MetaMaskContext } from '../hooks';
 import { InputType } from '../types';
 import type { KeyringState } from '../utils';
-import { connectSnap, getSnap } from '../utils';
+import { connectSnap, getSnap, togglePaymasterUsage } from '../utils';
 
 const snapId = defaultSnapOrigin;
 
 const initialState: {
   pendingRequests: KeyringRequest[];
   accounts: KeyringAccount[];
-  useSynchronousApprovals: boolean;
+  usePaymaster: boolean;
 } = {
   pendingRequests: [],
   accounts: [],
-  useSynchronousApprovals: true,
+  usePaymaster: false,
 };
 
 const Index = () => {
@@ -41,8 +40,6 @@ const Index = () => {
   const [salt, setSalt] = useState<string | null>();
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
-  // UserOp method state
-  const [chainConfig, setChainConfigObject] = useState<string | null>();
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
 
@@ -58,12 +55,23 @@ const Index = () => {
       }
       const accounts = await client.listAccounts();
       setSnapState({
+        ...state,
         accounts,
+        usePaymaster: false,
       });
     }
 
     getState().catch((error) => console.error(error));
   }, [state.installedSnap]);
+
+  const handleUsePaymasterToggle = useCallback(async () => {
+    console.log('Toggling paymaster usage');
+    await togglePaymasterUsage();
+    setSnapState({
+      ...snapState,
+      usePaymaster: !snapState.usePaymaster,
+    });
+  }, [snapState]);
 
   const syncAccounts = async () => {
     const accounts = await client.listAccounts();
@@ -94,22 +102,6 @@ const Index = () => {
     const account: KeyringAccount = JSON.parse(accountObject);
     await client.updateAccount(account);
     await syncAccounts();
-  };
-
-  const setChainConfig = async () => {
-    if (!chainConfig) {
-      return;
-    }
-    const request: KeyringRequest = {
-      id: uuid.v4(),
-      scope: '',
-      account: uuid.v4(),
-      request: {
-        method: 'snap.internal.setConfig',
-        params: [JSON.parse(chainConfig)],
-      },
-    };
-    await client.submitRequest(request);
   };
 
   const handleConnectClick = async () => {

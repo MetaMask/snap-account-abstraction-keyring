@@ -8,6 +8,15 @@ import * as uuid from 'uuid';
 
 import { StyledBox } from './styledComponents';
 import { defaultSnapOrigin } from '../config';
+import { chainIdToName } from '../utils/chains';
+
+const ChainConfigErrorContainer = styled.div`
+  color: #721c24;
+`;
+
+const ChainConfigSuccessContainer = styled.div`
+  color: #155724;
+`;
 
 const ChainConfigContainer = styled.div`
   width: 100%;
@@ -33,7 +42,7 @@ const ChainConfigHeader = styled.div`
 
 const ChainConfigContent = styled.div`
   display: ${({ isOpen }: { isOpen: boolean }) => (isOpen ? 'block' : 'none')};
-  padding: 0px 32px;
+  padding: 0px 8px;
 `;
 
 const ChainDescription = styled.p`
@@ -56,12 +65,13 @@ const Select = styled.select`
   width: calc(95% - 16px);
   padding-top: 8px;
   padding-bottom: 10px;
-  margin: 8px 2.5% 8px 16px;
+  margin: 8px 2.5% 8px 0px;
   border-radius: 5px;
 `;
 
 const SelectItem = styled.option`
   margin-left: 16px;
+  padding-left: 4px;
 
   :disabled {
     font-style: italic;
@@ -83,6 +93,7 @@ export type ChainConfigs = {
 export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
   const [chainConfigs, setChainConfigs] = useState<ChainConfigs>({});
   const [chainSelected, setChainSelected] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>();
   const [error, setError] = useState<Error | undefined>();
 
   useEffect(() => {
@@ -106,6 +117,23 @@ export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
     getChainConfig().catch((error) => setError(error));
   }, []);
 
+
+  useEffect(() => {
+    // set default values for unknown chain
+    if (!chainSelected && !chainConfigs[chainSelected as string]) {
+      setChainConfigs({
+        ...chainConfigs,
+        [chainSelected as string]: {
+          simpleAccountFactory: '',
+          entryPoint: '',
+          bundlerUrl: '',
+          customVerifyingPaymasterPK: '',
+          customVerifyingPaymasterAddress: '',
+        },
+      });
+    }
+  }, [chainSelected]);
+
   const updateSpecificChainConfig = (
     chainId: string,
     configKey: keyof ChainConfig,
@@ -121,6 +149,8 @@ export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
   };
 
   const updateChainConfig = async () => {
+    setError(undefined);
+    setSuccessMessage(undefined);
     if (!chainSelected || !chainConfigs[chainSelected]) {
       return;
     }
@@ -135,6 +165,7 @@ export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
         },
       };
       await client.submitRequest(request);
+      setSuccessMessage('Chain Config Updated');
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (error) {
       setError(error as Error);
@@ -146,18 +177,28 @@ export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
       <ChainConfigItem>
         <ChainConfigHeader>{'Chain Configuration'}</ChainConfigHeader>
         <ChainConfigContent isOpen>
-          {error && <p>{error.message}</p>}
-          <Select onChange={(event) => setChainSelected(event.target.value)}>
+          <ChainConfigErrorContainer>
+            {error && <p>{error.message}</p>}
+          </ChainConfigErrorContainer>
+          <ChainConfigSuccessContainer>
+            {successMessage && <p>{successMessage}</p>}
+          </ChainConfigSuccessContainer>
+          <Select
+            value={chainSelected ?? ''}
+            onChange={(event) => {
+              setChainSelected(event.target.value);
+            }}
+          >
             <SelectItem disabled value="">
               {'Select Chain'}
             </SelectItem>
             {Object.keys(chainConfigs).map((option: string) => (
               <SelectItem value={option} key={option}>
-                {option}
+                {chainIdToName(option) ?? `Chain ${option}`}
               </SelectItem>
             ))}
           </Select>
-          {chainSelected && chainConfigs?.[chainSelected] && (
+          {chainSelected && (
             <StyledBox sx={{ flexGrow: 1 }}>
               <ChainDescription>Simple Account Factory</ChainDescription>
               <TextField

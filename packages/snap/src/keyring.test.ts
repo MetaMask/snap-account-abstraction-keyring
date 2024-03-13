@@ -132,7 +132,7 @@ describe('Keyring', () => {
       },
       {
         field: 'bundlerUrl',
-        value: 'https:/invalid.fake.io',
+        value: 'ftp:/invalid.fake.io',
         errorMessage: 'Invalid Bundler URL',
       },
       {

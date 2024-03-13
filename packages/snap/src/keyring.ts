@@ -21,8 +21,8 @@ import {
   emitSnapKeyringEvent,
   EthAccountType,
   EthMethod,
+  KeyringEvent,
 } from '@metamask/keyring-api';
-import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import type { BigNumberish } from 'ethers';
@@ -315,7 +315,7 @@ export class AccountAbstractionKeyring implements Keyring {
     const { method, params = [] } = request.request as JsonRpcRequest;
 
     switch (method) {
-      case InternalMethod.GetConfig: {
+      case InternalMethod.GetConfigs: {
         return {
           pending: false,
           result: await this.getConfigs(),
@@ -399,6 +399,8 @@ export class AccountAbstractionKeyring implements Keyring {
     switch (method) {
       case EthMethod.PrepareUserOperation: {
         const transactions = params as EthBaseTransaction[];
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore-error will fix type in next PR
         return await this.#prepareUserOperation(account.address, transactions);
       }
 
@@ -477,7 +479,7 @@ export class AccountAbstractionKeyring implements Keyring {
       dummyPaymasterAndData: getDummyPaymasterAndData(
         verifyingPaymasterAddress,
       ),
-      bundlerUrl: chainConfig?.bundlerUrl ?? '',
+      bundlerUrl: chainConfig?.bundlerUrl,
     };
     return ethBaseUserOp;
   }
