@@ -4,7 +4,6 @@
   "private": true,
   "license": "(MIT-0 OR Apache-2.0)",
   "scripts": {
-    "allow-scripts": "yarn workspace @metamask/snap-account-abstraction-keyring allow-scripts",
     "build": "rimraf .cache && cross-env GATSBY_TELEMETRY_DISABLED=1 gatsby build --prefix-paths",
     "clean": "rimraf public .cache",
     "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types && yarn lint:changelog",
@@ -31,7 +30,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@metamask/keyring-api": "^3.0.0",
+    "@metamask/keyring-api": "^4.0.2",
     "@metamask/providers": "^14.0.2",
     "@mui/icons-material": "^5.14.0",
     "@mui/material": "^5.14.0",
