@@ -3,6 +3,7 @@ import {
   handleKeyringRequest,
 } from '@metamask/keyring-api';
 import type {
+  Json,
   OnKeyringRequestHandler,
   OnRpcRequestHandler,
 } from '@metamask/snaps-sdk';
@@ -58,18 +59,21 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   // Handle custom methods.
   switch (request.method) {
     case InternalMethod.SetConfig: {
-      if (!request.params?.length) {
+      if (!request.params) {
         throw new Error('Missing config');
       }
-      return (await getKeyring()).setConfig(request.params as ChainConfig);
+      return (await (
+        await getKeyring()
+      ).setConfig(request.params as ChainConfig)) as Json;
     }
 
     case InternalMethod.GetConfigs: {
-      return (await getKeyring()).getConfigs();
+      return (await (await getKeyring()).getConfigs()) as Json;
     }
 
     case InternalMethod.TogglePaymasterUsage: {
-      return (await getKeyring()).togglePaymasterUsage();
+      await (await getKeyring()).togglePaymasterUsage();
+      return null;
     }
 
     case InternalMethod.IsUsingPaymaster: {

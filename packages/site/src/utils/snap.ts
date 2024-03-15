@@ -1,5 +1,5 @@
 import snapPackageInfo from '../../../snap/package.json';
-import type { ChainConfigs } from '../components/ChainConfig';
+import type { ChainConfig, ChainConfigs } from '../components/ChainConfig';
 import { defaultSnapOrigin } from '../config';
 import type { GetSnapsResponse, Snap } from '../types';
 
@@ -55,20 +55,6 @@ export const getSnap = async (version?: string): Promise<Snap | undefined> => {
 };
 
 /**
- * Invoke the "hello" method from the example snap.
- */
-
-export const sendHello = async () => {
-  await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: {
-      snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.hello' },
-    },
-  });
-};
-
-/**
  * Invokes a Snap method with the specified parameters.
  * @param method - The method to invoke.
  * @param params - Optional parameters for the method.
@@ -120,27 +106,17 @@ export const isCurrentChainConfigured = async (): Promise<boolean> => {
 };
 
 export const getChainConfigs = async (): Promise<ChainConfigs> => {
-  const configs = (await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: {
-      snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.getConfigs' },
-    },
-  })) as ChainConfigs;
-
-  return configs;
+  return (await walletInvokeSnap('snap.internal.getConfigs')) as ChainConfigs;
 };
 
 export const saveChainConfig = async ({
   chainId,
-  verifyingPaymasterAddress,
-  verifyingPaymasterPK,
+  chainConfig,
 }: {
   chainId: string;
-  verifyingPaymasterAddress: string;
-  verifyingPaymasterPK: string;
+  chainConfig: Partial<ChainConfig>;
 }): Promise<void> => {
-  if (!chainId || !verifyingPaymasterAddress || !verifyingPaymasterPK) {
+  if (!chainId) {
     throw new Error('Invalid parameters');
   }
 
@@ -154,7 +130,7 @@ export const saveChainConfig = async ({
     method: 'wallet_invokeSnap',
     params: {
       snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.setConfig', params: [{}] },
+      request: { method: 'snap.internal.setConfig', params: chainConfig },
     },
   });
 };

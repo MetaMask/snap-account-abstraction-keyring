@@ -3704,17 +3704,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lavamoat/aa@npm:^4.1.0":
-  version: 4.1.0
-  resolution: "@lavamoat/aa@npm:4.1.0"
-  dependencies:
-    resolve: 1.22.8
-  bin:
-    lavamoat-ls: src/cli.js
-  checksum: c2ca989d2aaf012f8e1bc314c90a2475a79bbf34d52d2434d36e593e3d126b958950677f2111c142b81e5a7df7c6b1110331c908be5e033cfe96cdf7013540a7
-  languageName: node
-  linkType: hard
-
 "@lavamoat/aa@npm:^4.2.0":
   version: 4.2.0
   resolution: "@lavamoat/aa@npm:4.2.0"
@@ -3726,22 +3715,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@lavamoat/allow-scripts@npm:^3.0.0, @lavamoat/allow-scripts@npm:^3.0.3":
-  version: 3.0.3
-  resolution: "@lavamoat/allow-scripts@npm:3.0.3"
-  dependencies:
-    "@lavamoat/aa": ^4.1.0
-    "@npmcli/run-script": 7.0.4
-    bin-links: 4.0.3
-    npm-normalize-package-bin: 3.0.1
-    yargs: 17.7.2
-  bin:
-    allow-scripts: src/cli.js
-  checksum: 867cfee6e5bbe33d8e897c1374e10cff116f5c6e7cfc0609a5e985880b8b1603583f5d8a4a0bc67407784497debf91e7646fd8d85b76dd46c816d7337cf7de97
-  languageName: node
-  linkType: hard
-
-"@lavamoat/allow-scripts@npm:^3.0.4":
+"@lavamoat/allow-scripts@npm:^3.0.0, @lavamoat/allow-scripts@npm:^3.0.3, @lavamoat/allow-scripts@npm:^3.0.4":
   version: 3.0.4
   resolution: "@lavamoat/allow-scripts@npm:3.0.4"
   dependencies:

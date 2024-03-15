@@ -1,3 +1,5 @@
+import { ManageStateOperation } from '@metamask/snaps-sdk';
+
 import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
 import { CHAIN_IDS } from './constants/chain-ids';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
@@ -59,15 +61,15 @@ const defaultState: KeyringState = {
 export async function getState(): Promise<KeyringState> {
   const state = (await snap.request({
     method: 'snap_manageState',
-    params: { operation: 'get' },
+    params: { operation: ManageStateOperation.GetState },
   })) as any;
 
-  logger.debug('Retrieved state:', JSON.stringify(state));
+  if (!state) {
+    return defaultState;
+  }
 
-  return {
-    ...defaultState,
-    ...state,
-  };
+  logger.debug('Retrieved state:', JSON.stringify(state));
+  return state;
 }
 
 /**
@@ -76,8 +78,9 @@ export async function getState(): Promise<KeyringState> {
  * @param state - New snap state.
  */
 export async function saveState(state: KeyringState) {
+  logger.debug('Saving state:', JSON.stringify(state));
   await snap.request({
     method: 'snap_manageState',
-    params: { operation: 'update', newState: state },
+    params: { operation: ManageStateOperation.UpdateState, newState: state },
   });
 }

@@ -322,18 +322,6 @@ export class AccountAbstractionKeyring implements Keyring {
     const { method, params = [] } = request.request as JsonRpcRequest;
 
     switch (method) {
-      case InternalMethod.GetConfigs: {
-        return {
-          pending: false,
-          result: await this.getConfigs(),
-        };
-      }
-      case InternalMethod.SetConfig: {
-        return {
-          pending: false,
-          result: await this.setConfig(params as ChainConfig),
-        };
-      }
       default: {
         const signature = await this.#handleSigningRequest({
           account: this.#getWalletById(request.account).account,
@@ -635,6 +623,8 @@ export class AccountAbstractionKeyring implements Keyring {
       ...this.#state,
       usePaymaster: !this.#state.usePaymaster,
     };
+
+    this.#state = updatedState;
 
     await saveState(updatedState);
   }

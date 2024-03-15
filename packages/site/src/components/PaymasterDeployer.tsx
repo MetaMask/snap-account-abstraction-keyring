@@ -9,22 +9,25 @@ import { getChainConfigs, saveChainConfig } from '../utils';
 
 const PaymasterDeployerContainer = styled.div`
   width: 100%;
-  margin: 0 auto;
+  margin: 0 auto 20px auto;
   border: 1px solid #eaeaea;
   border-radius: 4px;
-  margin-bottom: 20px;
+  padding: 8px;
   width: 100%;
+`;
+
+const PaymasterDeployerHeader = styled.div`
+  margin: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  font-size: 16px;
 `;
 
 const PaymasterDeployerContent = styled.div`
   display: ${({ isOpen }: { isOpen: boolean }) => (isOpen ? 'block' : 'none')};
   padding: 0px 8px;
-`;
-
-const PaymasterDeployerDescription = styled.p`
-  font-size: 14px;
-  font-weight: bold;
-  margin: 5px 2.5% 5px 16px;
 `;
 
 export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
@@ -62,7 +65,6 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
   }, [chainId]);
 
   const deployPaymaster = async () => {
-    console.log('paymasterSecretKey', paymasterSecretKey);
     if (!paymasterSecretKey) {
       return;
     }
@@ -70,17 +72,12 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
     try {
       await window.ethereum.enable();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      console.log('signer', await signer.getAddress());
+      const signer = new ethers.Wallet(paymasterSecretKey, provider);
       const paymasterFactory = new ethers.ContractFactory(
         verifyingPaymaster.abi,
         verifyingPaymaster.bytecode,
         signer,
       );
-      console.log('paymaster factory', paymasterFactory);
-      console.log('chainid', chainId);
-      console.log('configs[chainId]', configs[chainId]);
-      console.log('entry point', configs[chainId]?.entryPoint);
       const paymaster = await paymasterFactory.deploy(
         configs[chainId]?.entryPoint,
         await signer.getAddress(),
@@ -91,9 +88,12 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
 
       await saveChainConfig({
         chainId,
-        verifyingPaymasterAddress: paymaster.address,
-        verifyingPaymasterPK: paymasterSecretKey,
+        chainConfig: {
+          customVerifyingPaymasterAddress: paymaster.address,
+          customVerifyingPaymasterSK: paymasterSecretKey,
+        },
       });
+      // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (error) {
       console.error(error);
     }
@@ -101,10 +101,10 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
 
   return (
     <PaymasterDeployerContainer>
+      <PaymasterDeployerHeader>
+        Deploy Verifying Paymaster
+      </PaymasterDeployerHeader>
       <PaymasterDeployerContent isOpen>
-        <PaymasterDeployerDescription>
-          Deploy Verifying Paymaster
-        </PaymasterDeployerDescription>
         <TextField
           id={'verify-paymaster-admin-secret-key'}
           placeholder={'Verifying Paymaster Secret Key'}
