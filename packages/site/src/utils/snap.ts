@@ -87,7 +87,7 @@ export const isUsingPaymaster = async (): Promise<boolean> => {
     method: 'wallet_invokeSnap',
     params: {
       snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.isUsingPaymster' },
+      request: { method: 'snap.internal.isUsingPaymaster' },
     },
   })) as boolean;
 };
