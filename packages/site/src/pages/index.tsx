@@ -4,7 +4,7 @@ import Grid from '@mui/material/Grid';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 
 import { Accordion, AccountList, Card, ConnectButton } from '../components';
-import { ChainConfig } from '../components/ChainConfig';
+import { ChainConfigComponent } from '../components/ChainConfig';
 import {
   CardContainer,
   Container,
@@ -257,7 +257,7 @@ const Index = () => {
             <Accordion items={accountManagementMethods} />
             <Divider />
             <DividerTitle>Snap Configuration</DividerTitle>
-            <ChainConfig client={client} />
+            <ChainConfigComponent client={client} />
             <Divider />
           </Grid>
           <Grid item xs={4} sm={2} md={1}>

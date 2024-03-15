@@ -86,13 +86,25 @@ export type ChainConfig = {
   customVerifyingPaymasterAddress?: string;
 };
 
+export const ConfigKeys = {
+  simpleAccountFactory: 'Simple Account Factory',
+  entryPoint: 'Entrypoint Address',
+  bundlerUrl: 'Bundle Url',
+  customVerifyingPaymasterPK: 'Verifying Paymaster Secret Key',
+  customVerifyingPaymasterAddress: 'Verifying Paymaster Contract Address',
+};
+
 export type ChainConfigs = {
   [chainId: string]: ChainConfig;
 };
 
-export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
+export const ChainConfigComponent = ({
+  client,
+}: {
+  client: KeyringSnapRpcClient;
+}) => {
   const [chainConfigs, setChainConfigs] = useState<ChainConfigs>({});
-  const [chainSelected, setChainSelected] = useState<string | null>(null);
+  const [chainSelected, setChainSelected] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>();
   const [error, setError] = useState<Error | undefined>();
 
@@ -119,10 +131,10 @@ export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
 
   useEffect(() => {
     // set default values for unknown chain
-    if (!chainSelected && !chainConfigs[chainSelected as string]) {
+    if (!chainSelected && !chainConfigs[chainSelected]) {
       setChainConfigs({
         ...chainConfigs,
-        [chainSelected as string]: {
+        [chainSelected]: {
           simpleAccountFactory: '',
           entryPoint: '',
           bundlerUrl: '',
@@ -197,103 +209,44 @@ export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
               </SelectItem>
             ))}
           </Select>
-          {chainSelected && (
+          {chainSelected && chainConfigs[chainSelected] && (
             <StyledBox sx={{ flexGrow: 1 }}>
-              <ChainDescription>Simple Account Factory</ChainDescription>
-              <TextField
-                id={'simpleAccountFactory'}
-                placeholder={
-                  chainConfigs?.[chainSelected]?.simpleAccountFactory ??
-                  'Simple Account Factory Address'
-                }
-                value={
-                  chainConfigs?.[chainSelected]?.simpleAccountFactory ?? ''
-                }
-                onChange={(event) =>
-                  updateSpecificChainConfig(
-                    chainSelected,
-                    'simpleAccountFactory',
-                    event.target.value,
-                  )
-                }
-              />
-              <ChainDescription>Entrypoint Contract</ChainDescription>
-              <TextField
-                id={'entrypoint'}
-                placeholder={
-                  chainConfigs?.[chainSelected]?.entryPoint ??
-                  'Entrypoint Address'
-                }
-                value={chainConfigs?.[chainSelected]?.entryPoint ?? ''}
-                onChange={(event) =>
-                  updateSpecificChainConfig(
-                    chainSelected,
-                    'entryPoint',
-                    event.target.value,
-                  )
-                }
-              />
-              <ChainDescription>Bundler Url</ChainDescription>
-              <TextField
-                id={'bundlerUrl'}
-                style={{
-                  borderColor: chainConfigs?.[chainSelected]?.bundlerUrl
-                    ? ''
-                    : 'red',
-                }}
-                placeholder={
-                  chainConfigs?.[chainSelected]?.bundlerUrl ?? 'Bundler URL'
-                }
-                value={chainConfigs?.[chainSelected]?.bundlerUrl ?? ''}
-                onChange={(event) =>
-                  updateSpecificChainConfig(
-                    chainSelected,
-                    'bundlerUrl',
-                    event.target.value,
-                  )
-                }
-              />
-              <ChainDescription>Verifying Paymaster Address</ChainDescription>
-              <TextField
-                id={'customVerifyingPaymasterAddress'}
-                placeholder={
-                  chainConfigs?.[chainSelected]
-                    ?.customVerifyingPaymasterAddress ??
-                  'Custom Verifying Paymaster Address'
-                }
-                value={
-                  chainConfigs?.[chainSelected]
-                    ?.customVerifyingPaymasterAddress ?? ''
-                }
-                onChange={(event) =>
-                  updateSpecificChainConfig(
-                    chainSelected,
-                    'customVerifyingPaymasterAddress',
-                    event.target.value,
-                  )
-                }
-              />
-              <ChainDescription>
-                Verifying Paymaster Private Key
-              </ChainDescription>
-              <TextField
-                id={'customVerifyingPaymasterPK'}
-                placeholder={
-                  chainConfigs?.[chainSelected]?.customVerifyingPaymasterPK ??
-                  'Custom Verifying Paymaster PK'
-                }
-                value={
-                  chainConfigs?.[chainSelected]?.customVerifyingPaymasterPK ??
-                  ''
-                }
-                onChange={(event) =>
-                  updateSpecificChainConfig(
-                    chainSelected,
-                    'customVerifyingPaymasterPK',
-                    event.target.value,
-                  )
-                }
-              />
+              {Object.entries(ConfigKeys).map(
+                ([key, title]: [key: string, title: string]) => {
+                  return (
+                    <>
+                      <ChainDescription key={key}>{title}</ChainDescription>
+                      <TextField
+                        id={key}
+                        placeholder={
+                          chainConfigs?.[chainSelected]?.[
+                            key as keyof ChainConfig
+                          ] ?? key
+                        }
+                        value={
+                          chainConfigs[chainSelected]?.[
+                            key as keyof ChainConfig
+                          ] ?? ''
+                        }
+                        style={{
+                          borderColor:
+                            key === 'bundlerUrl' &&
+                            !chainConfigs[chainSelected]?.bundlerUrl
+                              ? 'red'
+                              : undefined,
+                        }}
+                        onChange={(event) =>
+                          updateSpecificChainConfig(
+                            chainSelected,
+                            key as keyof ChainConfig,
+                            event.target.value,
+                          )
+                        }
+                      />
+                    </>
+                  );
+                },
+              )}
             </StyledBox>
           )}
 

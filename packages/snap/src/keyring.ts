@@ -108,12 +108,12 @@ export class AccountAbstractionKeyring implements Keyring {
     validateConfig(config);
 
     this.#state.config[Number(chainId)] = {
-      ...this.#state.config[Number(chainId)],
+      ...this.#state.config[Number(chainId).toString()],
       ...config,
     };
 
     await this.#saveState();
-    return this.#state.config[Number(chainId)]!;
+    return this.#state.config[Number(chainId).toString()]!;
   }
 
   /**
