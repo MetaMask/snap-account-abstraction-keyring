@@ -68,6 +68,14 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       return (await getKeyring()).getConfigs();
     }
 
+    case InternalMethod.TogglePaymasterUsage: {
+      return (await getKeyring()).togglePaymasterUsage();
+    }
+
+    case InternalMethod.IsUsingPaymaster: {
+      return (await getKeyring()).isUsingPaymaster();
+    }
+
     default: {
       throw new MethodNotSupportedError(request.method);
     }
