@@ -1,11 +1,7 @@
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
-import {
-  CaipNamespaces,
-  toCaipChainId,
-} from '@metamask/snap-account-abstraction-keyring/src/utils/caip';
 import Grid from '@mui/material/Grid';
-import React, { useCallback, useContext, useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 
 import { Accordion, AccountList, Card, ConnectButton } from '../components';
 import { ChainConfigComponent } from '../components/ChainConfig';
@@ -20,7 +16,7 @@ import { defaultSnapOrigin } from '../config';
 import { MetamaskActions, MetaMaskContext } from '../hooks';
 import { InputType } from '../types';
 import type { KeyringState } from '../utils';
-import { connectSnap, getSnap, togglePaymasterUsage } from '../utils';
+import { connectSnap, getSnap } from '../utils';
 
 const snapId = defaultSnapOrigin;
 
@@ -67,15 +63,6 @@ const Index = () => {
 
     getState().catch((error) => console.error(error));
   }, [state.installedSnap]);
-
-  const handleUsePaymasterToggle = useCallback(async () => {
-    console.log('Toggling paymaster usage');
-    await togglePaymasterUsage();
-    setSnapState({
-      ...snapState,
-      usePaymaster: !snapState.usePaymaster,
-    });
-  }, [snapState]);
 
   const syncAccounts = async () => {
     const accounts = await client.listAccounts();
