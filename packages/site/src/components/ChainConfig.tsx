@@ -97,7 +97,7 @@ export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
   const [error, setError] = useState<Error | undefined>();
 
   useEffect(() => {
-    const getChainConfig = async () => {
+    const getChainConfigs = async () => {
       try {
         const configs = await window.ethereum.request({
           method: 'wallet_invokeSnap',
@@ -114,9 +114,8 @@ export const ChainConfig = ({ client }: { client: KeyringSnapRpcClient }) => {
       }
     };
     // eslint-disable-next-line @typescript-eslint/no-shadow
-    getChainConfig().catch((error) => setError(error));
+    getChainConfigs().catch((error) => setError(error));
   }, []);
-
 
   useEffect(() => {
     // set default values for unknown chain
