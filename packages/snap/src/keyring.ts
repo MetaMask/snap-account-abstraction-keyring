@@ -116,6 +116,10 @@ export class AccountAbstractionKeyring implements Keyring {
     return this.#state.config[Number(chainId)]!;
   }
 
+  /**
+   * Retrieves the configuration settings for the keyring.
+   * @returns A promise that resolves to the ChainConfigs object containing the configuration settings.
+   */
   async getConfigs(): Promise<ChainConfigs> {
     return this.#state.config;
   }
