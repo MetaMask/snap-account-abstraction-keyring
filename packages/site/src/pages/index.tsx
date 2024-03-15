@@ -1,5 +1,9 @@
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
+import {
+  CaipNamespaces,
+  toCaipChainId,
+} from '@metamask/snap-account-abstraction-keyring/src/utils/caip';
 import Grid from '@mui/material/Grid';
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 
