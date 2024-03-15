@@ -490,6 +490,9 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     const chainConfig = this.#getChainConfig(Number(chainId));
+    if (!chainConfig?.bundlerUrl) {
+      throwError(`[Snap] Bundler URL not found for chain: ${chainId}`);
+    }
 
     const verifyingPaymasterAddress =
       chainConfig?.customVerifyingPaymasterAddress;
@@ -506,7 +509,7 @@ export class AccountAbstractionKeyring implements Keyring {
       dummyPaymasterAndData: getDummyPaymasterAndData(
         verifyingPaymasterAddress,
       ),
-      bundlerUrl: chainConfig?.bundlerUrl,
+      bundlerUrl: chainConfig.bundlerUrl,
     };
     return ethBaseUserOp;
   }
