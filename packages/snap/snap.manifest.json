@@ -19,10 +19,7 @@
   },
   "initialPermissions": {
     "endowment:keyring": {
-      "allowedOrigins": [
-        "https://metamask.github.io",
-        "http://localhost:8000"
-      ]
+      "allowedOrigins": ["https://metamask.github.io", "http://localhost:8000"]
     },
     "endowment:rpc": {
       "dapps": true

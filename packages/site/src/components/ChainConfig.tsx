@@ -101,8 +101,10 @@ export type ChainConfigs = {
 
 export const ChainConfigComponent = ({
   client,
+  setSelectedChain,
 }: {
   client: KeyringSnapRpcClient;
+  setSelectedChain: (chainId: string) => void;
 }) => {
   const [chainConfigs, setChainConfigs] = useState<ChainConfigs>({});
   const [chainSelected, setChainSelected] = useState<string>('');
@@ -144,6 +146,7 @@ export const ChainConfigComponent = ({
         },
       });
     }
+    setSelectedChain(chainSelected);
   }, [chainSelected]);
 
   const updateSpecificChainConfig = (

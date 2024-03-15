@@ -119,4 +119,44 @@ export const isCurrentChainConfigured = async (): Promise<boolean> => {
   );
 };
 
+export const getChainConfigs = async (): Promise<ChainConfigs> => {
+  const configs = (await window.ethereum.request({
+    method: 'wallet_invokeSnap',
+    params: {
+      snapId: defaultSnapOrigin,
+      request: { method: 'snap.internal.getConfigs' },
+    },
+  })) as ChainConfigs;
+
+  return configs;
+};
+
+export const saveChainConfig = async ({
+  chainId,
+  verifyingPaymasterAddress,
+  verifyingPaymasterPK,
+}: {
+  chainId: string;
+  verifyingPaymasterAddress: string;
+  verifyingPaymasterPK: string;
+}): Promise<void> => {
+  if (!chainId || !verifyingPaymasterAddress || !verifyingPaymasterPK) {
+    throw new Error('Invalid parameters');
+  }
+
+  const configs = await getChainConfigs();
+
+  if (!configs[chainId]) {
+    throw new Error('Invalid chain ID');
+  }
+
+  await window.ethereum.request({
+    method: 'wallet_invokeSnap',
+    params: {
+      snapId: defaultSnapOrigin,
+      request: { method: 'snap.internal.setConfig', params: [{}] },
+    },
+  });
+};
+
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');

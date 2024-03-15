@@ -48,6 +48,7 @@ const defaultState: KeyringState = {
       entryPoint: DEFAULT_ENTRYPOINTS[CHAIN_IDS.SEPOLIA]?.address ?? '',
     },
   },
+  usePaymaster: false,
 };
 
 /**
