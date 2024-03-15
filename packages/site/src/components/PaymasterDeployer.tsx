@@ -62,8 +62,6 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
   }, [chainId]);
 
   const deployPaymaster = async () => {
-    console.log('deploying paymaster');
-    console.log('paymasterSecretKey', paymasterSecretKey);
     if (!paymasterSecretKey) {
       return;
     }
@@ -71,17 +69,12 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
     try {
       await window.ethereum.enable();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = provider.getSigner();
-      console.log('signer', await signer.getAddress());
+      const signer = new ethers.Wallet(paymasterSecretKey, provider);
       const paymasterFactory = new ethers.ContractFactory(
         verifyingPaymaster.abi,
         verifyingPaymaster.bytecode,
         signer,
       );
-      console.log('paymaster factory', paymasterFactory);
-      console.log('chainid', chainId);
-      console.log('configs[chainId]', configs[chainId]);
-      console.log('entry point', configs[chainId]?.entryPoint);
       const paymaster = await paymasterFactory.deploy(
         configs[chainId]?.entryPoint,
         await signer.getAddress(),
