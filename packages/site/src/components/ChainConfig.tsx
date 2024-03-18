@@ -173,7 +173,7 @@ export const ChainConfigComponent = ({
         account: uuid.v4(),
         request: {
           method: 'snap.internal.setConfig',
-          params: [chainConfigs[chainSelected] as ChainConfig],
+          params: chainConfigs[chainSelected] as ChainConfig,
         },
       };
       await client.submitRequest(request);
