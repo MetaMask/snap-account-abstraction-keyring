@@ -69,40 +69,42 @@ export const sendHello = async () => {
 };
 
 /**
- * Toggle paymaster usage.
+ * Invokes a Snap method with the specified parameters.
+ * @param method - The method to invoke.
+ * @param params - Optional parameters for the method.
+ * @returns A promise that resolves to the result of the Snap method invocation.
  */
-
-export const togglePaymasterUsage = async () => {
-  await window.ethereum.request({
+const walletInvokeSnap = async (method: string, params?: JSON) => {
+  return await window.ethereum.request({
     method: 'wallet_invokeSnap',
     params: {
       snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.togglePaymasterUsage' },
+      request: { method, params },
     },
   });
 };
 
-export const isUsingPaymaster = async (): Promise<boolean> => {
-  return (await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: {
-      snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.isUsingPaymaster' },
-    },
-  })) as boolean;
+/**
+ * Toggle paymaster usage.
+ */
+export const togglePaymasterUsage = async () => {
+  await walletInvokeSnap('snap.internal.togglePaymasterUsage');
 };
 
+export const isUsingPaymaster = async (): Promise<boolean> => {
+  return (await walletInvokeSnap('snap.internal.isUsingPaymaster')) as boolean;
+};
+
+/**
+ * Checks if the current chain is configured by retrieving the chain ID from the Ethereum provider and
+ * comparing it with the chain configurations obtained from the wallet's Snap plugin.
+ * @returns A promise that resolves to a boolean indicating whether the current chain is configured.
+ */
 export const isCurrentChainConfigured = async (): Promise<boolean> => {
   const currentChainId = (await window.ethereum.request({
     method: 'eth_chainId',
   })) as string;
-  const configs = (await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: {
-      snapId: defaultSnapOrigin,
-      request: { method: 'snap.getConfigs' },
-    },
-  })) as ChainConfigs;
+  const configs = (await walletInvokeSnap('snap.getConfigs')) as ChainConfigs;
 
   const chainConfig = configs[currentChainId];
 
