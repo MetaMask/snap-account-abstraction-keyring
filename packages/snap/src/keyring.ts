@@ -65,7 +65,7 @@ export type ChainConfig = {
   simpleAccountFactory?: string;
   entryPoint?: string;
   bundlerUrl?: string;
-  customVerifyingPaymasterPK?: string;
+  customVerifyingPaymasterSK?: string;
   customVerifyingPaymasterAddress?: string;
 };
 
@@ -537,7 +537,7 @@ export class AccountAbstractionKeyring implements Keyring {
     );
 
     const verifyingSigner = getSigner(
-      chainConfig?.customVerifyingPaymasterPK ?? wallet.privateKey,
+      chainConfig?.customVerifyingPaymasterSK ?? wallet.privateKey,
     );
 
     // Create a hash that doesn't expire

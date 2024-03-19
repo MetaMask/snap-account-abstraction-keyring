@@ -23,7 +23,7 @@ const ChainConfigStruct = object({
   [CONFIG_KEYS.BUNDLER_URL]: exactOptional(UrlStruct),
   [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_ADDRESS]:
     exactOptional(EthereumAddress),
-  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_PK]: exactOptional(PrivateKey),
+  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_SK]: exactOptional(PrivateKey),
 });
 
 /**
@@ -66,7 +66,7 @@ export function validateConfig(config: ChainConfig): void {
             CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_ADDRESS
           } ${String(value)}`;
           break;
-        case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_PK:
+        case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_SK:
           customMessage = `${
             CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_PK
           } ${String(value)}`;

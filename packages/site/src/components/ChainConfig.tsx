@@ -83,7 +83,7 @@ export type ChainConfig = {
   simpleAccountFactory?: string;
   entryPoint?: string;
   bundlerUrl?: string;
-  customVerifyingPaymasterPK?: string;
+  customVerifyingPaymasterSK?: string;
   customVerifyingPaymasterAddress?: string;
 };
 
@@ -91,7 +91,7 @@ export const ConfigKeys = {
   simpleAccountFactory: 'Simple Account Factory',
   entryPoint: 'Entrypoint Address',
   bundlerUrl: 'Bundle Url',
-  customVerifyingPaymasterPK: 'Verifying Paymaster Secret Key',
+  customVerifyingPaymasterSK: 'Verifying Paymaster Secret Key',
   customVerifyingPaymasterAddress: 'Verifying Paymaster Contract Address',
 };
 
@@ -139,7 +139,7 @@ export const ChainConfigComponent = ({
           simpleAccountFactory: '',
           entryPoint: '',
           bundlerUrl: '',
-          customVerifyingPaymasterPK: '',
+          customVerifyingPaymasterSK: '',
           customVerifyingPaymasterAddress: '',
         },
       });

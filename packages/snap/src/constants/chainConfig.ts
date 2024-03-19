@@ -2,7 +2,7 @@ export const CONFIG_KEYS = {
   SIMPLE_ACCOUNT_FACTORY: 'simpleAccountFactory',
   ENTRY_POINT: 'entryPoint',
   BUNDLER_URL: 'bundlerUrl',
-  CUSTOM_VERIFYING_PAYMASTER_PK: 'customVerifyingPaymasterPK',
+  CUSTOM_VERIFYING_PAYMASTER_SK: 'customVerifyingPaymasterSK',
   CUSTOM_VERIFYING_PAYMASTER_ADDRESS: 'customVerifyingPaymasterAddress',
 };
 
