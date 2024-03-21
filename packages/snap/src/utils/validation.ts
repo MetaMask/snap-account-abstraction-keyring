@@ -68,7 +68,7 @@ export function validateConfig(config: ChainConfig): void {
           break;
         case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_SK:
           customMessage = `${
-            CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_PK
+            CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_SK
           } ${String(value)}`;
           break;
         default:
