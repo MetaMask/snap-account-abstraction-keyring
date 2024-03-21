@@ -117,6 +117,7 @@ describe('Keyring', () => {
       simpleAccountFactory: await simpleAccountFactory.getAddress(),
       entryPoint: await entryPoint.getAddress(),
       customVerifyingPaymasterAddress: await verifyingPaymaster.getAddress(),
+      bundlerUrl: 'http://mock-bundler-url.com',
     });
   });
 
@@ -139,7 +140,7 @@ describe('Keyring', () => {
         simpleAccountFactory: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
         entryPoint: '0x5FbDB2315678afecb367f032d93F642f64180aa3',
         bundlerUrl: 'https://bundler.example.com/rpc',
-        customVerifyingPaymasterPK: aaOwnerSk,
+        customVerifyingPaymasterSK: aaOwnerSk,
         customVerifyingPaymasterAddress:
           '0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512',
       };
@@ -163,13 +164,13 @@ describe('Keyring', () => {
       },
       {
         field: 'bundlerUrl',
-        value: 'https:/invalid.fake.io',
+        value: 'ftp:/invalid.fake.io',
         errorMessage: 'Invalid Bundler URL',
       },
       {
-        field: 'customVerifyingPaymasterPK',
+        field: 'customVerifyingPaymasterSK',
         value: '123NotAPrivateKey456',
-        errorMessage: 'Invalid Custom Verifying Paymaster Private Key',
+        errorMessage: 'Invalid Custom Verifying Paymaster Secret Key',
       },
     ];
 
@@ -792,7 +793,7 @@ describe('Keyring', () => {
         simpleAccountFactory: '0x07a4E8982B685EC9d706FbF21459e159A141Cfe7',
         entryPoint: '0x15FC356a6bd6b9915322A43327B9Cc5477568e99',
         bundlerUrl: 'https://example.com/bundler',
-        customVerifyingPaymasterPK:
+        customVerifyingPaymasterSK:
           '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
         customVerifyingPaymasterAddress:
           '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',

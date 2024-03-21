@@ -2,7 +2,7 @@ export const CONFIG_KEYS = {
   SIMPLE_ACCOUNT_FACTORY: 'simpleAccountFactory',
   ENTRY_POINT: 'entryPoint',
   BUNDLER_URL: 'bundlerUrl',
-  CUSTOM_VERIFYING_PAYMASTER_PK: 'customVerifyingPaymasterPK',
+  CUSTOM_VERIFYING_PAYMASTER_SK: 'customVerifyingPaymasterSK',
   CUSTOM_VERIFYING_PAYMASTER_ADDRESS: 'customVerifyingPaymasterAddress',
 };
 
@@ -14,6 +14,6 @@ export const CONFIG_ERROR_MESSAGES = {
   INVALID_BUNDLER_URL: '[Snap] Invalid Bundler URL:',
   INVALID_CUSTOM_VERIFYING_PAYMASTER_ADDRESS:
     '[Snap] Invalid Custom Verifying Paymaster Address:',
-  INVALID_CUSTOM_VERIFYING_PAYMASTER_PK:
-    '[Snap] Invalid Custom Verifying Paymaster Private Key:',
+  INVALID_CUSTOM_VERIFYING_PAYMASTER_SK:
+    '[Snap] Invalid Custom Verifying Paymaster Secret Key:',
 };

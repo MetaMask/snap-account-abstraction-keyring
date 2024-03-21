@@ -1,4 +1,5 @@
 import snapPackageInfo from '../../../snap/package.json';
+import type { ChainConfigs } from '../components/ChainConfig';
 import { defaultSnapOrigin } from '../config';
 import type { GetSnapsResponse, Snap } from '../types';
 
@@ -65,6 +66,57 @@ export const sendHello = async () => {
       request: { method: 'snap.internal.hello' },
     },
   });
+};
+
+/**
+ * Invokes a Snap method with the specified parameters.
+ * @param method - The method to invoke.
+ * @param params - Optional parameters for the method.
+ * @returns A promise that resolves to the result of the Snap method invocation.
+ */
+const walletInvokeSnap = async (method: string, params?: JSON) => {
+  return await window.ethereum.request({
+    method: 'wallet_invokeSnap',
+    params: {
+      snapId: defaultSnapOrigin,
+      request: { method, params },
+    },
+  });
+};
+
+/**
+ * Toggle paymaster usage.
+ */
+export const togglePaymasterUsage = async () => {
+  await walletInvokeSnap('snap.internal.togglePaymasterUsage');
+};
+
+export const isUsingPaymaster = async (): Promise<boolean> => {
+  return (await walletInvokeSnap('snap.internal.isUsingPaymaster')) as boolean;
+};
+
+/**
+ * Checks if the current chain is configured by retrieving the chain ID from the Ethereum provider and
+ * comparing it with the chain configurations obtained from the wallet's Snap plugin.
+ * @returns A promise that resolves to a boolean indicating whether the current chain is configured.
+ */
+export const isCurrentChainConfigured = async (): Promise<boolean> => {
+  const currentChainId = (await window.ethereum.request({
+    method: 'eth_chainId',
+  })) as string;
+  const configs = (await walletInvokeSnap('snap.getConfigs')) as ChainConfigs;
+
+  const chainConfig = configs[currentChainId];
+
+  if (!chainConfig) {
+    return false;
+  }
+
+  return (
+    chainConfig.simpleAccountFactory !== '' &&
+    chainConfig.entryPoint !== '' &&
+    chainConfig.bundlerUrl !== ''
+  );
 };
 
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');

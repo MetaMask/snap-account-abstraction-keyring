@@ -21,8 +21,8 @@ import {
   emitSnapKeyringEvent,
   EthAccountType,
   EthMethod,
+  KeyringEvent,
 } from '@metamask/keyring-api';
-import { KeyringEvent } from '@metamask/keyring-api/dist/events';
 import type { CaipChainId, Json, JsonRpcRequest } from '@metamask/utils';
 import { hexToBytes, parseCaipChainId } from '@metamask/utils';
 import { Buffer } from 'buffer';
@@ -65,13 +65,15 @@ export type ChainConfig = {
   simpleAccountFactory?: string;
   entryPoint?: string;
   bundlerUrl?: string;
-  customVerifyingPaymasterPK?: string;
+  customVerifyingPaymasterSK?: string;
   customVerifyingPaymasterAddress?: string;
 };
 
+export type ChainConfigs = Record<string, ChainConfig>;
+
 export type KeyringState = {
   wallets: Record<string, Wallet>;
-  config: Record<number, ChainConfig>;
+  config: ChainConfigs;
 };
 
 export type Wallet = {
@@ -103,12 +105,20 @@ export class AccountAbstractionKeyring implements Keyring {
     validateConfig(config);
 
     this.#state.config[Number(chainId)] = {
-      ...this.#state.config[Number(chainId)],
+      ...this.#state.config[Number(chainId).toString()],
       ...config,
     };
 
     await this.#saveState();
-    return this.#state.config[Number(chainId)]!;
+    return this.#state.config[Number(chainId).toString()]!;
+  }
+
+  /**
+   * Retrieves the configuration settings for the keyring.
+   * @returns A promise that resolves to the ChainConfigs object containing the configuration settings.
+   */
+  async getConfigs(): Promise<ChainConfigs> {
+    return this.#state.config;
   }
 
   /**
@@ -310,23 +320,32 @@ export class AccountAbstractionKeyring implements Keyring {
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
 
-    if (method === InternalMethod.SetConfig) {
-      return {
-        pending: false,
-        result: await this.setConfig((params as [ChainConfig])[0]),
-      };
+    switch (method) {
+      case InternalMethod.GetConfigs: {
+        return {
+          pending: false,
+          result: await this.getConfigs(),
+        };
+      }
+      case InternalMethod.SetConfig: {
+        return {
+          pending: false,
+          result: await this.setConfig((params as [ChainConfig])[0]),
+        };
+      }
+      default: {
+        const signature = await this.#handleSigningRequest({
+          account: this.#getWalletById(request.account).account,
+          method,
+          params,
+          scope: request.scope,
+        });
+        return {
+          pending: false,
+          result: signature,
+        };
+      }
     }
-
-    const signature = await this.#handleSigningRequest({
-      account: this.#getWalletById(request.account).account,
-      scope: request.scope,
-      method,
-      params,
-    });
-    return {
-      pending: false,
-      result: signature,
-    };
   }
 
   #getWalletById(accountId: string): Wallet {
@@ -406,6 +425,8 @@ export class AccountAbstractionKeyring implements Keyring {
     switch (method) {
       case EthMethod.PrepareUserOperation: {
         const transactions = params as EthBaseTransaction[];
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore-error will fix type in next PR
         return await this.#prepareUserOperation(account.address, transactions);
       }
 
@@ -469,6 +490,9 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     const chainConfig = this.#getChainConfig(Number(chainId));
+    if (!chainConfig?.bundlerUrl) {
+      throwError(`[Snap] Bundler URL not found for chain: ${chainId}`);
+    }
 
     const verifyingPaymasterAddress =
       chainConfig?.customVerifyingPaymasterAddress;
@@ -485,7 +509,7 @@ export class AccountAbstractionKeyring implements Keyring {
       dummyPaymasterAndData: getDummyPaymasterAndData(
         verifyingPaymasterAddress,
       ),
-      bundlerUrl: chainConfig?.bundlerUrl ?? '',
+      bundlerUrl: chainConfig.bundlerUrl,
     };
     return ethBaseUserOp;
   }
@@ -513,7 +537,7 @@ export class AccountAbstractionKeyring implements Keyring {
     );
 
     const verifyingSigner = getSigner(
-      chainConfig?.customVerifyingPaymasterPK ?? wallet.privateKey,
+      chainConfig?.customVerifyingPaymasterSK ?? wallet.privateKey,
     );
 
     // Create a hash that doesn't expire
