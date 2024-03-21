@@ -117,6 +117,7 @@ describe('Keyring', () => {
       simpleAccountFactory: await simpleAccountFactory.getAddress(),
       entryPoint: await entryPoint.getAddress(),
       customVerifyingPaymasterAddress: await verifyingPaymaster.getAddress(),
+      bundlerUrl: 'http://mock-bundler-url.com',
     });
   });
 
@@ -169,7 +170,7 @@ describe('Keyring', () => {
       {
         field: 'customVerifyingPaymasterSK',
         value: '123NotAPrivateKey456',
-        errorMessage: 'Invalid Custom Verifying Paymaster Private Key',
+        errorMessage: 'Invalid Custom Verifying Paymaster Secret Key',
       },
     ];
 
