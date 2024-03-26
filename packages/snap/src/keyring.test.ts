@@ -471,6 +471,22 @@ describe('Keyring', () => {
           },
         });
 
+        console.log(op);
+
+        const opResult = await keyring.submitRequest({
+          id: 'ef70fc30-93a8-4bb0-b8c7-9d3e7732372b',
+          scope,
+          account: mockAccountId,
+          request: {
+            method: 'eth_sendUserOpBoba',
+            params: [intent],
+          },
+        });
+
+        console.log('******');
+        console.log(opResult);
+        console.log('******');
+
         expect(op).toStrictEqual(expected);
       });
 

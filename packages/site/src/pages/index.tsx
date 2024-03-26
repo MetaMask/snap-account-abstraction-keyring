@@ -95,6 +95,33 @@ const Index = () => {
     await syncAccounts();
   };
 
+  const sendBobaTx = async () => {
+    console.log('Inside Send Boba Tx');
+    const accounts: any = await ethereum.request({ method: 'eth_accounts' });
+    console.log('Inside Send Boba Tx2');
+
+    // take optional gasLimit
+    const transactionDetails = {
+      accountAddress: accounts[0],
+      to: accounts[0],
+      value: '0x0',
+      data: '0x',
+    };
+
+    const request: KeyringRequest = {
+      id: uuid.v4(),
+      scope: '',
+      account: uuid.v4(),
+      request: {
+        method: 'eth_sendUserOpBoba',
+        params: [transactionDetails],
+      },
+    };
+    console.log('Inside Send Boba Tx3');
+    await client.submitRequest(request);
+  };
+
+
   const handleConnectClick = async () => {
     try {
       await connectSnap();
