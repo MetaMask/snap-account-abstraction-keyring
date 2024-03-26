@@ -522,6 +522,21 @@ export class AccountAbstractionKeyring implements Keyring {
         return await this.#prepareAndSignUserOperationBoba(
           account.address,
           transactions,
+          '',
+          '0x',
+          '0x',
+        );
+      }
+
+      case 'eth_sendUserOpBobaPM': {
+        console.log('Preparing User Op');
+        const transactions = params as EthBaseTransaction[];
+        return await this.#prepareAndSignUserOperationBoba(
+          account.address,
+          transactions,
+          'alt_fee',
+          '0x',
+          '0x',
         );
       }
 
@@ -551,6 +566,9 @@ export class AccountAbstractionKeyring implements Keyring {
   async #prepareAndSignUserOperationBoba(
     address: string,
     transactions: EthBaseTransaction[],
+    paymasterType: string,
+    paymasterAddr: string,
+    tokenAddr: string,
   ): Promise<EthUserOperation> {
     if (transactions.length !== 1) {
       throwError(`[Snap] Only one transaction per UserOp supported`);
@@ -593,8 +611,8 @@ export class AccountAbstractionKeyring implements Keyring {
     const chainConfig = this.#getChainConfig(Number(chainId));
     const entryPoint = await this.#getEntryPoint(Number(chainId), signer);
 
-    // const verifyingPaymasterAddress =
-    //   chainConfig?.customVerifyingPaymasterAddress;
+    const verifyingPaymasterAddress =
+      chainConfig?.customVerifyingPaymasterAddress;
 
     const callDataReq = aaInstance.interface.encodeFunctionData('execute', [
       transaction.to ?? ethers.ZeroAddress,
@@ -621,6 +639,12 @@ export class AccountAbstractionKeyring implements Keyring {
     const maxFeePerGasReq = BigInt('1000000000');
     const maxPriorityFeePerGasReq = BigInt('1000000000');
 
+    const paymasterAndDataReq = await this.#getPaymasterAndData(
+      paymasterType,
+      paymasterAddr,
+      tokenAddr,
+    );
+
     const partialUserOp: any = {
       sender: address,
       nonce,
@@ -630,7 +654,7 @@ export class AccountAbstractionKeyring implements Keyring {
       verificationGasLimit: verificationGasLimitReq.toString(),
       maxFeePerGas: maxFeePerGasReq.toString(),
       maxPriorityFeePerGas: maxPriorityFeePerGasReq.toString(),
-      paymasterAndData: '0x',
+      paymasterAndData: paymasterAndDataReq,
     };
 
     const preVerificationGasReq = calcPreVerificationGas(partialUserOp);
@@ -658,6 +682,17 @@ export class AccountAbstractionKeyring implements Keyring {
     console.log(signedUserOp);
     ethBaseUserOp.signature = signedUserOp;
     return ethBaseUserOp;
+  }
+
+  async #getPaymasterAndData(
+    paymasterType: string,
+    paymasterAddr: string, // take as config params
+    tokenAddr: string,
+  ): Promise<string> {
+    if (paymasterType === 'alt_fee') {
+      return ethers.concat([paymasterAddr, ethers.zeroPadValue(tokenAddr, 20)]);
+    }
+    return '0x';
   }
 
   async #prepareUserOperation(
