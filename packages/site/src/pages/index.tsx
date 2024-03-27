@@ -44,14 +44,13 @@ const Index = () => {
   const [transferToken, setTransferToken] = useState<string | null>('ETH');
   const [targetAccount, setTargetAccount] = useState<string | null>('0xcF044AB1e5b55203dC258F47756daFb7F8F01760');
   const [transferAmount, setTransferAmount] = useState<string | null>('2');
+  const [greetMessage, setGreetMessage] = useState<string | null>('Hello Snaps!');
 
 
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
-
-  console.log(`snapId`, snapId, client)
 
   useEffect(() => {
     /**
@@ -64,6 +63,7 @@ const Index = () => {
         return;
       }
       const accounts = await client.listAccounts();
+      // listRequests
       setSnapState({
         ...state,
         accounts,
@@ -109,7 +109,6 @@ const Index = () => {
     if (!snapState || !snapState.accounts) {
       return false;
     }
-    console.log('Sending Boba Tx');
 
     const transactionDetails: Record<string, Json> = {
       accountAddress: snapState?.accounts[0]?.address || '',
@@ -128,7 +127,7 @@ const Index = () => {
         params: [transactionDetails],
       },
     };
-    console.log(`snapId`, snapId)
+
     const submitRes = await client.submitRequest(request);
     // const submitRes = await window.ethereum.request({
     //   method: "wallet_invokeSnap",
@@ -149,6 +148,54 @@ const Index = () => {
     return submitRes;
   };
 
+  const publishMessage = async () => {
+    if (!snapState || !snapState.accounts) {
+      return false;
+    }
+
+    const msgDetail: Record<string, Json> = {
+      accountAddress: snapState?.accounts[0]?.address || '',
+      message: greetMessage,
+      data: '0x',
+    };
+
+    const request: KeyringRequest = {
+      id: uuidV4(),
+      scope: '',
+      account: uuidV4(),
+      request: {
+        method: 'snap.internal.newGreet',
+        params: [msgDetail],
+      },
+    };
+
+    /*   let greetResponse;
+     // greetResponse = await client.submitRequest(request);
+
+     greetResponse = await window.ethereum.request({
+       method: "wallet_invokeSnap",
+       params: {
+         spanId: defaultSnapOrigin,
+         request
+       }
+     }) */
+
+    const greetResponse = await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method: 'snap.internal.newGreet',
+          params: [msgDetail]
+        },
+      },
+    });
+
+
+    console.log(`greetResponse`, greetResponse);
+    return greetResponse;
+  };
+
 
   const handleConnectClick = async () => {
     try {
@@ -165,11 +212,6 @@ const Index = () => {
     }
   };
 
-  console.log({
-    transferAmount,
-    targetAccount,
-    transferToken
-  })
 
   const accountManagementMethods = [
     {
@@ -248,6 +290,25 @@ const Index = () => {
         label: 'Transfer',
       },
       successMessage: 'Funds transfer successful!',
+    },
+    {
+      name: 'Test keyring client call',
+      description: 'Call hello world snap!',
+      inputs: [
+        {
+          id: 'client-call-message',
+          title: 'Transfer To Account',
+          value: greetMessage,
+          type: InputType.TextField,
+          placeholder: 'eg. hello world',
+          onChange: (event: any) => setGreetMessage(event.currentTarget.value),
+        }
+      ],
+      action: {
+        callback: async () => await publishMessage(),
+        label: 'Say hello!',
+      },
+      successMessage: 'Greeting send!',
     },
     // {
     //   name: 'Get account',

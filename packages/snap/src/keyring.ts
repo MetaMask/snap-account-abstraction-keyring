@@ -206,6 +206,23 @@ export class AccountAbstractionKeyring implements Keyring {
     return this.#state.config[Number(chainId).toString()]!;
   }
 
+
+  /**
+   * Send the greet message to user
+   *
+   */
+  async greetRequest(params: EthBaseTransaction[]): Promise<any> {
+    console.log('Calling from new Greet keyring!');
+    const transactions = params as EthBaseTransaction[];
+    return {
+      message: 'SUCCESS - hello world!',
+      transactions
+    }
+
+  }
+
+
+
   /**
    * Retrieves the configuration settings for the keyring.
    * @returns A promise that resolves to the ChainConfigs object containing the configuration settings.

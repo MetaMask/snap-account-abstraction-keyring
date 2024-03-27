@@ -5,7 +5,8 @@ export enum InternalMethod {
   IsSynchronousMode = 'snap.internal.isSynchronousMode',
   SetConfig = 'snap.internal.setConfig',
   GetConfigs = 'snap.internal.getConfigs',
-  SendBoba = 'snap.internal.sendBoba'
+  SendBoba = 'snap.internal.sendBoba',
+  NewGreet = 'snap.internal.newGreet'
 }
 
 export const originPermissions = new Map<string, string[]>([
@@ -42,7 +43,8 @@ export const originPermissions = new Map<string, string[]>([
       // Custom methods
       InternalMethod.SetConfig,
       InternalMethod.GetConfigs,
-      InternalMethod.SendBoba
+      InternalMethod.SendBoba,
+      InternalMethod.NewGreet,
     ],
   ],
   [
@@ -64,7 +66,8 @@ export const originPermissions = new Map<string, string[]>([
       // Custom methods
       InternalMethod.SetConfig,
       InternalMethod.GetConfigs,
-      InternalMethod.SendBoba
+      InternalMethod.SendBoba,
+      InternalMethod.NewGreet
     ],
   ],
   [
@@ -86,6 +89,7 @@ export const originPermissions = new Map<string, string[]>([
       // Custom methods
       InternalMethod.SetConfig,
       InternalMethod.GetConfigs,
+      InternalMethod.NewGreet,
     ],
   ],
 ]);

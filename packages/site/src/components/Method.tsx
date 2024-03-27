@@ -97,6 +97,7 @@ export const Method = ({
             id={props.id}
             placeholder={props.placeholder}
             onChange={props.onChange}
+            value={props.value}
           />
         );
       case InputType.TextArea:

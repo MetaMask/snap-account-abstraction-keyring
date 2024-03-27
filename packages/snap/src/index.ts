@@ -1,4 +1,5 @@
 import {
+  EthBaseTransaction,
   MethodNotSupportedError,
   handleKeyringRequest,
 } from '@metamask/keyring-api';
@@ -36,7 +37,6 @@ async function getKeyring(): Promise<AccountAbstractionKeyring> {
  * @returns True if the caller is allowed to call the method, false otherwise.
  */
 function hasPermission(origin: string, method: string): boolean {
-  console.log(`caller origin!!`, origin, method);
   return originPermissions.get(origin)?.includes(method) ?? false;
 }
 
@@ -50,6 +50,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   );
 
   // Check if origin is allowed to call method.
+  console.log(`calling from RPC REQUEST`)
   if (!hasPermission(origin, request.method)) {
     throw new Error(
       `hello! Origin '${origin}' is not allowed to call '${request.method}'`,
@@ -69,9 +70,9 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       return (await getKeyring()).getConfigs();
     }
 
-    case InternalMethod.SendBoba: {
-      return { message: 'rpc call!', request };
-      // return (await getKeyring()).submitRequest(request)
+    case InternalMethod.NewGreet: {
+      console.log(`invoking keyring`, request);
+      return (await getKeyring()).greetRequest(request.params as EthBaseTransaction[]);
     }
 
     default: {
@@ -86,6 +87,7 @@ export const onKeyringRequest: OnKeyringRequestHandler = async ({
   origin,
   request,
 }) => {
+  console.log(`calling from Keyring REQUEST`)
   logger.debug(
     `Keyring request (origin="${origin}"):`,
     JSON.stringify(request, undefined, 2),
