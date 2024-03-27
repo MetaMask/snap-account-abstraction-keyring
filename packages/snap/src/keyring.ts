@@ -516,15 +516,15 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     switch (method) {
-      case 'eth_sendUserOpBoba': {
-        console.log('Preparing User Op');
+      case InternalMethod.SendBoba: {
+        console.log('Trigger boba send request');
         const transactions = params as EthBaseTransaction[];
         return await this.#prepareAndSignUserOperationBoba(
           account.address,
           transactions,
-          '',
-          '0x',
-          '0x',
+          '',// paymaster type
+          '0x', /// paymaster address
+          '0x', // fee token address
         );
       }
 
@@ -614,6 +614,7 @@ export class AccountAbstractionKeyring implements Keyring {
     const verifyingPaymasterAddress =
       chainConfig?.customVerifyingPaymasterAddress;
 
+    // ethers.utils.hexlify(transaction.value)
     const callDataReq = aaInstance.interface.encodeFunctionData('execute', [
       transaction.to ?? ethers.ZeroAddress,
       transaction.value ?? '0x00',

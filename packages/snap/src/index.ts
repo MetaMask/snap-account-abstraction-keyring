@@ -36,6 +36,7 @@ async function getKeyring(): Promise<AccountAbstractionKeyring> {
  * @returns True if the caller is allowed to call the method, false otherwise.
  */
 function hasPermission(origin: string, method: string): boolean {
+  console.log(`caller origin!!`, origin, method);
   return originPermissions.get(origin)?.includes(method) ?? false;
 }
 
@@ -51,7 +52,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   // Check if origin is allowed to call method.
   if (!hasPermission(origin, request.method)) {
     throw new Error(
-      `Origin '${origin}' is not allowed to call '${request.method}'`,
+      `hello! Origin '${origin}' is not allowed to call '${request.method}'`,
     );
   }
 
@@ -66,6 +67,11 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 
     case InternalMethod.GetConfigs: {
       return (await getKeyring()).getConfigs();
+    }
+
+    case InternalMethod.SendBoba: {
+      return { message: 'rpc call!', request };
+      // return (await getKeyring()).submitRequest(request)
     }
 
     default: {
@@ -88,7 +94,7 @@ export const onKeyringRequest: OnKeyringRequestHandler = async ({
   // Check if origin is allowed to call method.
   if (!hasPermission(origin, request.method)) {
     throw new Error(
-      `Origin '${origin}' is not allowed to call '${request.method}'`,
+      `Hello 22 ! Origin '${origin}' is not allowed to call '${request.method}'`,
     );
   }
 

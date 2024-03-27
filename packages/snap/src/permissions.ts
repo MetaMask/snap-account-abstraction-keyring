@@ -5,6 +5,7 @@ export enum InternalMethod {
   IsSynchronousMode = 'snap.internal.isSynchronousMode',
   SetConfig = 'snap.internal.setConfig',
   GetConfigs = 'snap.internal.getConfigs',
+  SendBoba = 'snap.internal.sendBoba'
 }
 
 export const originPermissions = new Map<string, string[]>([
@@ -41,6 +42,29 @@ export const originPermissions = new Map<string, string[]>([
       // Custom methods
       InternalMethod.SetConfig,
       InternalMethod.GetConfigs,
+      InternalMethod.SendBoba
+    ],
+  ],
+  [
+    'http://localhost:8001',
+    [
+      // Keyring methods
+      KeyringRpcMethod.ListAccounts,
+      KeyringRpcMethod.GetAccount,
+      KeyringRpcMethod.CreateAccount,
+      KeyringRpcMethod.FilterAccountChains,
+      KeyringRpcMethod.UpdateAccount,
+      KeyringRpcMethod.DeleteAccount,
+      KeyringRpcMethod.ExportAccount,
+      KeyringRpcMethod.SubmitRequest,
+      KeyringRpcMethod.ListRequests,
+      KeyringRpcMethod.GetRequest,
+      KeyringRpcMethod.ApproveRequest,
+      KeyringRpcMethod.RejectRequest,
+      // Custom methods
+      InternalMethod.SetConfig,
+      InternalMethod.GetConfigs,
+      InternalMethod.SendBoba
     ],
   ],
   [

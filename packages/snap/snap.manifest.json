@@ -7,7 +7,7 @@
     "url": "git+https://github.com/MetaMask/snap-account-abstraction-keyring.git"
   },
   "source": {
-    "shasum": "I2n6C/a7RKpixg1io43LlbJemg8v3akKZZ0wSDBdlKw=",
+    "shasum": "0ZCvwKaCOwzlf7XYXhcu0urhD8ARcQNTUJLvwhpLH9o=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
@@ -20,13 +20,13 @@
   "initialPermissions": {
     "endowment:keyring": {
       "allowedOrigins": [
-        "https://metamask.github.io",
         "http://localhost:8000"
       ]
     },
     "endowment:rpc": {
       "dapps": true
     },
+    "snap_dialog": {},
     "snap_manageAccounts": {},
     "snap_manageState": {},
     "endowment:ethereum-provider": {},
