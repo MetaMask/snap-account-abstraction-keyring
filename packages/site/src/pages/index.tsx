@@ -63,6 +63,7 @@ const Index = () => {
         return;
       }
       const accounts = await client.listAccounts();
+      console.log(`accounts loaded!`, accounts)
       // listRequests
       setSnapState({
         ...state,
@@ -72,6 +73,7 @@ const Index = () => {
     }
 
     getState().catch((error) => console.error(error));
+
   }, [state.installedSnap]);
 
   const syncAccounts = async () => {
@@ -110,39 +112,32 @@ const Index = () => {
       return false;
     }
 
-    const transactionDetails: Record<string, Json> = {
-      accountAddress: snapState?.accounts[0]?.address || '',
-      to: targetAccount,
+    const transactionDetails: Record<string, any> = {
+      payload: {
+        to: targetAccount,
       value: transferAmount,
-      tokenAddress: transferToken,
-      data: '0x',
-    };
-
-    const request: KeyringRequest = {
-      id: uuidV4(),
-      scope: '',
-      account: uuidV4(),
-      request: {
-        method: 'eth_sendUserOpBoba',
-        params: [transactionDetails],
+        data: '0x'
       },
+      account: snapState.accounts[0]?.id || '',
+      scope: "eip155:11155111"
     };
 
-    const submitRes = await client.submitRequest(request);
-    // const submitRes = await window.ethereum.request({
-    //   method: "wallet_invokeSnap",
-    //   params: {
-    //     spanId: defaultSnapOrigin,
-    //     request
-    //   }
-    // })
-    // const configs = await window.ethereum.request({
-    //   method: 'wallet_invokeSnap',
-    //   params: {
-    //     snapId: defaultSnapOrigin,
-    //     request: { method: 'snap.internal.sendBoba' },
-    //   },
-    // });
+    console.log(snapState);
+
+    let submitRes = await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method: 'eth_prepareUserOperation',
+          params: [transactionDetails],
+          id: snapState.accounts[0]?.id || '',
+          // request: {
+          //   method: 'snap.internal.sendBoba',
+          // },
+        },
+      },
+    })
 
     console.log(`submitRes`, submitRes);
     return submitRes;
@@ -158,28 +153,6 @@ const Index = () => {
       message: greetMessage,
       data: '0x',
     };
-
-    const request: KeyringRequest = {
-      id: uuidV4(),
-      scope: '',
-      account: uuidV4(),
-      request: {
-        method: 'snap.internal.newGreet',
-        params: [msgDetail],
-      },
-    };
-
-    /*   let greetResponse;
-     // greetResponse = await client.submitRequest(request);
-
-     greetResponse = await window.ethereum.request({
-       method: "wallet_invokeSnap",
-       params: {
-         spanId: defaultSnapOrigin,
-         request
-       }
-     }) */
-
     const greetResponse = await window.ethereum.request({
       method: 'wallet_invokeSnap',
       params: {

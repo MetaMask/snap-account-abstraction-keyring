@@ -444,11 +444,13 @@ export class AccountAbstractionKeyring implements Keyring {
         };
       }
       default: {
+        const { scope } = (params as any)[0] || {}
+        console.log(`handling goes here`, scope, JSON.stringify(request))
         const signature = await this.#handleSigningRequest({
-          account: this.#getWalletById(request.account).account,
+          account: this.#getWalletById(request.id).account,
           method,
           params,
-          scope: request.scope,
+          scope: scope,
         });
         return {
           pending: false,
@@ -459,6 +461,7 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   #getWalletById(accountId: string): Wallet {
+    console.log(`account id`, this.#state.wallets, accountId);
     const wallet = this.#state.wallets[accountId];
     if (!wallet) {
       throwError(`Account '${accountId}' not found`);

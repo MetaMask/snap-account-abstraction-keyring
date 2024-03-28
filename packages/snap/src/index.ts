@@ -50,7 +50,7 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   );
 
   // Check if origin is allowed to call method.
-  console.log(`calling from RPC REQUEST`)
+  console.log(`calling from RPC REQUEST`, request)
   if (!hasPermission(origin, request.method)) {
     throw new Error(
       `hello! Origin '${origin}' is not allowed to call '${request.method}'`,
@@ -71,8 +71,23 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     }
 
     case InternalMethod.NewGreet: {
-      console.log(`invoking keyring`, request);
       return (await getKeyring()).greetRequest(request.params as EthBaseTransaction[]);
+    }
+
+    case InternalMethod.SendBoba: {
+      console.log(`making call to kerying for send boba!`, request)
+      const {
+        id,
+        method,
+        params,
+      } = request;
+      return (await getKeyring()).submitRequest({
+        id,
+        request: {
+          method,
+          params
+        }
+      } as any);
     }
 
     default: {
