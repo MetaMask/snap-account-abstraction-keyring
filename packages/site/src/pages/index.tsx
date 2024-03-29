@@ -115,7 +115,7 @@ const Index = () => {
     const transactionDetails: Record<string, any> = {
       payload: {
         to: targetAccount,
-      value: transferAmount,
+        value: transferAmount,
         data: '0x'
       },
       account: snapState.accounts[0]?.id || '',
@@ -124,17 +124,19 @@ const Index = () => {
 
     console.log(snapState);
 
+    let method = 'snap.internal.sendBoba';
+    if (isPaymaster) {
+      method = 'snap.internal.sendBobaPM',
+    }
+
     let submitRes = await window.ethereum.request({
       method: 'wallet_invokeSnap',
       params: {
         snapId: defaultSnapOrigin,
         request: {
-          method: 'eth_prepareUserOperation',
+          method,
           params: [transactionDetails],
           id: snapState.accounts[0]?.id || '',
-          // request: {
-          //   method: 'snap.internal.sendBoba',
-          // },
         },
       },
     })

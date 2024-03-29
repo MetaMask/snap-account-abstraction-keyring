@@ -699,6 +699,9 @@ export class AccountAbstractionKeyring implements Keyring {
     //   signature: DUMMY_SIGNATURE,
     //   paymasterAndData: getDummyPaymasterAndData(verifyingPaymasterAddress),
     // };
+
+    // TODO: show modal popup with details we can
+    // sign goes here
     const signedUserOp = await this.#signUserOperation(address, ethBaseUserOp);
     console.log(signedUserOp);
     ethBaseUserOp.signature = signedUserOp;
