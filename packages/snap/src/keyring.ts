@@ -51,7 +51,7 @@ import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
 import { isUniqueAddress, runSensitive, throwError } from './utils/util';
 import { validateConfig } from './utils/validation';
-import { copyable, DialogType, heading, panel, text } from '@metamask/snaps-sdk';
+import { copyable, DialogType, heading, NotificationType, panel, text } from '@metamask/snaps-sdk';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -729,6 +729,27 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const signedUserOp = await this.#signUserOperation(address, ethBaseUserOp);
     console.log(signedUserOp);
+
+    // await snap.request({
+    //   method: "snap_notify",
+    //   params: {
+    //     type: NotificationType.InApp,
+    //     message: `Transaction Success`
+    //   },
+    // }) as any;
+
+    await snap.request({
+      method: "snap_dialog",
+      params: {
+        type: DialogType.Alert,
+        content: panel([
+          heading("Transaction Success!"),
+          text("UserOP has been send to bundler"),
+          copyable(signedUserOp),
+        ]),
+      },
+    }) as any;
+
     ethBaseUserOp.signature = signedUserOp;
     return ethBaseUserOp;
   }
