@@ -5,7 +5,8 @@ export enum InternalMethod {
   IsSynchronousMode = 'snap.internal.isSynchronousMode',
   SetConfig = 'snap.internal.setConfig',
   GetConfigs = 'snap.internal.getConfigs',
-  SendBoba = 'snap.internal.sendBoba',
+  SendBoba = 'eth_sendBobaUserOp',
+  SendBobaPM = 'eth_sendBobaUserOpPM',
   NewGreet = 'snap.internal.newGreet'
 }
 

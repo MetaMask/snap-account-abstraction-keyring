@@ -122,12 +122,7 @@ const Index = () => {
       scope: "eip155:11155111"
     };
 
-    console.log(snapState);
-
-    let method = 'snap.internal.sendBoba';
-    if (isPaymaster) {
-      method = 'snap.internal.sendBobaPM',
-    }
+    let method = 'eth_sendBobaUserOp';
 
     let submitRes = await window.ethereum.request({
       method: 'wallet_invokeSnap',
@@ -141,7 +136,6 @@ const Index = () => {
       },
     })
 
-    console.log(`submitRes`, submitRes);
     return submitRes;
   };
 

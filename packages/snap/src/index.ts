@@ -75,7 +75,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     }
 
     case InternalMethod.SendBoba: {
-      console.log(`making call to kerying for send boba!`, request)
       const {
         id,
         method,

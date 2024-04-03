@@ -51,6 +51,7 @@ import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
 import { isUniqueAddress, runSensitive, throwError } from './utils/util';
 import { validateConfig } from './utils/validation';
+import { copyable, DialogType, heading, panel, text } from '@metamask/snaps-sdk';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -445,7 +446,6 @@ export class AccountAbstractionKeyring implements Keyring {
       }
       default: {
         const { scope } = (params as any)[0] || {}
-        console.log(`handling goes here`, scope, JSON.stringify(request))
         const signature = await this.#handleSigningRequest({
           account: this.#getWalletById(request.id).account,
           method,
@@ -548,8 +548,7 @@ export class AccountAbstractionKeyring implements Keyring {
         );
       }
 
-      case 'eth_sendUserOpBobaPM': {
-        console.log('Preparing User Op');
+      case InternalMethod.SendBobaPM: {
         const transactions = params as EthBaseTransaction[];
         return await this.#prepareAndSignUserOperationBoba(
           account.address,
@@ -702,6 +701,32 @@ export class AccountAbstractionKeyring implements Keyring {
 
     // TODO: show modal popup with details we can
     // sign goes here
+
+    const result = await snap.request({
+      method: "snap_dialog",
+      params: {
+        type: DialogType.Confirmation,
+        // id: "ghjkl",
+        content: panel([
+          heading("Sending funds to!"),
+          text("Target Address"),
+          copyable((transaction as any).payload.to),
+          text("Token Amount"),
+          copyable((transaction as any).payload.value),
+          text("Tx Data"),
+          copyable((transaction as any).payload.data),
+        ]),
+      },
+    }) as any;
+
+    console.log(`result`, result);
+
+    if (!result) {
+      throw new Error(
+        `User declien transaction!`,
+      );
+    }
+
     const signedUserOp = await this.#signUserOperation(address, ethBaseUserOp);
     console.log(signedUserOp);
     ethBaseUserOp.signature = signedUserOp;
