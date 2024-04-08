@@ -806,7 +806,7 @@ describe('Keyring', () => {
         account: mockAccountId,
         request: {
           method: InternalMethod.SetConfig,
-          params: [mockConfig],
+          params: mockConfig,
         },
       };
 
