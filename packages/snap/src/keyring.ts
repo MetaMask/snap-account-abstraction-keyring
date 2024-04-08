@@ -330,7 +330,7 @@ export class AccountAbstractionKeyring implements Keyring {
       case InternalMethod.SetConfig: {
         return {
           pending: false,
-          result: await this.setConfig((params as [ChainConfig])[0]),
+          result: await this.setConfig(params as ChainConfig),
         };
       }
       default: {
