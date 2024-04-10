@@ -3,9 +3,9 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import type { ChainConfigs } from './ChainConfig';
+import { TextField } from './TextField';
 import verifyingPaymaster from '../../../snap/artifacts/contracts/samples/VerifyingPaymaster.sol/VerifyingPaymaster.json';
 import { getChainConfigs, saveChainConfig } from '../utils';
-import { TextField } from './TextField';
 
 const PaymasterDeployerContainer = styled.div`
   width: 100%;
@@ -56,13 +56,12 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
       setPaymasterAddress(
         configs[chainId]?.customVerifyingPaymasterAddress ?? '',
       );
-      setPaymasterSecretKey(configs[chainId]?.customVerifyingPaymasterPK ?? '');
+      setPaymasterSecretKey(configs[chainId]?.customVerifyingPaymasterSK ?? '');
       setPaymasterDeployed(true);
     }
   }, [chainId]);
 
   const deployPaymaster = async () => {
-    console.log('deploying paymaster');
     console.log('paymasterSecretKey', paymasterSecretKey);
     if (!paymasterSecretKey) {
       return;
