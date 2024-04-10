@@ -45,30 +45,8 @@ export const originPermissions = new Map<string, string[]>([
       InternalMethod.SetConfig,
       InternalMethod.GetConfigs,
       InternalMethod.SendBoba,
+      InternalMethod.SendBobaPM,
       InternalMethod.NewGreet,
-    ],
-  ],
-  [
-    'http://localhost:8001',
-    [
-      // Keyring methods
-      KeyringRpcMethod.ListAccounts,
-      KeyringRpcMethod.GetAccount,
-      KeyringRpcMethod.CreateAccount,
-      KeyringRpcMethod.FilterAccountChains,
-      KeyringRpcMethod.UpdateAccount,
-      KeyringRpcMethod.DeleteAccount,
-      KeyringRpcMethod.ExportAccount,
-      KeyringRpcMethod.SubmitRequest,
-      KeyringRpcMethod.ListRequests,
-      KeyringRpcMethod.GetRequest,
-      KeyringRpcMethod.ApproveRequest,
-      KeyringRpcMethod.RejectRequest,
-      // Custom methods
-      InternalMethod.SetConfig,
-      InternalMethod.GetConfigs,
-      InternalMethod.SendBoba,
-      InternalMethod.NewGreet
     ],
   ],
   [

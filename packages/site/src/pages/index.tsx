@@ -40,6 +40,7 @@ const Index = () => {
   // internal development and testing tool.
   const [privateKey, setPrivateKey] = useState<string | null>();
   const [salt, setSalt] = useState<string | null>();
+  const [bobaPaymasterSelected, setBobaPaymasterSelected] = useState<Boolean | null>();
 
   const [transferToken, setTransferToken] = useState<string | null>('ETH');
   const [targetAccount, setTargetAccount] = useState<string | null>('0xcF044AB1e5b55203dC258F47756daFb7F8F01760');
@@ -123,6 +124,21 @@ const Index = () => {
     };
 
     let method = 'eth_sendBobaUserOp';
+
+    if (bobaPaymasterSelected) {
+      method = 'eth_sendBobaUserOpPM';
+    }
+    console.log({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method,
+          params: [transactionDetails],
+          id: snapState.accounts[0]?.id || '',
+        },
+      }
+    })
 
     let submitRes = await window.ethereum.request({
       method: 'wallet_invokeSnap',
@@ -252,6 +268,14 @@ const Index = () => {
           type: InputType.TextField,
           placeholder: 'E.g. 0.00',
           onChange: (event: any) => setTransferAmount(event.currentTarget.value),
+        },
+        {
+          id: 'transfer-fund-boba-paymaster',
+          title: 'Select boba as paymaster.',
+          value: bobaPaymasterSelected,
+          type: InputType.CheckBox,
+          placeholder: 'E.g. 0.00',
+          onChange: (event: any) => setBobaPaymasterSelected(event.target.checked),
         },
       ],
       action: {

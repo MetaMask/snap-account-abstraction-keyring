@@ -51,7 +51,7 @@ import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
 import { isUniqueAddress, runSensitive, throwError } from './utils/util';
 import { validateConfig } from './utils/validation';
-import { copyable, DialogType, heading, NotificationType, panel, text } from '@metamask/snaps-sdk';
+import { copyable, DialogType, heading, NodeType, NotificationType, panel, text } from '@metamask/snaps-sdk';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -702,6 +702,11 @@ export class AccountAbstractionKeyring implements Keyring {
     // TODO: show modal popup with details we can
     // sign goes here
 
+    let pmPayload: ({ value: string; type: NodeType.Copyable; sensitive?: boolean /* eslint-disable camelcase */ | undefined; } | { value: string; type: NodeType.Text; markdown?: boolean | undefined; })[] = [];
+    if (paymasterType) {
+      pmPayload = [text("Boba paymaster has been selected!")];
+    }
+
     const result = await snap.request({
       method: "snap_dialog",
       params: {
@@ -709,6 +714,7 @@ export class AccountAbstractionKeyring implements Keyring {
         // id: "ghjkl",
         content: panel([
           heading("Sending funds to!"),
+          ...pmPayload,
           text("Target Address"),
           copyable((transaction as any).payload.to),
           text("Token Amount"),
@@ -718,8 +724,6 @@ export class AccountAbstractionKeyring implements Keyring {
         ]),
       },
     }) as any;
-
-    console.log(`result`, result);
 
     if (!result) {
       throw new Error(

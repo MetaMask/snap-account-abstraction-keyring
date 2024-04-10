@@ -74,7 +74,8 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       return (await getKeyring()).greetRequest(request.params as EthBaseTransaction[]);
     }
 
-    case InternalMethod.SendBoba: {
+    case InternalMethod.SendBoba:
+    case InternalMethod.SendBobaPM: {
       const {
         id,
         method,
