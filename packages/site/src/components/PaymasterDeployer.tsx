@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import type { ChainConfigs } from './ChainConfig';
+import { ErrorContainer } from './ErrorContainer';
+import { SuccessContainer } from './SuccessContainer';
 import { TextField } from './TextField';
 import verifyingPaymaster from '../../../snap/artifacts/contracts/samples/VerifyingPaymaster.sol/VerifyingPaymaster.json';
 import { getChainConfigs, saveChainConfig } from '../utils';
@@ -30,48 +32,61 @@ const PaymasterDeployerContent = styled.div`
   padding: 0px 8px;
 `;
 
-export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
+export const PaymasterDeployer = () => {
   const [paymasterAddress, setPaymasterAddress] = useState<string | null>(null);
   const [paymasterSecretKey, setPaymasterSecretKey] = useState<string | null>(
     null,
   );
-  const [paymasterDeployed, setPaymasterDeployed] = useState<boolean>(false);
   const [configs, setConfigs] = useState<ChainConfigs>({});
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | undefined>();
+  const [successMessage, setSuccessMessage] = useState<string | null>();
 
   useEffect(() => {
     getChainConfigs()
       .then((chainConfigs: ChainConfigs) => {
         setConfigs(chainConfigs);
       })
+      // eslint-disable-next-line @typescript-eslint/no-shadow
       .catch((error) => {
         setError(error);
       });
   }, []);
 
-  useEffect(() => {
+  const deployPaymaster = async () => {
     // clear state
     setPaymasterAddress(null);
     setPaymasterSecretKey(null);
-    setPaymasterDeployed(false);
+    setError(undefined);
+    setLoading(true);
 
-    if (configs[chainId]) {
-      setPaymasterAddress(
-        configs[chainId]?.customVerifyingPaymasterAddress ?? '',
-      );
-      setPaymasterSecretKey(configs[chainId]?.customVerifyingPaymasterSK ?? '');
-      setPaymasterDeployed(true);
-    }
-  }, [chainId]);
-
-  const deployPaymaster = async () => {
     if (!paymasterSecretKey) {
+      setError(new Error('Please provide a secret key'));
+      return;
+    }
+
+    let hexSecretKey;
+    // eslint-disable-next-line no-negated-condition
+    if (!paymasterSecretKey.startsWith('0x')) {
+      hexSecretKey = `0x${paymasterSecretKey}`;
+    } else {
+      hexSecretKey = paymasterSecretKey;
+    }
+
+    console.log(hexSecretKey);
+
+    try {
+      // eslint-disable-next-line no-new
+      new ethers.Wallet(hexSecretKey);
+    } catch {
+      setError(new Error('Invalid secret key'));
       return;
     }
 
     try {
-      await window.ethereum.enable();
+      // await window.ethereum.enable();
       const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const { chainId } = await provider.getNetwork();
       const signer = new ethers.Wallet(paymasterSecretKey, provider);
       const paymasterFactory = new ethers.ContractFactory(
         verifyingPaymaster.abi,
@@ -87,15 +102,17 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
       setPaymasterAddress(paymaster.address);
 
       await saveChainConfig({
-        chainId,
+        chainId: chainId.toString(),
         chainConfig: {
           customVerifyingPaymasterAddress: paymaster.address,
-          customVerifyingPaymasterSK: paymasterSecretKey,
+          customVerifyingPaymasterSK: hexSecretKey,
         },
       });
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (error) {
-      console.error(error);
+      setError(error as Error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -104,15 +121,21 @@ export const PaymasterDeployer = ({ chainId }: { chainId: string }) => {
       <PaymasterDeployerHeader>
         Deploy Verifying Paymaster
       </PaymasterDeployerHeader>
+      {error && <ErrorContainer error={error.message} />}
+      {successMessage && <SuccessContainer message={successMessage} />}
       <PaymasterDeployerContent isOpen>
         <TextField
           id={'verify-paymaster-admin-secret-key'}
-          placeholder={'Verifying Paymaster Secret Key'}
+          placeholder={'Verifying Paymaster Secret Key in Hex Format'}
           value={paymasterSecretKey as string}
           onChange={(event) => setPaymasterSecretKey(event.target.value)}
         />
-        <button type="button" onClick={async () => deployPaymaster()}>
-          {paymasterDeployed ? 'Redeploy Paymaster' : 'Deploy Paymaster'}
+        <button
+          type="button"
+          onClick={async () => deployPaymaster()}
+          disabled={!paymasterSecretKey || loading}
+        >
+          {loading ? 'Deploying' : 'Deploy Paymaster'}
         </button>
       </PaymasterDeployerContent>
     </PaymasterDeployerContainer>

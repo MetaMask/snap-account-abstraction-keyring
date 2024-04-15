@@ -279,10 +279,7 @@ const Index = () => {
             <Accordion items={accountManagementMethods} />
             <Divider />
             <DividerTitle>Snap Configuration</DividerTitle>
-            <ChainConfigComponent
-              client={client}
-              setSelectedChain={setSelectedChain}
-            />
+            <ChainConfigComponent setSelectedChain={setSelectedChain} />
             <PaymasterDeployer chainId={selectedChain} />
             <Divider />
           </Grid>

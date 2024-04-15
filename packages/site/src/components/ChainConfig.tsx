@@ -2,18 +2,12 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 
+import { ErrorContainer } from './ErrorContainer';
 import { StyledBox } from './styledComponents';
+import { SuccessContainer } from './SuccessContainer';
 import { TextField } from './TextField';
 import { getChainConfigs, saveChainConfig } from '../utils';
 import { chainIdToName } from '../utils/chains';
-
-const ChainConfigErrorContainer = styled.div`
-  color: #721c24;
-`;
-
-const ChainConfigSuccessContainer = styled.div`
-  color: #155724;
-`;
 
 const ChainConfigContainer = styled.div`
   width: 100%;
@@ -156,12 +150,8 @@ export const ChainConfigComponent = ({
       <ChainConfigItem>
         <ChainConfigHeader>{'Chain Configuration'}</ChainConfigHeader>
         <ChainConfigContent isOpen>
-          <ChainConfigErrorContainer>
-            {error && <p>{error.message}</p>}
-          </ChainConfigErrorContainer>
-          <ChainConfigSuccessContainer>
-            {successMessage && <p>{successMessage}</p>}
-          </ChainConfigSuccessContainer>
+          {error && <ErrorContainer error={error.message} />}
+          {successMessage && <SuccessContainer message={successMessage} />}
           <Select
             value={chainSelected ?? ''}
             onChange={(event) => {

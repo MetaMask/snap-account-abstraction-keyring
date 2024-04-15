@@ -38,7 +38,6 @@ import {
 } from './constants/dummy-values';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import { logger } from './logger';
-import { InternalMethod } from './permissions';
 import { saveState } from './stateManagement';
 import {
   EntryPoint__factory,
