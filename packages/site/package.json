@@ -7,7 +7,7 @@
     "build": "rimraf .cache && cross-env GATSBY_TELEMETRY_DISABLED=1 gatsby build --prefix-paths",
     "clean": "rimraf public .cache",
     "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types && yarn lint:changelog",
-    "lint:deps": "depcheck --ignores='@lavamoat/allow-scripts'",
+    "lint:deps": "depcheck --ignores='@lavamoat/allow-scripts,@svgr/webpack,gatsby-plugin-styled-components,gatsby-plugin-svgr,gatsby-plugin-webfonts,react-scripts'",
     "lint:eslint": "eslint . --cache --ext js,jsx,ts,tsx",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --check",
