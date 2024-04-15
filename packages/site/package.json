@@ -7,7 +7,7 @@
     "build": "rimraf .cache && cross-env GATSBY_TELEMETRY_DISABLED=1 gatsby build --prefix-paths",
     "clean": "rimraf public .cache",
     "lint": "yarn lint:eslint && yarn lint:misc && yarn lint:deps && yarn lint:types && yarn lint:changelog",
-    "lint:deps": "depcheck",
+    "lint:deps": "depcheck --ignores='@lavamoat/allow-scripts'",
     "lint:eslint": "eslint . --cache --ext js,jsx,ts,tsx",
     "lint:fix": "yarn lint:eslint --fix && yarn lint:misc --write",
     "lint:misc": "prettier '**/*.json' '**/*.md' '!CHANGELOG.md' --check",
@@ -45,7 +45,6 @@
     "react-is": "^18.2.0",
     "semver": "^7.5.4",
     "styled-components": "5.3.9",
-    "uuid": "^9.0.0",
     "webpack": "^5.88.2"
   },
   "devDependencies": {
@@ -93,7 +92,9 @@
       "gatsby>lmdb": false,
       "gatsby>lmdb>msgpackr>msgpackr-extract": false,
       "gatsby>memoizee>es5-ext": false,
-      "react-scripts>tailwindcss>postcss-load-config>ts-node>@swc/core": false
+      "react-scripts>tailwindcss>postcss-load-config>ts-node>@swc/core": false,
+      "eslint-plugin-jest>jest>jest-cli>jest-config>ts-node>@swc/core": false,
+      "react-scripts>react-app-polyfill>core-js": false
     }
   }
 }
