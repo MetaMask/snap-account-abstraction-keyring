@@ -6,7 +6,6 @@ import type {
   EthBaseUserOperation,
   EthUserOperation,
   KeyringAccount,
-  KeyringRequest,
 } from '@metamask/keyring-api';
 import { EthMethod } from '@metamask/keyring-api';
 import type { Signer } from 'ethers';

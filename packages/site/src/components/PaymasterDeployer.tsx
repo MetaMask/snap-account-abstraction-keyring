@@ -73,8 +73,6 @@ export const PaymasterDeployer = () => {
       hexSecretKey = paymasterSecretKey;
     }
 
-    console.log(hexSecretKey);
-
     try {
       // eslint-disable-next-line no-new
       new ethers.Wallet(hexSecretKey);
@@ -108,6 +106,9 @@ export const PaymasterDeployer = () => {
           customVerifyingPaymasterSK: hexSecretKey,
         },
       });
+      setSuccessMessage(
+        `Verifying Paymaster Deployed to ${paymasterAddress as string}`,
+      );
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (error) {
       setError(error as Error);
@@ -132,7 +133,10 @@ export const PaymasterDeployer = () => {
         />
         <button
           type="button"
-          onClick={async () => deployPaymaster()}
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
+          onClick={async () => {
+            await deployPaymaster();
+          }}
           disabled={!paymasterSecretKey || loading}
         >
           {loading ? 'Deploying' : 'Deploy Paymaster'}
