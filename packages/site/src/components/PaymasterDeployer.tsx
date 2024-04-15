@@ -82,7 +82,8 @@ export const PaymasterDeployer = () => {
     }
 
     try {
-      // await window.ethereum.enable();
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore - MetaMask provider would work for Web3Provider
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const { chainId } = await provider.getNetwork();
       const signer = new ethers.Wallet(paymasterSecretKey, provider);

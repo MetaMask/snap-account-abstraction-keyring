@@ -52,7 +52,6 @@ const Index = () => {
   const [salt, setSalt] = useState<string | null>();
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
-  const [selectedChain, setSelectedChain] = useState<string>('');
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
 
@@ -279,8 +278,8 @@ const Index = () => {
             <Accordion items={accountManagementMethods} />
             <Divider />
             <DividerTitle>Snap Configuration</DividerTitle>
-            <ChainConfigComponent setSelectedChain={setSelectedChain} />
-            <PaymasterDeployer chainId={selectedChain} />
+            <ChainConfigComponent />
+            <PaymasterDeployer />
             <Divider />
           </Grid>
           <Grid item xs={4} sm={2} md={1}>

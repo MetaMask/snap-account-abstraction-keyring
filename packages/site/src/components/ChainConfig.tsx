@@ -79,11 +79,7 @@ export type ChainConfigs = {
   [chainId: string]: ChainConfig;
 };
 
-export const ChainConfigComponent = ({
-  setSelectedChain,
-}: {
-  setSelectedChain: (chainId: string) => void;
-}) => {
+export const ChainConfigComponent = () => {
   const [chainConfigs, setChainConfigs] = useState<ChainConfigs>({});
   const [chainSelected, setChainSelected] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>();
@@ -110,7 +106,6 @@ export const ChainConfigComponent = ({
         },
       });
     }
-    setSelectedChain(chainSelected);
   }, [chainSelected]);
 
   const updateSpecificChainConfig = (
@@ -136,7 +131,7 @@ export const ChainConfigComponent = ({
     try {
       await saveChainConfig({
         chainId: chainSelected,
-        chainConfig: chainConfigs[chainSelected],
+        chainConfig: chainConfigs[chainSelected] as ChainConfig,
       });
       setSuccessMessage('Chain Config Updated');
       // eslint-disable-next-line @typescript-eslint/no-shadow
