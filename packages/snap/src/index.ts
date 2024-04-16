@@ -56,28 +56,29 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     );
   }
 
+  const keyringInstance = await getKeyring();
   // Handle custom methods.
   switch (request.method) {
     case InternalMethod.SetConfig: {
       if (!request.params) {
         throw new Error('Missing config');
       }
-      return (await (
-        await getKeyring()
-      ).setConfig(request.params as ChainConfig)) as Json;
+      return (await keyringInstance.setConfig(
+        request.params as ChainConfig,
+      )) as Json;
     }
 
     case InternalMethod.GetConfigs: {
-      return (await (await getKeyring()).getConfigs()) as Json;
+      return (await keyringInstance.getConfigs()) as Json;
     }
 
     case InternalMethod.TogglePaymasterUsage: {
-      await (await getKeyring()).togglePaymasterUsage();
+      await keyringInstance.togglePaymasterUsage();
       return null;
     }
 
     case InternalMethod.IsUsingPaymaster: {
-      return (await getKeyring()).isUsingPaymaster();
+      return keyringInstance.isUsingPaymaster();
     }
 
     default: {
