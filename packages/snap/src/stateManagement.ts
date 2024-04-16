@@ -68,7 +68,6 @@ export async function getState(): Promise<KeyringState> {
     return defaultState;
   }
 
-  logger.debug('Retrieved state:', JSON.stringify(state));
   return state;
 }
 
@@ -78,7 +77,6 @@ export async function getState(): Promise<KeyringState> {
  * @param state - New snap state.
  */
 export async function saveState(state: KeyringState) {
-  logger.debug('Saving state:', JSON.stringify(state));
   await snap.request({
     method: 'snap_manageState',
     params: { operation: ManageStateOperation.UpdateState, newState: state },

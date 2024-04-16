@@ -67,7 +67,6 @@ const Index = () => {
       }
       const accounts = await client.listAccounts();
       const usePaymaster = await isUsingPaymaster();
-      console.log('is using paymaster ', usePaymaster);
       setSnapState({
         ...state,
         accounts,
@@ -79,7 +78,6 @@ const Index = () => {
   }, [state.installedSnap]);
 
   const handleUsePaymasterToggle = useCallback(async () => {
-    console.log('Toggling paymaster usage');
     await togglePaymasterUsage();
     setSnapState({
       ...snapState,
