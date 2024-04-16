@@ -126,13 +126,7 @@ export const saveChainConfig = async ({
     throw new Error('Invalid chain ID');
   }
 
-  await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: {
-      snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.setConfig', params: chainConfig },
-    },
-  });
+  await walletInvokeSnap('snap.internal.setConfig', chainConfig as JSON);
 };
 
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');
