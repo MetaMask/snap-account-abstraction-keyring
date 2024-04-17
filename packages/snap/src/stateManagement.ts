@@ -4,7 +4,6 @@ import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
 import { CHAIN_IDS } from './constants/chain-ids';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import type { KeyringState } from './keyring';
-import { logger } from './logger';
 
 /**
  * Default keyring state.
