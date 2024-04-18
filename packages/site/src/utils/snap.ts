@@ -1,5 +1,5 @@
 import snapPackageInfo from '../../../snap/package.json';
-import type { ChainConfigs } from '../components/ChainConfig';
+import type { ChainConfig, ChainConfigs } from '../components/ChainConfig';
 import { defaultSnapOrigin } from '../config';
 import type { GetSnapsResponse, Snap } from '../types';
 
@@ -55,20 +55,6 @@ export const getSnap = async (version?: string): Promise<Snap | undefined> => {
 };
 
 /**
- * Invoke the "hello" method from the example snap.
- */
-
-export const sendHello = async () => {
-  await window.ethereum.request({
-    method: 'wallet_invokeSnap',
-    params: {
-      snapId: defaultSnapOrigin,
-      request: { method: 'snap.internal.hello' },
-    },
-  });
-};
-
-/**
  * Invokes a Snap method with the specified parameters.
  * @param method - The method to invoke.
  * @param params - Optional parameters for the method.
@@ -117,6 +103,30 @@ export const isCurrentChainConfigured = async (): Promise<boolean> => {
     chainConfig.entryPoint !== '' &&
     chainConfig.bundlerUrl !== ''
   );
+};
+
+export const getChainConfigs = async (): Promise<ChainConfigs> => {
+  return (await walletInvokeSnap('snap.internal.getConfigs')) as ChainConfigs;
+};
+
+export const saveChainConfig = async ({
+  chainId,
+  chainConfig,
+}: {
+  chainId: string;
+  chainConfig: Partial<ChainConfig>;
+}): Promise<void> => {
+  if (!chainId) {
+    throw new Error('Invalid parameters');
+  }
+
+  const configs = await getChainConfigs();
+
+  if (!configs[chainId]) {
+    throw new Error('Invalid chain ID');
+  }
+
+  await walletInvokeSnap('snap.internal.setConfig', chainConfig as JSON);
 };
 
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');
