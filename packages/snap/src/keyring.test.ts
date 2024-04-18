@@ -6,7 +6,6 @@ import type {
   EthBaseUserOperation,
   EthUserOperation,
   KeyringAccount,
-  KeyringRequest,
 } from '@metamask/keyring-api';
 import { EthMethod } from '@metamask/keyring-api';
 import type { Signer } from 'ethers';
@@ -20,7 +19,6 @@ import {
 } from './constants/dummy-values';
 import type { ChainConfig, KeyringState } from './keyring';
 import { AccountAbstractionKeyring } from './keyring';
-import { InternalMethod } from './permissions';
 import * as stateManagement from './stateManagement';
 import type {
   EntryPoint,
@@ -76,6 +74,7 @@ global.snap = {
 const getInitialState = (): KeyringState => ({
   wallets: {},
   config: {},
+  usePaymaster: false,
 });
 
 const saveStateWillThrow = (message: string) => {
@@ -788,32 +787,6 @@ describe('Keyring', () => {
       ).rejects.toThrow(`Account '${nonExistentAccountId}' not found`);
     });
 
-    it('should return the result of setting the config when submitting a set config request', async () => {
-      const mockConfig: ChainConfig = {
-        simpleAccountFactory: '0x07a4E8982B685EC9d706FbF21459e159A141Cfe7',
-        entryPoint: '0x15FC356a6bd6b9915322A43327B9Cc5477568e99',
-        bundlerUrl: 'https://example.com/bundler',
-        customVerifyingPaymasterSK:
-          '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80',
-        customVerifyingPaymasterAddress:
-          '0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266',
-      };
-
-      const requestId = v4();
-      const request: KeyringRequest = {
-        id: requestId,
-        scope,
-        account: mockAccountId,
-        request: {
-          method: InternalMethod.SetConfig,
-          params: [mockConfig],
-        },
-      };
-
-      const response = await keyring.submitRequest(request);
-      expect(response).toStrictEqual({ pending: false, result: mockConfig });
-    });
-
     describe('#getEntryPoint', () => {
       it('should throw an error if not on a supported chain', async () => {
         const aaAccount = await keyring.createAccount({
@@ -959,6 +932,16 @@ describe('Keyring', () => {
           }),
         ).rejects.toThrow(`[Snap] Account does not support chain: ${scope}`);
       });
+    });
+  });
+
+  describe('togglePaymasterUsage', () => {
+    it('toggles the use of the paymaster', async () => {
+      expect(keyring.isUsingPaymaster()).toBe(false);
+      await keyring.togglePaymasterUsage();
+      expect(keyring.isUsingPaymaster()).toBe(true);
+      await keyring.togglePaymasterUsage();
+      expect(keyring.isUsingPaymaster()).toBe(false);
     });
   });
 });
