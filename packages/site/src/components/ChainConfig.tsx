@@ -1,23 +1,13 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import type {
-  KeyringRequest,
-  KeyringSnapRpcClient,
-} from '@metamask/keyring-api';
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import * as uuid from 'uuid';
 
+import { ErrorContainer } from './ErrorContainer';
 import { StyledBox } from './styledComponents';
-import { defaultSnapOrigin } from '../config';
+import { SuccessContainer } from './SuccessContainer';
+import { TextField } from './TextField';
+import { getChainConfigs, saveChainConfig } from '../utils';
 import { chainIdToName } from '../utils/chains';
-
-const ChainConfigErrorContainer = styled.div`
-  color: #721c24;
-`;
-
-const ChainConfigSuccessContainer = styled.div`
-  color: #155724;
-`;
 
 const ChainConfigContainer = styled.div`
   width: 100%;
@@ -50,16 +40,6 @@ const ChainDescription = styled.p`
   font-size: 14px;
   font-weight: bold;
   margin: 5px 2.5% 5px 16px;
-`;
-
-const TextField = styled.input`
-  width: calc(95% - 16px);
-  padding: 10px;
-  margin: 8px 2.5% 8px 16px;
-  background: transparent;
-  border-radius: 5px;
-  box-sizing: border-box;
-  border: 1px solid #bbc0c5;
 `;
 
 const Select = styled.select`
@@ -99,35 +79,17 @@ export type ChainConfigs = {
   [chainId: string]: ChainConfig;
 };
 
-export const ChainConfigComponent = ({
-  client,
-}: {
-  client: KeyringSnapRpcClient;
-}) => {
+export const ChainConfigComponent = () => {
   const [chainConfigs, setChainConfigs] = useState<ChainConfigs>({});
   const [chainSelected, setChainSelected] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>();
   const [error, setError] = useState<Error | undefined>();
 
   useEffect(() => {
-    const getChainConfigs = async () => {
-      try {
-        const configs = await window.ethereum.request({
-          method: 'wallet_invokeSnap',
-          params: {
-            snapId: defaultSnapOrigin,
-            request: { method: 'snap.internal.getConfigs' },
-          },
-        });
-
-        setChainConfigs(configs as ChainConfigs);
-        // eslint-disable-next-line @typescript-eslint/no-shadow
-      } catch (error) {
-        setError(error as Error);
-      }
-    };
-    // eslint-disable-next-line @typescript-eslint/no-shadow
-    getChainConfigs().catch((error) => setError(error));
+    getChainConfigs()
+      .then((configs) => setChainConfigs(configs))
+      // eslint-disable-next-line @typescript-eslint/no-shadow
+      .catch((error) => setError(error));
   }, []);
 
   useEffect(() => {
@@ -167,16 +129,10 @@ export const ChainConfigComponent = ({
       return;
     }
     try {
-      const request: KeyringRequest = {
-        id: uuid.v4(),
-        scope: '',
-        account: uuid.v4(),
-        request: {
-          method: 'snap.internal.setConfig',
-          params: chainConfigs[chainSelected] as ChainConfig,
-        },
-      };
-      await client.submitRequest(request);
+      await saveChainConfig({
+        chainId: chainSelected,
+        chainConfig: chainConfigs[chainSelected] as ChainConfig,
+      });
       setSuccessMessage('Chain Config Updated');
       // eslint-disable-next-line @typescript-eslint/no-shadow
     } catch (error) {
@@ -189,12 +145,8 @@ export const ChainConfigComponent = ({
       <ChainConfigItem>
         <ChainConfigHeader>{'Chain Configuration'}</ChainConfigHeader>
         <ChainConfigContent isOpen>
-          <ChainConfigErrorContainer>
-            {error && <p>{error.message}</p>}
-          </ChainConfigErrorContainer>
-          <ChainConfigSuccessContainer>
-            {successMessage && <p>{successMessage}</p>}
-          </ChainConfigSuccessContainer>
+          {error && <ErrorContainer error={error.message} />}
+          {successMessage && <SuccessContainer message={successMessage} />}
           <Select
             value={chainSelected ?? ''}
             onChange={(event) => {

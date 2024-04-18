@@ -1,8 +1,9 @@
+import { ManageStateOperation } from '@metamask/snaps-sdk';
+
 import { DEFAULT_AA_FACTORIES } from './constants/aa-factories';
 import { CHAIN_IDS } from './constants/chain-ids';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import type { KeyringState } from './keyring';
-import { logger } from './logger';
 
 /**
  * Default keyring state.
@@ -48,6 +49,7 @@ const defaultState: KeyringState = {
       entryPoint: DEFAULT_ENTRYPOINTS[CHAIN_IDS.SEPOLIA]?.address ?? '',
     },
   },
+  usePaymaster: false,
 };
 
 /**
@@ -58,15 +60,14 @@ const defaultState: KeyringState = {
 export async function getState(): Promise<KeyringState> {
   const state = (await snap.request({
     method: 'snap_manageState',
-    params: { operation: 'get' },
+    params: { operation: ManageStateOperation.GetState },
   })) as any;
 
-  logger.debug('Retrieved state:', JSON.stringify(state));
+  if (!state) {
+    return defaultState;
+  }
 
-  return {
-    ...defaultState,
-    ...state,
-  };
+  return state;
 }
 
 /**
@@ -77,6 +78,6 @@ export async function getState(): Promise<KeyringState> {
 export async function saveState(state: KeyringState) {
   await snap.request({
     method: 'snap_manageState',
-    params: { operation: 'update', newState: state },
+    params: { operation: ManageStateOperation.UpdateState, newState: state },
   });
 }
