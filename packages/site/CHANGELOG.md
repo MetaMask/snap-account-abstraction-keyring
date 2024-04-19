@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added deployment of verifying paymaster from frontend ([#71](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/71))
+- Deployment of verifying paymaster from frontend ([#71](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/71))
 
 ## [0.2.2]
 
