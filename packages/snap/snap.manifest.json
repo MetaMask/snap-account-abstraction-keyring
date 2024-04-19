@@ -1,5 +1,5 @@
 {
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
   "proposedName": "MetaMask Account Abstraction Snap Keyring",
   "repository": {
@@ -7,7 +7,7 @@
     "url": "git+https://github.com/MetaMask/snap-account-abstraction-keyring.git"
   },
   "source": {
-    "shasum": "dLUO6JjV/E8HZNKqg2RP2s59cHpJN50vK/EoHq2a4Rc=",
+    "shasum": "Mfu+0zN4GztOlkSXOZeMqlU4/BtzJoYqlMWaOGrqrpI=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",
