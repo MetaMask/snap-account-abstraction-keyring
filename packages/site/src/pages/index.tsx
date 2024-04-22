@@ -45,7 +45,6 @@ const Index = () => {
   const [transferToken, setTransferToken] = useState<string | null>('ETH');
   const [targetAccount, setTargetAccount] = useState<string | null>('0xcF044AB1e5b55203dC258F47756daFb7F8F01760');
   const [transferAmount, setTransferAmount] = useState<string | null>('2');
-  const [greetMessage, setGreetMessage] = useState<string | null>('Hello Snaps!');
 
 
   const [accountId, setAccountId] = useState<string | null>();
@@ -119,14 +118,14 @@ const Index = () => {
         value: transferAmount,
         data: '0x'
       },
-      account: snapState.accounts[0]?.id || '',
+      account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
       scope: "eip155:11155111"
     };
 
-    let method = 'eth_sendBobaUserOp';
+    let method = 'eth_sendUserOpBoba';
 
     if (bobaPaymasterSelected) {
-      method = 'eth_sendBobaUserOpPM';
+      method = 'eth_sendUserOpBobaPM';
     }
     console.log({
       method: 'wallet_invokeSnap',
@@ -147,40 +146,13 @@ const Index = () => {
         request: {
           method,
           params: [transactionDetails],
-          id: snapState.accounts[0]?.id || '',
+          id: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
         },
       },
     })
 
     return submitRes;
   };
-
-  const publishMessage = async () => {
-    if (!snapState || !snapState.accounts) {
-      return false;
-    }
-
-    const msgDetail: Record<string, Json> = {
-      accountAddress: snapState?.accounts[0]?.address || '',
-      message: greetMessage,
-      data: '0x',
-    };
-    const greetResponse = await window.ethereum.request({
-      method: 'wallet_invokeSnap',
-      params: {
-        snapId: defaultSnapOrigin,
-        request: {
-          method: 'snap.internal.newGreet',
-          params: [msgDetail]
-        },
-      },
-    });
-
-
-    console.log(`greetResponse`, greetResponse);
-    return greetResponse;
-  };
-
 
   const handleConnectClick = async () => {
     try {
@@ -196,7 +168,6 @@ const Index = () => {
       dispatch({ type: MetamaskActions.SetError, payload: error });
     }
   };
-
 
   const accountManagementMethods = [
     {
@@ -229,7 +200,7 @@ const Index = () => {
     },
     {
       name: 'Transfer Funds',
-      description: 'Transfer fund with boba as fee token!',
+      description: 'Transfer funds from your Smart Account',
       inputs: [
         {
           id: 'transfer-fund-select-token',
@@ -249,6 +220,7 @@ const Index = () => {
               value: 'ETH',
               key: 'ETH',
             },
+            // TODO: add custom token option
           ],
           placeholder: 'E.g. ETH',
           onChange: (event: any) => setTransferToken(event.currentTarget.value),
@@ -283,25 +255,6 @@ const Index = () => {
         label: 'Transfer',
       },
       successMessage: 'Funds transfer successful!',
-    },
-    {
-      name: 'Test keyring client call',
-      description: 'Call hello world snap!',
-      inputs: [
-        {
-          id: 'client-call-message',
-          title: 'Transfer To Account',
-          value: greetMessage,
-          type: InputType.TextField,
-          placeholder: 'eg. hello world',
-          onChange: (event: any) => setGreetMessage(event.currentTarget.value),
-        }
-      ],
-      action: {
-        callback: async () => await publishMessage(),
-        label: 'Say hello!',
-      },
-      successMessage: 'Greeting send!',
     },
     // {
     //   name: 'Get account',

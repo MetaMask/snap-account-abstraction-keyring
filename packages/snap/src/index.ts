@@ -50,10 +50,9 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   );
 
   // Check if origin is allowed to call method.
-  console.log(`calling from RPC REQUEST`, request)
   if (!hasPermission(origin, request.method)) {
     throw new Error(
-      `hello! Origin '${origin}' is not allowed to call '${request.method}'`,
+      `Origin '${origin}' is not allowed to call '${request.method}'`,
     );
   }
 
@@ -70,12 +69,8 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
       return (await getKeyring()).getConfigs();
     }
 
-    case InternalMethod.NewGreet: {
-      return (await getKeyring()).greetRequest(request.params as EthBaseTransaction[]);
-    }
-
-    case InternalMethod.SendBoba:
-    case InternalMethod.SendBobaPM: {
+    case InternalMethod.SendUserOpBoba:
+    case InternalMethod.SendUserOpBobaPM: {
       const {
         id,
         method,
@@ -102,7 +97,6 @@ export const onKeyringRequest: OnKeyringRequestHandler = async ({
   origin,
   request,
 }) => {
-  console.log(`calling from Keyring REQUEST`)
   logger.debug(
     `Keyring request (origin="${origin}"):`,
     JSON.stringify(request, undefined, 2),
@@ -111,7 +105,7 @@ export const onKeyringRequest: OnKeyringRequestHandler = async ({
   // Check if origin is allowed to call method.
   if (!hasPermission(origin, request.method)) {
     throw new Error(
-      `Hello 22 ! Origin '${origin}' is not allowed to call '${request.method}'`,
+      `Origin '${origin}' is not allowed to call '${request.method}'`,
     );
   }
 

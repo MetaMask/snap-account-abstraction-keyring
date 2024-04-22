@@ -207,23 +207,6 @@ export class AccountAbstractionKeyring implements Keyring {
     return this.#state.config[Number(chainId).toString()]!;
   }
 
-
-  /**
-   * Send the greet message to user
-   *
-   */
-  async greetRequest(params: EthBaseTransaction[]): Promise<any> {
-    console.log('Calling from new Greet keyring!');
-    const transactions = params as EthBaseTransaction[];
-    return {
-      message: 'SUCCESS - hello world!',
-      transactions
-    }
-
-  }
-
-
-
   /**
    * Retrieves the configuration settings for the keyring.
    * @returns A promise that resolves to the ChainConfigs object containing the configuration settings.
@@ -461,7 +444,6 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   #getWalletById(accountId: string): Wallet {
-    console.log(`account id`, this.#state.wallets, accountId);
     const wallet = this.#state.wallets[accountId];
     if (!wallet) {
       throwError(`Account '${accountId}' not found`);
@@ -536,19 +518,19 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     switch (method) {
-      case InternalMethod.SendBoba: {
+      case InternalMethod.SendUserOpBoba: {
         console.log('Trigger boba send request');
         const transactions = params as EthBaseTransaction[];
         return await this.#prepareAndSignUserOperationBoba(
           account.address,
           transactions,
-          '',// paymaster type
+          '', // paymaster type
           '0x', /// paymaster address
           '0x', // fee token address
         );
       }
 
-      case InternalMethod.SendBobaPM: {
+      case InternalMethod.SendUserOpBobaPM: {
         const transactions = params as EthBaseTransaction[];
         return await this.#prepareAndSignUserOperationBoba(
           account.address,
@@ -634,10 +616,11 @@ export class AccountAbstractionKeyring implements Keyring {
       chainConfig?.customVerifyingPaymasterAddress;
 
     // ethers.utils.hexlify(transaction.value)
+    // TODO: simplify transaction object to not have payload
     const callDataReq = aaInstance.interface.encodeFunctionData('execute', [
-      transaction.to ?? ethers.ZeroAddress,
-      transaction.value ?? '0x00',
-      transaction.data ?? ethers.ZeroHash,
+      (transaction as any).payload.to ?? ethers.ZeroAddress,
+      (transaction as any).payload.value ?? '0x00',
+      (transaction as any).payload.data ?? ethers.ZeroHash,
     ]);
 
     const callGasLimitReq = await provider.estimateGas({
@@ -699,9 +682,6 @@ export class AccountAbstractionKeyring implements Keyring {
     //   paymasterAndData: getDummyPaymasterAndData(verifyingPaymasterAddress),
     // };
 
-    // TODO: show modal popup with details we can
-    // sign goes here
-
     let pmPayload: ({ value: string; type: NodeType.Copyable; sensitive?: boolean /* eslint-disable camelcase */ | undefined; } | { value: string; type: NodeType.Text; markdown?: boolean | undefined; })[] = [];
     if (paymasterType) {
       pmPayload = [text("Boba paymaster has been selected!")];
@@ -733,14 +713,6 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const signedUserOp = await this.#signUserOperation(address, ethBaseUserOp);
     console.log(signedUserOp);
-
-    // await snap.request({
-    //   method: "snap_notify",
-    //   params: {
-    //     type: NotificationType.InApp,
-    //     message: `Transaction Success`
-    //   },
-    // }) as any;
 
     await snap.request({
       method: "snap_dialog",
