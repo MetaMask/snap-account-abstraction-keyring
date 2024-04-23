@@ -640,6 +640,8 @@ export class AccountAbstractionKeyring implements Keyring {
       pmPayload = [text("Boba paymaster has been selected!")];
     }
 
+    // For Funds transfer (specific tokens) modify dialog accordingly,
+    // for general tx show general dialog
     const result = await snap.request({
       method: "snap_dialog",
       params: {
