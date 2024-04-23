@@ -51,6 +51,7 @@ import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
 import { isUniqueAddress, runSensitive, throwError } from './utils/util';
 import { validateConfig } from './utils/validation';
+import { copyable, DialogType, heading, NodeType, NotificationType, panel, text } from '@metamask/snaps-sdk';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -84,6 +85,99 @@ export type Wallet = {
   salt: string;
   initCode: string;
 };
+
+export const DefaultGasOverheads = {
+  fixed: 21000,
+  perUserOp: 18300,
+  perUserOpWord: 4,
+  zeroByte: 4,
+  nonZeroByte: 16,
+  bundleSize: 1,
+  sigSize: 65,
+};
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+export function packUserOp(op: any, forSignature = true): string {
+  if (forSignature) {
+    return ethers.AbiCoder.defaultAbiCoder().encode(
+      // eslint-disable-next-line prettier/prettier
+      ['address','uint256', 'bytes32', 'bytes32',
+        // eslint-disable-next-line prettier/prettier
+        'uint256', 'uint256', 'uint256', 'uint256', 'uint256',
+        'bytes32',
+      ],
+      [
+        op.sender,
+        op.nonce,
+        ethers.keccak256(op.initCode),
+        ethers.keccak256(op.callData),
+        op.callGasLimit,
+        op.verificationGasLimit,
+        op.preVerificationGas,
+        op.maxFeePerGas,
+        op.maxPriorityFeePerGas,
+        ethers.keccak256(op.paymasterAndData),
+      ],
+    );
+
+    // eslint-disable-next-line no-else-return
+  } else {
+    // for the purpose of calculating gas cost encode also signature (and no keccak of bytes)
+    return ethers.AbiCoder.defaultAbiCoder().encode(
+      // eslint-disable-next-line prettier/prettier
+      ['address', 'uint256', 'bytes', 'bytes',
+        // eslint-disable-next-line prettier/prettier
+        'uint256', 'uint256', 'uint256', 'uint256', 'uint256',
+        'bytes',
+        'bytes',
+      ],
+      [
+        op.sender,
+        op.nonce,
+        op.initCode,
+        op.callData,
+        op.callGasLimit,
+        op.verificationGasLimit,
+        op.preVerificationGas,
+        op.maxFeePerGas,
+        op.maxPriorityFeePerGas,
+        op.paymasterAndData,
+        op.signature,
+      ],
+    );
+  }
+}
+
+// eslint-disable-next-line jsdoc/require-jsdoc
+export function calcPreVerificationGas(userOp: any, overheads?: any): number {
+  const ov = { ...DefaultGasOverheads, ...(overheads ?? {}) };
+  // eslint-disable-next-line id-length, @typescript-eslint/no-unnecessary-type-assertion
+  const p = {
+    // dummy values, in case the UserOp is incomplete.
+    preVerificationGas: 21000, // dummy value, just for calldata cost
+    signature: ethers.hexlify(Buffer.alloc(ov.sigSize, 1)), // dummy signature
+    ...userOp,
+  } as any;
+  if (p.signature === '') {
+    p.signature = ethers.hexlify(Buffer.alloc(ov.sigSize, 1));
+  }
+  const packed = ethers.getBytes(packUserOp(p, false));
+  const lengthInWord = (packed.length + 31) / 32;
+  const callDataCost = packed
+    // eslint-disable-next-line id-length
+    .map((x) => (x === 0 ? ov.zeroByte : ov.nonZeroByte))
+    // eslint-disable-next-line id-length
+    .reduce((sum, x) => sum + x);
+  const ret = Math.round(
+    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+    callDataCost +
+      ov.fixed / ov.bundleSize +
+      // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+      ov.perUserOp +
+      ov.perUserOpWord * lengthInWord,
+  );
+  return ret;
+}
 
 export class AccountAbstractionKeyring implements Keyring {
   #state: KeyringState;
@@ -334,11 +428,12 @@ export class AccountAbstractionKeyring implements Keyring {
         };
       }
       default: {
+        const { scope } = (params as any)[0] || {}
         const signature = await this.#handleSigningRequest({
-          account: this.#getWalletById(request.account).account,
+          account: this.#getWalletById(request.id).account,
           method,
           params,
-          scope: request.scope,
+          scope: scope,
         });
         return {
           pending: false,
@@ -423,6 +518,29 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     switch (method) {
+      case InternalMethod.SendUserOpBoba: {
+        console.log('Trigger boba send request');
+        const transactions = params as EthBaseTransaction[];
+        return await this.#prepareAndSignUserOperationBoba(
+          account.address,
+          transactions,
+          '', // paymaster type
+          '0x', /// paymaster address
+          '0x', // fee token address
+        );
+      }
+
+      case InternalMethod.SendUserOpBobaPM: {
+        const transactions = params as EthBaseTransaction[];
+        return await this.#prepareAndSignUserOperationBoba(
+          account.address,
+          transactions,
+          'alt_fee',
+          '0x',
+          '0x',
+        );
+      }
+
       case EthMethod.PrepareUserOperation: {
         const transactions = params as EthBaseTransaction[];
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -444,6 +562,183 @@ export class AccountAbstractionKeyring implements Keyring {
         throw new Error(`EVM method '${method}' not supported`);
       }
     }
+  }
+
+  async #prepareAndSignUserOperationBoba(
+    address: string,
+    transactions: EthBaseTransaction[],
+    paymasterType: string,
+    paymasterAddr: string,
+    tokenAddr: string,
+  ): Promise<EthUserOperation> {
+    if (transactions.length !== 1) {
+      throwError(`[Snap] Only one transaction per UserOp supported`);
+    }
+    const transaction =
+      transactions[0] ?? throwError(`[Snap] Transaction is required`);
+    logger.info(
+      `[Snap] PrepareUserOp for transaction\n: ${JSON.stringify(
+        transaction,
+        null,
+        2,
+      )}`,
+    );
+
+    const wallet = this.#getWalletByAddress(address);
+    const signer = getSigner(wallet.privateKey);
+
+    // eslint-disable-next-line camelcase
+    const aaInstance = SimpleAccount__factory.connect(
+      wallet.account.address, // AA address
+      signer, // Admin signer
+    );
+
+    const { chainId } = await provider.getNetwork();
+
+    let nonce = '0x0';
+    let initCode = '0x';
+    try {
+      nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
+        16,
+      )}`;
+      if (!wallet.chains[chainId.toString()]) {
+        wallet.chains[chainId.toString()] = true;
+        await this.#saveState();
+      }
+    } catch (error) {
+      initCode = wallet.initCode;
+    }
+
+    const chainConfig = this.#getChainConfig(Number(chainId));
+    const entryPoint = await this.#getEntryPoint(Number(chainId), signer);
+
+    const verifyingPaymasterAddress =
+      chainConfig?.customVerifyingPaymasterAddress;
+
+    // ethers.utils.hexlify(transaction.value)
+    // TODO: simplify transaction object to not have payload
+    const callDataReq = aaInstance.interface.encodeFunctionData('execute', [
+      (transaction as any).payload.to ?? ethers.ZeroAddress,
+      (transaction as any).payload.value ?? '0x00',
+      (transaction as any).payload.data ?? ethers.ZeroHash,
+    ]);
+
+    const callGasLimitReq = await provider.estimateGas({
+      from: await entryPoint.getAddress(),
+      to: wallet.account.address,
+      data: callDataReq,
+    });
+
+    // eslint-disable-next-line prefer-template
+    const deployerCallDataReq = '0x' + initCode.substring(42);
+    const initGasReq = await provider.estimateGas({
+      to: initCode.substring(0, 42),
+      data: deployerCallDataReq,
+    });
+
+    // verification gasLimit expected is 100000
+    const verificationGasLimitReq = BigInt(100000) + initGasReq;
+
+    const maxFeePerGasReq = BigInt('1000000000');
+    const maxPriorityFeePerGasReq = BigInt('1000000000');
+
+    const paymasterAndDataReq = await this.#getPaymasterAndData(
+      paymasterType,
+      paymasterAddr,
+      tokenAddr,
+    );
+
+    const partialUserOp: any = {
+      sender: address,
+      nonce,
+      initCode,
+      callData: callDataReq,
+      callGasLimit: callGasLimitReq.toString(),
+      verificationGasLimit: verificationGasLimitReq.toString(),
+      maxFeePerGas: maxFeePerGasReq.toString(),
+      maxPriorityFeePerGas: maxPriorityFeePerGasReq.toString(),
+      paymasterAndData: paymasterAndDataReq,
+    };
+
+    const preVerificationGasReq = calcPreVerificationGas(partialUserOp);
+
+    const ethBaseUserOp: EthUserOperation = {
+      ...partialUserOp,
+      preVerificationGas: preVerificationGasReq,
+      signature: DUMMY_SIGNATURE,
+    };
+
+    // const ethBaseUserOp: EthUserOperation = {
+    //   sender: address,
+    //   nonce,
+    //   initCode,
+    //   callData: callDataReq,
+    //   callGasLimit: callGasLimitReq.toString(),
+    //   verificationGasLimit: verificationGasLimitReq.toString(),
+    //   preVerificationGas: DUMMY_GAS_VALUES.preVerificationGas,
+    //   maxFeePerGas: maxFeePerGasReq.toString(),
+    //   maxPriorityFeePerGas: maxPriorityFeePerGasReq.toString(),
+    //   signature: DUMMY_SIGNATURE,
+    //   paymasterAndData: getDummyPaymasterAndData(verifyingPaymasterAddress),
+    // };
+
+    let pmPayload: ({ value: string; type: NodeType.Copyable; sensitive?: boolean /* eslint-disable camelcase */ | undefined; } | { value: string; type: NodeType.Text; markdown?: boolean | undefined; })[] = [];
+    if (paymasterType) {
+      pmPayload = [text("Boba paymaster has been selected!")];
+    }
+
+    const result = await snap.request({
+      method: "snap_dialog",
+      params: {
+        type: DialogType.Confirmation,
+        // id: "ghjkl",
+        content: panel([
+          heading("Sending funds to!"),
+          ...pmPayload,
+          text("Target Address"),
+          copyable((transaction as any).payload.to),
+          text("Token Amount"),
+          copyable((transaction as any).payload.value),
+          text("Tx Data"),
+          copyable((transaction as any).payload.data),
+        ]),
+      },
+    }) as any;
+
+    if (!result) {
+      throw new Error(
+        `User declien transaction!`,
+      );
+    }
+
+    const signedUserOp = await this.#signUserOperation(address, ethBaseUserOp);
+    console.log(signedUserOp);
+
+    await snap.request({
+      method: "snap_dialog",
+      params: {
+        type: DialogType.Alert,
+        content: panel([
+          heading("Transaction Success!"),
+          text("UserOP has been send to bundler"),
+          copyable(signedUserOp),
+        ]),
+      },
+    }) as any;
+
+    ethBaseUserOp.signature = signedUserOp;
+    return ethBaseUserOp;
+  }
+
+  async #getPaymasterAndData(
+    paymasterType: string,
+    paymasterAddr: string, // take as config params
+    tokenAddr: string,
+  ): Promise<string> {
+    if (paymasterType === 'alt_fee') {
+      return ethers.concat([paymasterAddr, ethers.zeroPadValue(tokenAddr, 20)]);
+    }
+    return '0x';
   }
 
   async #prepareUserOperation(

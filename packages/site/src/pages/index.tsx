@@ -1,7 +1,9 @@
+import type { Json } from '@metamask/utils';
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
 import Grid from '@mui/material/Grid';
 import React, { useContext, useEffect, useState } from 'react';
+import { v4 as uuidV4 } from 'uuid'
 
 import { Accordion, AccountList, Card, ConnectButton } from '../components';
 import { ChainConfigComponent } from '../components/ChainConfig';
@@ -38,6 +40,13 @@ const Index = () => {
   // internal development and testing tool.
   const [privateKey, setPrivateKey] = useState<string | null>();
   const [salt, setSalt] = useState<string | null>();
+  const [bobaPaymasterSelected, setBobaPaymasterSelected] = useState<Boolean | null>();
+
+  const [transferToken, setTransferToken] = useState<string | null>('ETH');
+  const [targetAccount, setTargetAccount] = useState<string | null>('0xcF044AB1e5b55203dC258F47756daFb7F8F01760');
+  const [transferAmount, setTransferAmount] = useState<string | null>('2');
+
+
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
 
@@ -54,6 +63,8 @@ const Index = () => {
         return;
       }
       const accounts = await client.listAccounts();
+      console.log(`accounts loaded!`, accounts)
+      // listRequests
       setSnapState({
         ...state,
         accounts,
@@ -62,6 +73,7 @@ const Index = () => {
     }
 
     getState().catch((error) => console.error(error));
+
   }, [state.installedSnap]);
 
   const syncAccounts = async () => {
@@ -93,6 +105,53 @@ const Index = () => {
     const account: KeyringAccount = JSON.parse(accountObject);
     await client.updateAccount(account);
     await syncAccounts();
+  };
+
+  const sendBobaTx = async () => {
+    if (!snapState || !snapState.accounts) {
+      return false;
+    }
+
+    const transactionDetails: Record<string, any> = {
+      payload: {
+        to: targetAccount,
+        value: transferAmount,
+        data: '0x'
+      },
+      account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+      scope: "eip155:11155111"
+    };
+
+    let method = 'eth_sendUserOpBoba';
+
+    if (bobaPaymasterSelected) {
+      method = 'eth_sendUserOpBobaPM';
+    }
+    console.log({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method,
+          params: [transactionDetails],
+          id: snapState.accounts[0]?.id || '',
+        },
+      }
+    })
+
+    let submitRes = await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method,
+          params: [transactionDetails],
+          id: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+        },
+      },
+    })
+
+    return submitRes;
   };
 
   const handleConnectClick = async () => {
@@ -140,84 +199,142 @@ const Index = () => {
       successMessage: 'Smart Contract Account Created',
     },
     {
-      name: 'Get account',
-      description: 'Get data of the selected account',
+      name: 'Transfer Funds',
+      description: 'Transfer funds from your Smart Account',
       inputs: [
         {
-          id: 'get-account-account-id',
-          title: 'Account ID',
+          id: 'transfer-fund-select-token',
+          title: 'Select Token',
+          value: transferToken,
+          type: InputType.Dropdown,
+          options: [
+            {
+              value: 'Boba',
+              key: 'Boba',
+            },
+            {
+              value: 'USDC',
+              key: 'USDC',
+            },
+            {
+              value: 'ETH',
+              key: 'ETH',
+            },
+            // TODO: add custom token option
+          ],
+          placeholder: 'E.g. ETH',
+          onChange: (event: any) => setTransferToken(event.currentTarget.value),
+        },
+        {
+          id: 'transfer-fund-to-address',
+          title: 'Transfer To Account',
+          value: targetAccount,
           type: InputType.TextField,
-          placeholder: 'E.g. f59a9562-96de-4e75-9229-079e82c7822a',
-          options: snapState.accounts.map((account) => {
-            return { value: account.address };
-          }),
-          onChange: (event: any) => setAccountId(event.currentTarget.value),
+          placeholder: 'E.g. 0x123',
+          onChange: (event: any) => setTargetAccount(event.currentTarget.value),
         },
-      ],
-      action: {
-        disabled: Boolean(accountId),
-        callback: async () => await client.getAccount(accountId as string),
-        label: 'Get Account',
-      },
-      successMessage: 'Account fetched',
-    },
-    {
-      name: 'List accounts',
-      description: 'List all account managed by the SSK',
-      action: {
-        disabled: false,
-        callback: async () => {
-          const accounts = await client.listAccounts();
-          setSnapState({
-            ...snapState,
-            accounts,
-          });
-          return accounts;
-        },
-        label: 'List Accounts',
-      },
-    },
-    {
-      name: 'Remove account',
-      description: 'Remove an account',
-      inputs: [
         {
-          id: 'delete-account-account-id',
-          title: 'Account ID',
+          id: 'transfer-fund-token-amount',
+          title: 'Token Amount',
+          value: transferAmount,
           type: InputType.TextField,
-          placeholder: 'E.g. 394bd587-7be4-4ffb-a113-198c6a7764c2',
-          options: snapState.accounts.map((account) => {
-            return { value: account.address };
-          }),
-          onChange: (event: any) => setAccountId(event.currentTarget.value),
+          placeholder: 'E.g. 0.00',
+          onChange: (event: any) => setTransferAmount(event.currentTarget.value),
         },
-      ],
-      action: {
-        disabled: Boolean(accountId),
-        callback: async () => await deleteAccount(),
-        label: 'Remove Account',
-      },
-      successMessage: 'Account Removed',
-    },
-    {
-      name: 'Update account',
-      description: 'Update an account',
-      inputs: [
         {
-          id: 'update-account-account-object',
-          title: 'Account Object',
-          type: InputType.TextArea,
-          placeholder: 'E.g. { id: ... }',
-          onChange: (event: any) => setAccountObject(event.currentTarget.value),
+          id: 'transfer-fund-boba-paymaster',
+          title: 'Select boba as paymaster.',
+          value: bobaPaymasterSelected,
+          type: InputType.CheckBox,
+          placeholder: 'E.g. 0.00',
+          onChange: (event: any) => setBobaPaymasterSelected(event.target.checked),
         },
       ],
       action: {
-        disabled: Boolean(accountId),
-        callback: async () => await updateAccount(),
-        label: 'Update Account',
+        callback: async () => await sendBobaTx(),
+        label: 'Transfer',
       },
-      successMessage: 'Account Updated',
+      successMessage: 'Funds transfer successful!',
     },
+    // {
+    //   name: 'Get account',
+    //   description: 'Get data of the selected account',
+    //   inputs: [
+    //     {
+    //       id: 'get-account-account-id',
+    //       title: 'Account ID',
+    //       type: InputType.TextField,
+    //       placeholder: 'E.g. f59a9562-96de-4e75-9229-079e82c7822a',
+    //       options: snapState.accounts.map((account) => {
+    //         return { value: account.address };
+    //       }),
+    //       onChange: (event: any) => setAccountId(event.currentTarget.value),
+    //     },
+    //   ],
+    //   action: {
+    //     disabled: Boolean(accountId),
+    //     callback: async () => await client.getAccount(accountId as string),
+    //     label: 'Get Account',
+    //   },
+    //   successMessage: 'Account fetched',
+    // },
+    // {
+    //   name: 'List accounts',
+    //   description: 'List all account managed by the SSK',
+    //   action: {
+    //     disabled: false,
+    //     callback: async () => {
+    //       const accounts = await client.listAccounts();
+    //       setSnapState({
+    //         ...snapState,
+    //         accounts,
+    //       });
+    //       return accounts;
+    //     },
+    //     label: 'List Accounts',
+    //   },
+    // },
+    // {
+    //   name: 'Remove account',
+    //   description: 'Remove an account',
+    //   inputs: [
+    //     {
+    //       id: 'delete-account-account-id',
+    //       title: 'Account ID',
+    //       type: InputType.TextField,
+    //       placeholder: 'E.g. 394bd587-7be4-4ffb-a113-198c6a7764c2',
+    //       options: snapState.accounts.map((account) => {
+    //         return { value: account.address };
+    //       }),
+    //       onChange: (event: any) => setAccountId(event.currentTarget.value),
+    //     },
+    //   ],
+    //   action: {
+    //     disabled: Boolean(accountId),
+    //     callback: async () => await deleteAccount(),
+    //     label: 'Remove Account',
+    //   },
+    //   successMessage: 'Account Removed',
+    // },
+    // {
+    //   name: 'Update account',
+    //   description: 'Update an account',
+    //   inputs: [
+    //     {
+    //       id: 'update-account-account-object',
+    //       title: 'Account Object',
+    //       type: InputType.TextArea,
+    //       placeholder: 'E.g. { id: ... }',
+    //       onChange: (event: any) => setAccountObject(event.currentTarget.value),
+    //     },
+    //   ],
+    //   action: {
+    //     disabled: Boolean(accountId),
+    //     callback: async () => await updateAccount(),
+    //     label: 'Update Account',
+    //   },
+    //   successMessage: 'Account Updated',
+    // },
   ];
 
   return (
@@ -228,7 +345,7 @@ const Index = () => {
             content={{
               title: 'Connect',
               description:
-                'Get started by connecting to and installing the example snap.',
+                'Get started by connecting to and installing the snap.',
               button: (
                 <ConnectButton
                   onClick={handleConnectClick}
@@ -242,7 +359,7 @@ const Index = () => {
       </CardContainer>
 
       <StyledBox sx={{ flexGrow: 1 }}>
-        <Grid container spacing={4} columns={[1, 2, 3]}>
+        <Grid alignItems="flex-start" container spacing={4} columns={[1, 2, 3]}>
           <Grid item xs={8} sm={4} md={2}>
             <DividerTitle>Methods</DividerTitle>
             <Accordion items={accountManagementMethods} />

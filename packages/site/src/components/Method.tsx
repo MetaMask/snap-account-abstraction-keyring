@@ -45,6 +45,12 @@ const TextField = styled.input`
   border: 1px solid #bbc0c5;
 `;
 
+const CheckboxField = styled.input`
+  width: 20px;
+  padding: 10px;
+  display: inline-block;
+`;
+
 const TextArea = styled.textarea`
   width: calc(95% - 16px);
   height: 250px;
@@ -97,6 +103,7 @@ export const Method = ({
             id={props.id}
             placeholder={props.placeholder}
             onChange={props.onChange}
+            value={props.value}
           />
         );
       case InputType.TextArea:
@@ -119,6 +126,16 @@ export const Method = ({
               </StyledSelectItem>
             ))}
           </StyledSelect>
+        );
+      case InputType.CheckBox:
+        return (
+          <CheckboxField
+            type="checkbox"
+            id={props.id}
+            placeholder={props.placeholder}
+            onChange={props.onChange}
+            value={props.value}
+          />
         );
       default:
         return null;

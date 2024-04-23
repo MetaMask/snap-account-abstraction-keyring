@@ -5,6 +5,8 @@ export enum InternalMethod {
   IsSynchronousMode = 'snap.internal.isSynchronousMode',
   SetConfig = 'snap.internal.setConfig',
   GetConfigs = 'snap.internal.getConfigs',
+  SendUserOpBoba = 'eth_sendUserOpBoba',
+  SendUserOpBobaPM = 'eth_sendUserOpBobaPM',
 }
 
 export const originPermissions = new Map<string, string[]>([
@@ -41,6 +43,9 @@ export const originPermissions = new Map<string, string[]>([
       // Custom methods
       InternalMethod.SetConfig,
       InternalMethod.GetConfigs,
+      // TODO: determine if these methods need to be restricted to our own UI
+      InternalMethod.SendUserOpBoba,
+      InternalMethod.SendUserOpBobaPM,
     ],
   ],
   [

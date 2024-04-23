@@ -1,4 +1,5 @@
 import {
+  EthBaseTransaction,
   MethodNotSupportedError,
   handleKeyringRequest,
 } from '@metamask/keyring-api';
@@ -66,6 +67,22 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
 
     case InternalMethod.GetConfigs: {
       return (await getKeyring()).getConfigs();
+    }
+
+    case InternalMethod.SendUserOpBoba:
+    case InternalMethod.SendUserOpBobaPM: {
+      const {
+        id,
+        method,
+        params,
+      } = request;
+      return (await getKeyring()).submitRequest({
+        id,
+        request: {
+          method,
+          params
+        }
+      } as any);
     }
 
     default: {
