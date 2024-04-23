@@ -32,6 +32,22 @@ const initialState: {
   usePaymaster: false,
 };
 
+// TODO: used shared address file on the gateway
+const TOKEN_ADDR = {
+  288: {
+    bobaToken: '0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7',
+    usdcToken: '0x66a2A913e447d6b4BF33EFbec43aAeF87890FBbc',
+  },
+  11155111: {
+    bobaToken: '0x33faF65b3DfcC6A1FccaD4531D9ce518F0FDc896',
+    usdcToken: '0x33faF65b3DfcC6A1FccaD4531D9ce518F0FDc896',
+  },
+  28882: {
+    bobaToken: '0x4200000000000000000000000000000000000023',
+    usdcToken: '0x4200000000000000000000000000000000000023',
+  },
+};
+
 const Index = () => {
   const [state, dispatch] = useContext(MetaMaskContext);
   const [snapState, setSnapState] = useState<KeyringState>(initialState);
@@ -112,7 +128,12 @@ const Index = () => {
       return false;
     }
 
-    const transactionDetails: Record<string, any> = {
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    let transactionDetails: Record<string, any> = {
       payload: {
         to: targetAccount,
         value: transferAmount,
@@ -121,6 +142,32 @@ const Index = () => {
       account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
       scope: "eip155:11155111"
     };
+
+    if (transferToken !== 'ETH') {
+      let tokenAddress;
+      if (transferToken === 'Boba') {
+        tokenAddress = TOKEN_ADDR[currentChainIdInt]?.bobaToken;
+      } else if (transferToken === 'USDC') {
+        tokenAddress = TOKEN_ADDR[currentChainIdInt]?.usdcToken;
+      }
+
+      // TODO: use ethers
+      const transferFunctionSelector = '0xa9059cbb';
+      const txData =
+        transferFunctionSelector +
+        targetAccount.slice(2).padStart(64, '0') +
+        (Number(transferAmount).toString(16)).padStart(64, '0');
+
+      transactionDetails = {
+        payload: {
+          to: tokenAddress,
+          value: '0',
+          data: txData,
+        },
+        account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+        scope: "eip155:11155111"
+      };
+    }
 
     let method = 'eth_sendUserOpBoba';
 

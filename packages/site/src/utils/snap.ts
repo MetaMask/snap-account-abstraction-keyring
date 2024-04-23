@@ -95,28 +95,28 @@ export const isUsingPaymaster = async (): Promise<boolean> => {
   return (await walletInvokeSnap('snap.internal.isUsingPaymaster')) as boolean;
 };
 
-/**
- * Checks if the current chain is configured by retrieving the chain ID from the Ethereum provider and
- * comparing it with the chain configurations obtained from the wallet's Snap plugin.
- * @returns A promise that resolves to a boolean indicating whether the current chain is configured.
- */
-export const isCurrentChainConfigured = async (): Promise<boolean> => {
-  const currentChainId = (await window.ethereum.request({
-    method: 'eth_chainId',
-  })) as string;
-  const configs = (await walletInvokeSnap('snap.getConfigs')) as ChainConfigs;
+// /**
+//  * Checks if the current chain is configured by retrieving the chain ID from the Ethereum provider and
+//  * comparing it with the chain configurations obtained from the wallet's Snap plugin.
+//  * @returns A promise that resolves to a boolean indicating whether the current chain is configured.
+//  */
+// export const isCurrentChainConfigured = async (): Promise<boolean> => {
+//   const currentChainId = (await window.ethereum.request({
+//     method: 'eth_chainId',
+//   })) as string;
+//   const configs = (await walletInvokeSnap('snap.getConfigs')) as ChainConfigs;
 
-  const chainConfig = configs[currentChainId];
+//   const chainConfig = configs[currentChainId];
 
-  if (!chainConfig) {
-    return false;
-  }
+//   if (!chainConfig) {
+//     return false;
+//   }
 
-  return (
-    chainConfig.simpleAccountFactory !== '' &&
-    chainConfig.entryPoint !== '' &&
-    chainConfig.bundlerUrl !== ''
-  );
-};
+//   return (
+//     chainConfig.simpleAccountFactory !== '' &&
+//     chainConfig.entryPoint !== '' &&
+//     chainConfig.bundlerUrl !== ''
+//   );
+// };
 
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');

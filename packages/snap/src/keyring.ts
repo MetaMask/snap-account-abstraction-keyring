@@ -648,11 +648,11 @@ export class AccountAbstractionKeyring implements Keyring {
         type: DialogType.Confirmation,
         // id: "ghjkl",
         content: panel([
-          heading("Sending funds to!"),
+          heading("Sending Tx to!"),
           ...pmPayload,
           text("Target Address"),
           copyable((transaction as any).payload.to),
-          text("Token Amount"),
+          text("Tx Value"),
           copyable((transaction as any).payload.value),
           text("Tx Data"),
           copyable((transaction as any).payload.data),
