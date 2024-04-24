@@ -570,6 +570,10 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     const entryPoint = await this.#getEntryPoint(Number(chainId), signer);
+    const chainConfig = this.#getChainConfig(Number(chainId));
+    if (!chainConfig?.bundlerUrl) {
+      throwError(`[Snap] Bundler URL not found for chain: ${chainId}`);
+    }
 
     // ethers.utils.hexlify(transaction.value)
     // TODO: simplify transaction object to not have payload
@@ -634,6 +638,18 @@ export class AccountAbstractionKeyring implements Keyring {
     };
 
     console.log(ethBaseUserOp)
+    const estimatedGas = await this.#estimateUserOpGas(
+      ethBaseUserOp,
+      await entryPoint.getAddress(),
+      chainConfig.bundlerUrl,
+    );
+    const preVerificationGasFromBundler = estimatedGas.result?.preVerificationGas;
+    if (
+      preVerificationGasFromBundler &&
+      preVerificationGasFromBundler > preVerificationGasReq
+    ) {
+      ethBaseUserOp.preVerificationGas = preVerificationGasFromBundler;
+    }
 
     let pmPayload: ({ value: string; type: NodeType.Copyable; sensitive?: boolean /* eslint-disable camelcase */ | undefined; } | { value: string; type: NodeType.Text; markdown?: boolean | undefined; })[] = [];
     if (paymasterType) {
@@ -669,6 +685,21 @@ export class AccountAbstractionKeyring implements Keyring {
     const signedUserOp = await this.#signUserOperation(address, ethBaseUserOp);
     console.log(signedUserOp);
 
+    ethBaseUserOp.signature = signedUserOp;
+
+    const bundlerRes = await this.#sendUserOperation(
+      ethBaseUserOp,
+      await entryPoint.getAddress(),
+      chainConfig.bundlerUrl,
+    );
+    console.log(bundlerRes);
+    if (!bundlerRes.result) {
+      console.log(bundlerRes.error)
+      throw new Error(
+        `UserOp Failed ${bundlerRes.error.message}`,
+      );
+    }
+
     await snap.request({
       method: "snap_dialog",
       params: {
@@ -681,7 +712,6 @@ export class AccountAbstractionKeyring implements Keyring {
       },
     }) as any;
 
-    ethBaseUserOp.signature = signedUserOp;
     return ethBaseUserOp;
   }
 
@@ -757,6 +787,57 @@ export class AccountAbstractionKeyring implements Keyring {
       bundlerUrl: chainConfig.bundlerUrl,
     };
     return ethBaseUserOp;
+  }
+
+  async #sendUserOperation(userOp, entryPointAddress, bundlerUrl) {
+    const requestBody = {
+      method: 'eth_sendUserOperation',
+      id: 1,
+      jsonrpc: '2.0',
+      params: [userOp, entryPointAddress],
+    };
+    try {
+      const response = await fetch(bundlerUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      console.log('Response:', data);
+      return data; // Return the data
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
+  }
+
+  async #estimateUserOpGas(userOp, entryPointAddress, bundlerUrl) {
+    const requestBody = {
+      method: 'eth_estimateUserOperationGas',
+      id: 1,
+      jsonrpc: '2.0',
+      params: [userOp, entryPointAddress],
+    };
+    try {
+      const response = await fetch(bundlerUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const data = await response.json();
+      console.log('Response:', data);
+      console.log(data.error?.message);
+      return data; // Return the data
+    } catch (error) {
+      console.error('Error:', error);
+      throw error;
+    }
   }
 
   // async #patchUserOperation(
