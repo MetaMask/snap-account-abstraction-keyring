@@ -37,14 +37,17 @@ const TOKEN_ADDR = {
   288: {
     bobaToken: '0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7',
     usdcToken: '0x66a2A913e447d6b4BF33EFbec43aAeF87890FBbc',
+    paymaster: '',
   },
   11155111: {
     bobaToken: '0x33faF65b3DfcC6A1FccaD4531D9ce518F0FDc896',
     usdcToken: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+    paymaster: '0x0ebB672Aec2b82108542E29875669770EBcB7066',
   },
   28882: {
     bobaToken: '0x4200000000000000000000000000000000000023',
     usdcToken: '0x4200000000000000000000000000000000000023',
+    paymaster: '',
   },
 };
 
@@ -121,6 +124,75 @@ const Index = () => {
     const account: KeyringAccount = JSON.parse(accountObject);
     await client.updateAccount(account);
     await syncAccounts();
+  };
+
+  const sendCustomTx = async (target, value, txData, paymasterOverride) => {
+    if (!snapState || !snapState.accounts) {
+      return false;
+    }
+
+    let transactionDetails: Record<string, any> = {
+      payload: {
+        to: target,
+        value: value,
+        data: txData,
+      },
+      account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+      scope: "eip155:11155111"
+    };
+
+    let method = 'eth_sendUserOpBoba';
+
+    if (paymasterOverride) {
+      method = 'eth_sendUserOpBobaPM';
+    }
+    console.log({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method,
+          params: [transactionDetails],
+          id: snapState.accounts[0]?.id || '',
+        },
+      },
+    });
+
+    const submitRes = await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method,
+          params: [transactionDetails],
+          id: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+        },
+      },
+    })
+
+    return submitRes;
+  };
+
+  const setUpPaymaster = async () => {
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    const txData = '0x'; // TODO: use ethers to create calldata for addDepositFor(boba, account, amount)
+
+    await sendCustomTx(TOKEN_ADDR[currentChainIdInt]?.paymaster, '0', txData, false)
+  };
+
+  const approveBobaSpend = async () => {
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    const txData = '0x'; // TODO: use ethers to create calldata for approve(paymaster, amount)
+
+    await sendCustomTx(TOKEN_ADDR[currentChainIdInt]?.bobaToken, '0', txData, false)
   };
 
   const sendBobaTx = async () => {
