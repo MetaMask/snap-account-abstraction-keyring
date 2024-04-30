@@ -244,7 +244,7 @@ export class AccountAbstractionKeyring implements Keyring {
       (options.salt as string) ??
       ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
-    const aaAddress = await aaFactory.getAccountAddress(admin, salt);
+    const aaAddress = await aaFactory['getAddress(address,uint256)'](admin, salt);
 
     if (!isUniqueAddress(aaAddress, Object.values(this.#state.wallets))) {
       throw new Error(
@@ -620,10 +620,10 @@ export class AccountAbstractionKeyring implements Keyring {
       nonce,
       initCode,
       callData: callDataReq,
-      callGasLimit: callGasLimitReq.toString(),
-      verificationGasLimit: verificationGasLimitReq.toString(),
-      maxFeePerGas: maxFeePerGasReq.toString(),
-      maxPriorityFeePerGas: maxPriorityFeePerGasReq.toString(),
+      callGasLimit: `0x${callGasLimitReq.toString(16)}`,
+      verificationGasLimit: `0x${verificationGasLimitReq.toString(16)}`,
+      maxFeePerGas: `0x${maxFeePerGasReq.toString(16)}`,
+      maxPriorityFeePerGas: `0x${maxPriorityFeePerGasReq.toString(16)}`,
       paymasterAndData: paymasterAndDataReq,
     };
 
@@ -633,7 +633,7 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const ethBaseUserOp: EthUserOperation = {
       ...partialUserOp,
-      preVerificationGas: preVerificationGasReq,
+      preVerificationGas: `0x${preVerificationGasReq.toString(16)}`,
       signature: DUMMY_SIGNATURE,
     };
 

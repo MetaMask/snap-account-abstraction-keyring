@@ -13,7 +13,7 @@ export const AA_CONFIG = {
   [CHAIN_IDS.SEPOLIA]: {
     version: '0.6.0',
     entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-    simpleAccountFactory: '0xBfc0acf30682F2d1A8594B61100b6ccb64302c05',
+    simpleAccountFactory: '0x9406cc6185a346906296840746125a0e44976454',
     bobaPaymaster: '0x0ebB672Aec2b82108542E29875669770EBcB7066',
     bobaToken: '0x33faF65b3DfcC6A1FccaD4531D9ce518F0FDc896',
     bundlerUrl: 'https://public.stackup.sh/api/v1/node/ethereum-sepolia',
@@ -22,8 +22,8 @@ export const AA_CONFIG = {
     version: '0.6.0',
     entryPoint: '0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
     simpleAccountFactory: '0x9406cc6185a346906296840746125a0e44976454',
-    bobaPaymaster: '0x',
+    bobaPaymaster: '0x8223388f7aF211d84289783ed97ffC5Fefa14256',
     bobaToken: '0x4200000000000000000000000000000000000023',
-    bundlerUrl: '',
+    bundlerUrl: 'https://bundler.sepolia.boba.network/rpc',
   },
 };
