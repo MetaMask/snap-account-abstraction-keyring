@@ -131,6 +131,11 @@ const Index = () => {
       return false;
     }
 
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
     let transactionDetails: Record<string, any> = {
       payload: {
         to: target,
@@ -138,7 +143,7 @@ const Index = () => {
         data: txData,
       },
       account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
-      scope: "eip155:11155111"
+      scope: `eip155:${currentChainIdInt}`,
     };
 
     let method = 'eth_sendUserOpBoba';
@@ -212,7 +217,7 @@ const Index = () => {
         data: '0x'
       },
       account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
-      scope: "eip155:11155111"
+      scope: `eip155:${currentChainIdInt}`,
     };
 
     if (transferToken !== 'ETH') {
@@ -237,7 +242,7 @@ const Index = () => {
           data: txData,
         },
         account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
-        scope: "eip155:11155111"
+        scope: `eip155:${currentChainIdInt}`,
       };
     }
 
