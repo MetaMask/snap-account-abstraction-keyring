@@ -627,7 +627,12 @@ export class AccountAbstractionKeyring implements Keyring {
       paymasterAndData: paymasterAndDataReq,
     };
 
-    const preVerificationGasReq = calcPreVerificationGas(partialUserOp);
+    let preVerificationGasReq = calcPreVerificationGas(partialUserOp);
+
+    // TODO: (replace) the public bundler on sepolia expects more preVerifGas
+    if (chainId.toString() === '11155111') {
+      preVerificationGasReq += 10000;
+    }
 
     // check if calculated preVerificationGas is adequate by calling eth_estimateUserOperationGas on the bundler here
 
