@@ -38,7 +38,6 @@ import {
 } from './constants/dummy-values';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import { logger } from './logger';
-import { InternalMethod } from './permissions';
 import { saveState } from './stateManagement';
 import {
   EntryPoint__factory,
@@ -74,6 +73,7 @@ export type ChainConfigs = Record<string, ChainConfig>;
 export type KeyringState = {
   wallets: Record<string, Wallet>;
   config: ChainConfigs;
+  usePaymaster: boolean;
 };
 
 export type Wallet = {
@@ -321,18 +321,6 @@ export class AccountAbstractionKeyring implements Keyring {
     const { method, params = [] } = request.request as JsonRpcRequest;
 
     switch (method) {
-      case InternalMethod.GetConfigs: {
-        return {
-          pending: false,
-          result: await this.getConfigs(),
-        };
-      }
-      case InternalMethod.SetConfig: {
-        return {
-          pending: false,
-          result: await this.setConfig(params as ChainConfig),
-        };
-      }
       default: {
         const signature = await this.#handleSigningRequest({
           account: this.#getWalletById(request.account).account,
@@ -627,6 +615,21 @@ export class AccountAbstractionKeyring implements Keyring {
   #doesAccountSupportChain(accountId: string, scope: string): boolean {
     const wallet = this.#getWalletById(accountId);
     return Object.prototype.hasOwnProperty.call(wallet.chains, scope);
+  }
+
+  async togglePaymasterUsage(): Promise<void> {
+    const updatedState = {
+      ...this.#state,
+      usePaymaster: !this.#state.usePaymaster,
+    };
+
+    this.#state = updatedState;
+
+    await saveState(updatedState);
+  }
+
+  isUsingPaymaster(): boolean {
+    return this.#state.usePaymaster;
   }
 
   async #saveState(): Promise<void> {
