@@ -10,8 +10,7 @@ const config: SnapConfig = {
     crypto: true,
   },
   environment: {
-    DAPP_ORIGIN_PRODUCTION:
-      'https://metamask.github.io/snap-account-abstraction-keyring/',
+    DAPP_ORIGIN_PRODUCTION: 'https://gateway.boba.network/',
     DAPP_ORIGIN_DEVELOPMENT: 'http://localhost:8000/',
   },
   stats: {

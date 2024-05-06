@@ -45,7 +45,7 @@ export const originPermissions = new Map<string, string[]>([
     ],
   ],
   [
-    'https://metamask.github.io',
+    'https://gateway.boba.network',
     [
       // Keyring methods
       KeyringRpcMethod.ListAccounts,
@@ -61,6 +61,9 @@ export const originPermissions = new Map<string, string[]>([
       KeyringRpcMethod.ApproveRequest,
       KeyringRpcMethod.RejectRequest,
       // Custom methods
+      // TODO: determine if these methods need to be restricted to our own UI
+      InternalMethod.SendUserOpBoba,
+      InternalMethod.SendUserOpBobaPM,
     ],
   ],
 ]);
