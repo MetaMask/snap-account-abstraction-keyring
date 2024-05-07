@@ -1,5 +1,5 @@
 {
-  "name": "@metamask/snap-account-abstraction-keyring-site",
+  "name": "@bobanetwork/snap-account-abstraction-keyring-site",
   "version": "0.2.2",
   "private": true,
   "license": "(MIT-0 OR Apache-2.0)",
@@ -36,6 +36,7 @@
     "@mui/material": "^5.14.0",
     "@types/react-helmet": "^6.1.6",
     "crypto-browserify": "^3.12.0",
+    "ethers": "^6.12.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",

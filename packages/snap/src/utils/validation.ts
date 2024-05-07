@@ -17,13 +17,15 @@ const PrivateKey = define('PrivateKey', (value) => {
   return typeof value === 'string' && ethers.isHexString(value, 32);
 });
 
+const VersionString = define('VersionString', (value) => {
+  return typeof value === 'string';
+});
+
 const ChainConfigStruct = object({
   [CONFIG_KEYS.SIMPLE_ACCOUNT_FACTORY]: exactOptional(EthereumAddress),
   [CONFIG_KEYS.ENTRY_POINT]: exactOptional(EthereumAddress),
   [CONFIG_KEYS.BUNDLER_URL]: exactOptional(UrlStruct),
-  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_ADDRESS]:
-    exactOptional(EthereumAddress),
-  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_SK]: exactOptional(PrivateKey),
+  [CONFIG_KEYS.VERSION]: exactOptional(VersionString),
 });
 
 /**
@@ -61,15 +63,10 @@ export function validateConfig(config: ChainConfig): void {
             CONFIG_ERROR_MESSAGES.INVALID_BUNDLER_URL
           } ${String(value)}`;
           break;
-        case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_ADDRESS:
-          customMessage = `${
-            CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_ADDRESS
-          } ${String(value)}`;
-          break;
-        case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_SK:
-          customMessage = `${
-            CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_SK
-          } ${String(value)}`;
+        case CONFIG_KEYS.VERSION:
+          customMessage = `${CONFIG_ERROR_MESSAGES.INVALID_VERSION} ${String(
+            value,
+          )}`;
           break;
         default:
           customMessage = `[Snap] Invalid chain configuration for ${String(

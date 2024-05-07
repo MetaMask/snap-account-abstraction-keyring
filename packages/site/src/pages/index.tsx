@@ -2,6 +2,7 @@ import type { Json } from '@metamask/utils';
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
 import Grid from '@mui/material/Grid';
+import { ethers } from 'ethers';
 import React, { useContext, useEffect, useState } from 'react';
 import { v4 as uuidV4 } from 'uuid'
 
@@ -32,6 +33,25 @@ const initialState: {
   usePaymaster: false,
 };
 
+// TODO: used shared address file on the gateway
+const TOKEN_ADDR = {
+  288: {
+    bobaToken: '0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7',
+    usdcToken: '0x66a2A913e447d6b4BF33EFbec43aAeF87890FBbc',
+    paymaster: '',
+  },
+  11155111: {
+    bobaToken: '0x33faF65b3DfcC6A1FccaD4531D9ce518F0FDc896',
+    usdcToken: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238',
+    paymaster: '0x0ebB672Aec2b82108542E29875669770EBcB7066',
+  },
+  28882: {
+    bobaToken: '0x4200000000000000000000000000000000000023',
+    usdcToken: '0x4200000000000000000000000000000000000023',
+    paymaster: '0x8223388f7aF211d84289783ed97ffC5Fefa14256',
+  },
+};
+
 const Index = () => {
   const [state, dispatch] = useContext(MetaMaskContext);
   const [snapState, setSnapState] = useState<KeyringState>(initialState);
@@ -51,6 +71,7 @@ const Index = () => {
   const [accountObject, setAccountObject] = useState<string | null>();
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
+  const abiCoder = new ethers.AbiCoder();
 
   useEffect(() => {
     /**
@@ -107,20 +128,222 @@ const Index = () => {
     await syncAccounts();
   };
 
+  const sendCustomTx = async (target, value, txData, paymasterOverride) => {
+    if (!snapState || !snapState.accounts) {
+      return false;
+    }
+
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    let transactionDetails: Record<string, any> = {
+      payload: {
+        to: target,
+        value: value,
+        data: txData,
+      },
+      account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+      scope: `eip155:${currentChainIdInt}`,
+    };
+
+    let method = 'eth_sendUserOpBoba';
+
+    if (paymasterOverride) {
+      method = 'eth_sendUserOpBobaPM';
+    }
+    console.log({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method,
+          params: [transactionDetails],
+          id: snapState.accounts[0]?.id || '',
+        },
+      },
+    });
+
+    const submitRes = await window.ethereum.request({
+      method: 'wallet_invokeSnap',
+      params: {
+        snapId: defaultSnapOrigin,
+        request: {
+          method,
+          params: [transactionDetails],
+          id: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+        },
+      },
+    })
+
+    return submitRes;
+  };
+
+  const checkDepositOnPaymaster = async () => {
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    // TODO: need to use currently selected snap account
+    const data = abiCoder.encode(
+      ['address', 'address'],
+      [TOKEN_ADDR[currentChainIdInt]?.bobaToken, snapState.accounts[0]?.address],
+    );
+
+    const callObject = {
+      to: TOKEN_ADDR[currentChainIdInt]?.paymaster,
+      data: ethers.hexlify(ethers.concat([ethers.FunctionFragment.getSelector("depositInfo", ["address", "address"]), data]))
+    };
+    const depositInfo = await window.ethereum.request({
+      method: 'eth_call',
+      params: [callObject, 'latest']
+    });
+
+    const decodedData = abiCoder.decode(
+      ['uint256', 'uint256'],
+      depositInfo
+    );
+
+    const depositAmount = decodedData[0];
+
+    console.log('deposit amount', depositAmount)
+
+    const hasSufficientDeposit = depositAmount >= (ethers.parseEther('1'));
+    return hasSufficientDeposit;
+  };
+
+  const setUpPaymaster = async () => {
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    const funcSelector = ethers.FunctionFragment.getSelector("addDepositFor", ["address", "address", "uint256"]);
+
+    // TODO: need to use currently selected snap account
+    const encodedParams = abiCoder.encode(
+      ['address', 'address', 'uint256'],
+      [TOKEN_ADDR[currentChainIdInt]?.bobaToken, snapState.accounts[0]?.address, ethers.parseEther('1')],
+    );
+
+    const txData = ethers.hexlify(ethers.concat([funcSelector, encodedParams]));
+
+    await sendCustomTx(TOKEN_ADDR[currentChainIdInt]?.paymaster, '0', txData, false)
+  };
+
+  const checkApproval = async () => {
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    // TODO: need to use currently selected snap account
+    const data = abiCoder.encode(
+      ['address', 'address'],
+      [snapState.accounts[0]?.address, TOKEN_ADDR[currentChainIdInt]?.paymaster],
+    );
+
+    const callObject = {
+      to: TOKEN_ADDR[currentChainIdInt]?.bobaToken,
+      data: ethers.hexlify(ethers.concat([ethers.FunctionFragment.getSelector("allowance", ["address", "address"]), data]))
+    };
+    const allowance = await window.ethereum.request({
+      method: 'eth_call',
+      params: [callObject, 'latest']
+    });
+    const allowanceBigNumber = ethers.toBigInt(allowance);
+    console.log('allowance ', allowanceBigNumber)
+
+    const hasSufficientApproval = allowanceBigNumber >= (ethers.parseEther('50000'));
+    return hasSufficientApproval;
+  };
+
+  const approveBobaSpend = async () => {
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    const funcSelector = ethers.FunctionFragment.getSelector("approve", ["address", "uint256"]);
+    const paymasterAddr = TOKEN_ADDR[currentChainIdInt]?.paymaster;
+    const amount = ethers.MaxUint256;
+
+    const encodedParams = abiCoder.encode(
+      ['address', 'uint256'],
+      [paymasterAddr, amount],
+    );
+
+    const txData = ethers.hexlify(ethers.concat([funcSelector, encodedParams]));
+
+    await sendCustomTx(TOKEN_ADDR[currentChainIdInt]?.bobaToken, '0', txData, false)
+  };
+
   const sendBobaTx = async () => {
     if (!snapState || !snapState.accounts) {
       return false;
     }
 
-    const transactionDetails: Record<string, any> = {
+    // Paymaster Setup steps (only first time or when required)
+    if (bobaPaymasterSelected) {
+      const hasSufficientApproval = await checkApproval();
+      if (!hasSufficientApproval) {
+        console.log('Does not have sufficient approval');
+        await approveBobaSpend();
+
+        // TODO: wait here before the change reflects on-chain
+      }
+
+      const hasSufficientDeposit = await checkDepositOnPaymaster();
+      if (!hasSufficientDeposit) {
+        console.log('Does not have sufficient deposit');
+        await setUpPaymaster();
+
+        // TODO: wait here before the change reflects on-chain
+      }
+    }
+
+    const currentChainId = (await window.ethereum.request({
+      method: 'eth_chainId',
+    })) as string;
+    const currentChainIdInt = parseInt(currentChainId, 16);
+
+    let transactionDetails: Record<string, any> = {
       payload: {
         to: targetAccount,
         value: transferAmount,
         data: '0x'
       },
       account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
-      scope: "eip155:11155111"
+      scope: `eip155:${currentChainIdInt}`,
     };
+
+    if (transferToken !== 'ETH') {
+      let tokenAddress;
+      if (transferToken === 'Boba') {
+        tokenAddress = TOKEN_ADDR[currentChainIdInt]?.bobaToken;
+      } else if (transferToken === 'USDC') {
+        tokenAddress = TOKEN_ADDR[currentChainIdInt]?.usdcToken;
+      }
+
+      // TODO: use ethers
+      const transferFunctionSelector = '0xa9059cbb';
+      const txData =
+        transferFunctionSelector +
+        targetAccount.slice(2).padStart(64, '0') +
+        (Number(transferAmount).toString(16)).padStart(64, '0');
+
+      transactionDetails = {
+        payload: {
+          to: tokenAddress,
+          value: '0',
+          data: txData,
+        },
+        account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+        scope: `eip155:${currentChainIdInt}`,
+      };
+    }
 
     let method = 'eth_sendUserOpBoba';
 

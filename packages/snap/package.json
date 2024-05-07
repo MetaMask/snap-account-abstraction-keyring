@@ -1,7 +1,7 @@
 {
-  "name": "@metamask/snap-account-abstraction-keyring",
-  "version": "0.2.2",
-  "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
+  "name": "@bobanetwork/snap-account-abstraction-keyring",
+  "version": "1.0.0",
+  "description": "An account abstraction keyring snap that integrates with MetaMask accounts on Boba Network",
   "keywords": [
     "metamask",
     "snap",
@@ -10,13 +10,13 @@
     "account abstraction",
     "4337"
   ],
-  "homepage": "https://github.com/MetaMask/snap-account-abstraction-keyring#readme",
+  "homepage": "https://github.com/bobanetwork/snap-account-abstraction-keyring#readme",
   "bugs": {
-    "url": "https://github.com/MetaMask/snap-saccount-abstraction-keyring/issues"
+    "url": "https://github.com/bobanetwork/snap-account-abstraction-keyring/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MetaMask/snap-account-abstraction-keyring.git"
+    "url": "git+https://github.com/bobanetwork/snap-account-abstraction-keyring.git"
   },
   "license": "(MIT-0 OR Apache-2.0)",
   "main": "dist/bundle.js",
