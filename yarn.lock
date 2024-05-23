@@ -5117,18 +5117,32 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/keyring-api@npm:^6.0.0":
-  version: 6.0.0
-  resolution: "@metamask/keyring-api@npm:6.0.0"
+"@metamask/key-tree@npm:^9.1.0":
+  version: 9.1.1
+  resolution: "@metamask/key-tree@npm:9.1.1"
   dependencies:
-    "@metamask/snaps-sdk": ^4.0.0
+    "@metamask/scure-bip39": ^2.1.1
+    "@metamask/utils": ^8.3.0
+    "@noble/curves": ^1.2.0
+    "@noble/hashes": ^1.3.2
+    "@scure/base": ^1.0.0
+  checksum: 4de5f92e4d9408829552bb569b998613ed940f289613fe86f9a5f0a66e392ec386d70b2365943c216b83c9ff249877fd731f2f791240a622ff186fd047d81f9e
+  languageName: node
+  linkType: hard
+
+"@metamask/keyring-api@npm:^6.0.0":
+  version: 6.2.0
+  resolution: "@metamask/keyring-api@npm:6.2.0"
+  dependencies:
+    "@metamask/snaps-sdk": ^4.2.0
     "@metamask/utils": ^8.3.0
     "@types/uuid": ^9.0.1
+    bech32: ^2.0.0
     superstruct: ^1.0.3
     uuid: ^9.0.0
   peerDependencies:
     "@metamask/providers": ">=15 <17"
-  checksum: d3d6d5d27945783ef74e8e1b9626d122a07df58a2a62e12c68ff0bda2894c6c0a16d6add40908159fb92dee0b98425c63fc494c9b86ae0d0a0be7dc74389997a
+  checksum: 63ba5e4dde6fcf7cff8c68e777daa85763dc5f352befde1de949adbfabc781a6e2553b0499ca8736fdfa0fd6cb90688540f5db172d625658d0c843187fea50ec
   languageName: node
   linkType: hard
 
@@ -5181,7 +5195,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/providers@npm:^16.0.0":
+"@metamask/providers@npm:^16.0.0, @metamask/providers@npm:^16.1.0":
   version: 16.1.0
   resolution: "@metamask/providers@npm:16.1.0"
   dependencies:
@@ -5225,7 +5239,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/scure-bip39@npm:^2.1.0":
+"@metamask/scure-bip39@npm:^2.1.0, @metamask/scure-bip39@npm:^2.1.1":
   version: 2.1.1
   resolution: "@metamask/scure-bip39@npm:2.1.1"
   dependencies:
@@ -5471,7 +5485,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/snaps-sdk@npm:^4.0.0, @metamask/snaps-sdk@npm:^4.0.1":
+"@metamask/snaps-sdk@npm:^4.0.1":
   version: 4.0.1
   resolution: "@metamask/snaps-sdk@npm:4.0.1"
   dependencies:
@@ -5482,6 +5496,20 @@ __metadata:
     fast-xml-parser: ^4.3.4
     superstruct: ^1.0.3
   checksum: 21a2985258216c362f521c36ec2e63963268177ac0d811c6bf7409c489209e341f383db891e5051d0510e7a967565ed0fb5825be3232181fa46ccee79642e3d7
+  languageName: node
+  linkType: hard
+
+"@metamask/snaps-sdk@npm:^4.2.0":
+  version: 4.2.0
+  resolution: "@metamask/snaps-sdk@npm:4.2.0"
+  dependencies:
+    "@metamask/key-tree": ^9.1.0
+    "@metamask/providers": ^16.1.0
+    "@metamask/rpc-errors": ^6.2.1
+    "@metamask/utils": ^8.3.0
+    fast-xml-parser: ^4.3.4
+    superstruct: ^1.0.3
+  checksum: f9b0e6d7600680183e69d419f5a802208fdc119c7d1226a74076f3b8b8c581850b135392c2f35c391305fc37406973afeb19d8909101580ec16b63fd2f200a8c
   languageName: node
   linkType: hard
 
@@ -10411,6 +10439,13 @@ __metadata:
   version: 1.1.4
   resolution: "bech32@npm:1.1.4"
   checksum: 0e98db619191548390d6f09ff68b0253ba7ae6a55db93dfdbb070ba234c1fd3308c0606fbcc95fad50437227b10011e2698b89f0181f6e7f845c499bd14d0f4b
+  languageName: node
+  linkType: hard
+
+"bech32@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "bech32@npm:2.0.0"
+  checksum: fa15acb270b59aa496734a01f9155677b478987b773bf701f465858bf1606c6a970085babd43d71ce61895f1baa594cb41a2cd1394bd2c6698f03cc2d811300e
   languageName: node
   linkType: hard
 
