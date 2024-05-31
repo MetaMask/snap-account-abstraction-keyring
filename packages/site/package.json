@@ -32,7 +32,7 @@
     "@emotion/styled": "^11.11.0",
     "@lavamoat/allow-scripts": "^3.0.4",
     "@metamask/keyring-api": "^6.0.0",
-    "@metamask/providers": "^16.0.0",
+    "@metamask/providers": "^17.0.0",
     "@mui/icons-material": "^5.14.0",
     "@mui/material": "^5.14.0",
     "@types/react-helmet": "^6.1.6",
