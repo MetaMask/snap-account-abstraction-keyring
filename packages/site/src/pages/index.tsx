@@ -1,13 +1,10 @@
-import type { Json } from '@metamask/utils';
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
 import { KeyringSnapRpcClient } from '@metamask/keyring-api';
 import Grid from '@mui/material/Grid';
-import { ethers } from 'ethers';
+import { ethers, formatEther, parseEther, parseUnits } from 'ethers';
 import React, { useContext, useEffect, useState } from 'react';
-import { v4 as uuidV4 } from 'uuid'
 
 import { Accordion, AccountList, Card, ConnectButton } from '../components';
-import { ChainConfigComponent } from '../components/ChainConfig';
 import {
   CardContainer,
   Container,
@@ -16,7 +13,7 @@ import {
   StyledBox,
 } from '../components/styledComponents';
 import { defaultSnapOrigin } from '../config';
-import { MetamaskActions, MetaMaskContext } from '../hooks';
+import { MetaMaskContext, MetamaskActions } from '../hooks';
 import { InputType } from '../types';
 import type { KeyringState } from '../utils';
 import { connectSnap, getSnap } from '../utils';
@@ -34,7 +31,7 @@ const initialState: {
 };
 
 // TODO: used shared address file on the gateway
-const TOKEN_ADDR = {
+const TOKEN_ADDR: any = {
   288: {
     bobaToken: '0xa18bF3994C0Cc6E3b63ac420308E5383f53120D7',
     usdcToken: '0x66a2A913e447d6b4BF33EFbec43aAeF87890FBbc',
@@ -128,7 +125,7 @@ const Index = () => {
     await syncAccounts();
   };
 
-  const sendCustomTx = async (target, value, txData, paymasterOverride) => {
+  const sendCustomTx = async (target: any, value: string, txData: string, paymasterOverride: boolean) => {
     if (!snapState || !snapState.accounts) {
       return false;
     }
@@ -203,7 +200,7 @@ const Index = () => {
 
     const decodedData = abiCoder.decode(
       ['uint256', 'uint256'],
-      depositInfo
+      depositInfo as any
     );
 
     const depositAmount = decodedData[0];
@@ -253,7 +250,7 @@ const Index = () => {
       method: 'eth_call',
       params: [callObject, 'latest']
     });
-    const allowanceBigNumber = ethers.toBigInt(allowance);
+    const allowanceBigNumber = ethers.toBigInt(allowance as any);
     console.log('allowance ', allowanceBigNumber)
 
     const hasSufficientApproval = allowanceBigNumber >= (ethers.parseEther('50000'));
@@ -304,9 +301,8 @@ const Index = () => {
       }
     }
 
-    const currentChainId = (await window.ethereum.request({
-      method: 'eth_chainId',
-    })) as string;
+    const currentChainId = window.ethereum.chainId as string;
+
     const currentChainIdInt = parseInt(currentChainId, 16);
 
     let transactionDetails: Record<string, any> = {
@@ -331,7 +327,7 @@ const Index = () => {
       const transferFunctionSelector = '0xa9059cbb';
       const txData =
         transferFunctionSelector +
-        targetAccount.slice(2).padStart(64, '0') +
+        targetAccount?.slice(2).padStart(64, '0') +
         (Number(transferAmount).toString(16)).padStart(64, '0');
 
       transactionDetails = {
@@ -562,8 +558,8 @@ const Index = () => {
 
   return (
     <Container>
-      <CardContainer>
-        {!state.installedSnap && (
+      {!state.installedSnap && (
+        <CardContainer>
           <Card
             content={{
               title: 'Connect',
@@ -578,18 +574,14 @@ const Index = () => {
             }}
             disabled={!state.hasMetaMask}
           />
-        )}
-      </CardContainer>
+        </CardContainer>
+      )}
 
-      <StyledBox sx={{ flexGrow: 1 }}>
+      {state.installedSnap && (<StyledBox sx={{ flexGrow: 1 }}>
         <Grid alignItems="flex-start" container spacing={4} columns={[1, 2, 3]}>
           <Grid item xs={8} sm={4} md={2}>
             <DividerTitle>Methods</DividerTitle>
             <Accordion items={accountManagementMethods} />
-            <Divider />
-            <DividerTitle>Snap Configuration</DividerTitle>
-            <ChainConfigComponent client={client} />
-            <Divider />
           </Grid>
           <Grid item xs={4} sm={2} md={1}>
             <Divider />
@@ -607,7 +599,7 @@ const Index = () => {
             />
           </Grid>
         </Grid>
-      </StyledBox>
+      </StyledBox>)}
     </Container>
   );
 };

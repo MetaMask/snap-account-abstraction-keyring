@@ -23,6 +23,7 @@ export const AccountList = ({
     {accounts.map((account, index) => (
       <Account
         key={`account-${index}`}
+        count={index}
         account={account}
         handleDelete={handleDelete}
       />

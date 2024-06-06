@@ -44,17 +44,17 @@ export const light: DefaultTheme = {
     background: {
       default: '#FFFFFF',
       alternative: '#F2F4F6',
-      inverse: '#141618',
+      inverse: '#AEDB01',
     },
     icon: {
-      default: '#141618',
+      default: '#AEDB01',
       alternative: '#BBC0C5',
     },
     text: {
       default: '#24272A',
       muted: '#6A737D',
       alternative: '#535A61',
-      inverse: '#FFFFFF',
+      inverse: '#000',
     },
     border: {
       default: '#BBC0C5',

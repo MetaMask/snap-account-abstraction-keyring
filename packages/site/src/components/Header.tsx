@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import semver from 'semver';
 import styled from 'styled-components';
-
+import Logo from '../assets/boba-logo.png';
 import { HeaderButtons } from './Buttons';
 import snapPackageInfo from '../../../snap/package.json';
 import packageInfo from '../../package.json';
@@ -14,9 +14,13 @@ const HeaderWrapper = styled.header`
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-  padding: 2.4rem;
-  padding-left: 5%;
-  padding-right: 5%;
+  padding: 10px 20px;
+  box-shadow: ${({ theme }) => theme.shadows.button};
+  background-color: ${({ theme }) => theme.colors.background?.alternative};
+`;
+
+const BobaLogo = styled.img`
+  width: 50px;
 `;
 
 const Title = styled.p`
@@ -108,10 +112,11 @@ export const Header = () => {
   return (
     <HeaderWrapper>
       <LogoWrapper>
-        <Title> 🥤 Boba Account Abstraction Snap</Title>
+        <BobaLogo src={Logo} />
+        <Title>AA HC Wallet</Title>
       </LogoWrapper>
       <RightContainer>
-        <Version />
+        {/* <Version /> */}
         <HeaderButtons
           state={state}
           onConnectClick={handleConnectClick}

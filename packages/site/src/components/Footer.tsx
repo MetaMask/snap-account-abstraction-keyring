@@ -1,19 +1,19 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
-
-import { MetaMask } from './MetaMask';
-import { PoweredBy } from './PoweredBy';
-import { ReactComponent as MetaMaskFox } from '../assets/metamask_fox.svg';
+import Logo from '../assets/boba-logo.png';
 
 const FooterWrapper = styled.footer`
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: center;
-  padding-top: 2.4rem;
-  padding-bottom: 2.4rem;
+  padding: 1rem 0px;
   border-top: 1px solid ${(props) => props.theme.colors.border?.default};
 `;
+
+const BobaLogo = styled.img`
+  width: 50px;
+`
 
 const PoweredByButton = styled.a`
   display: flex;
@@ -38,11 +38,7 @@ export const Footer = () => {
   return (
     <FooterWrapper>
       <PoweredByButton href="https://docs.metamask.io/" target="_blank">
-        <MetaMaskFox />
-        <PoweredByContainer>
-          <PoweredBy color={theme.colors.text?.muted ?? '#6A737D'} />
-          <MetaMask color={theme.colors.text?.default ?? '#24272A'} />
-        </PoweredByContainer>
+        <BobaLogo src={Logo} />
       </PoweredByButton>
     </FooterWrapper>
   );

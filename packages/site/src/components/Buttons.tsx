@@ -78,7 +78,7 @@ type ActionButtonProps = {
 
 const ActionButton = styled.button<ActionButtonProps>`
   width: ${(props) => props.width};
-  background-color: #0376c9;
+  
   border-radius: 999px;
   border: none;
   padding: 5px 20px;
