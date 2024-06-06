@@ -741,7 +741,7 @@ export class AccountAbstractionKeyring implements Keyring {
     const transaction =
       transactions[0] ?? throwError(`[Snap] Transaction is required`);
     logger.info(
-      `[Snap] PrepareUserOp for transaction prepareUserOperation\n: ${JSON.stringify(
+      `[Snap] PrepareUserOp for transaction\n: ${JSON.stringify(
         transaction,
         null,
         2,
