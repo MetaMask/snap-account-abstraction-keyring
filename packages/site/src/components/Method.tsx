@@ -10,7 +10,7 @@ import { InputType } from '../types';
 const StyledDescription = styled.p`
   font-size: 14px;
   margin: 8px;
-  padding-top: 24px;
+  padding: 24px 0;
 `;
 
 const InputTitle = styled.p`
@@ -146,9 +146,10 @@ export const Method = ({
     <Grid
       container
       direction="column"
-      spacing={4}
       style={{
+        margin: '0 auto',
         overflowX: 'hidden',
+        width: '75%'
       }}
     >
       <StyledDescription>{description}</StyledDescription>
@@ -159,9 +160,13 @@ export const Method = ({
           onChange: () => null;
           type: InputType;
         }) => (
-          <Grid key={input.title}>
-            <InputTitle>{input.title}</InputTitle>
-            {inputSwitch(input)}
+          <Grid container key={input.title}>
+            <Grid item xs={4}>
+              <InputTitle>{input.title}</InputTitle>
+            </Grid>
+            <Grid item xs={8}>
+              {inputSwitch(input)}
+            </Grid>
           </Grid>
         ),
       )}

@@ -38,7 +38,7 @@ export const App: FunctionComponent<AppProps> = ({ children }) => {
       </Helmet>
       <GlobalStyle />
       <Wrapper>
-        <BannerWrapper>
+        <BannerWrapper style={{ display: 'none' }}>
           <AlertBanner
             title={
               "This is a developer tool for testing purposes. Don't use it to store real assets. Use with caution."

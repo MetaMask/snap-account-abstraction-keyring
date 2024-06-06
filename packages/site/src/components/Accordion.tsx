@@ -16,6 +16,9 @@ const AccordionItem = styled.div`
   margin-bottom: 20px;
   padding: 8px;
   width: 100%;
+  border: 0px solid var(--border-default, #bbc0c5);
+  background: var(--background-default, #fff);
+  box-shadow: 0px 2px 40px 0px rgba(0, 0, 0, 0.1);
 `;
 
 const AccordionHeader = styled.div`
@@ -29,7 +32,8 @@ const AccordionHeader = styled.div`
 
 const AccordionContent = styled.div`
   display: ${({ isOpen }: { isOpen: boolean }) => (isOpen ? 'block' : 'none')};
-  padding: 0px 32px;
+  padding: 10px;
+  width: 100%;
 `;
 
 export const Accordion = ({ items }: any) => {
@@ -59,11 +63,16 @@ export const Accordion = ({ items }: any) => {
               )}
             </AccordionHeader>
             <AccordionContent isOpen={activeIndexes.includes(index)}>
-              <StyledBox sx={{ flexGrow: 1 }}>
+              <StyledBox sx={{
+                flexGrow: 1,
+                width: "-webkit-fill-available",
+                marginBottom: '10px'
+              }}>
                 <Method
                   description={item.description}
                   inputs={item.inputs}
                   action={item.action}
+                  successMessage={item.successMessage}
                 />
               </StyledBox>
             </AccordionContent>

@@ -18,16 +18,18 @@ import {
 export const Account = ({
   account,
   handleDelete,
+  count
 }: {
   account: KeyringAccount;
   handleDelete: (accountId: string) => Promise<void>;
+    count: number;
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
 
   return (
     <AccountContainer>
       <AccountTitleContainer>
-        <AccountTitle>{account.address}</AccountTitle>
+        <AccountTitle>Account {count + 1}</AccountTitle>
         <AccountTitleIconContainer>
           {isCollapsed ? (
             <ExpandMoreIcon
@@ -44,10 +46,10 @@ export const Account = ({
       </AccountTitleContainer>
       {!isCollapsed && (
         <>
-          <AccountRow>
+          {/* <AccountRow>
             <AccountRowTitle>ID</AccountRowTitle>
             <CopyableItem value={account.id} />
-          </AccountRow>
+          </AccountRow> */}
           <AccountRow>
             <AccountRowTitle>Address</AccountRowTitle>
             <CopyableItem value={account.address} />
@@ -56,7 +58,7 @@ export const Account = ({
             <AccountRowTitle>Type</AccountRowTitle>
             <AccountRowValue>{account.type}</AccountRowValue>
           </AccountRow>
-          <AccountRow>
+          {/* <AccountRow>
             <AccountRowTitle>Account Supported Methods</AccountRowTitle>
             <ul style={{ padding: '0px 0px 0px 16px' }}>
               {account.methods.map((method) => (
@@ -65,7 +67,7 @@ export const Account = ({
                 </AccountRowValue>
               ))}
             </ul>
-          </AccountRow>
+          </AccountRow> */}
           <AccountRow alignItems="flex-end">
             <MethodButton
               width="30%"
