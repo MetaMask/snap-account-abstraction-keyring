@@ -31,7 +31,7 @@ export const Account = ({
 
   return (
     <AccountContainer>
-      <AccountTitleContainer>
+      <AccountTitleContainer onClick={() => setIsCollapsed(!isCollapsed)}>
         <AccountTitle>
           Account {count + 1}
           {currentAccount.toLowerCase() === account.address.toLowerCase() && <StyledIcon><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -44,12 +44,10 @@ export const Account = ({
           {isCollapsed ? (
             <ExpandMoreIcon
               fontSize="large"
-              onClick={() => setIsCollapsed(!isCollapsed)}
             />
           ) : (
             <ExpandLessIcon
-              fontSize="large"
-              onClick={() => setIsCollapsed(!isCollapsed)}
+                fontSize="large"
             />
           )}
         </AccountTitleIconContainer>
@@ -78,16 +76,18 @@ export const Account = ({
               ))}
             </ul>
           </AccountRow> */}
-          <AccountRow alignItems="flex-end">
-            <MethodButton
-              width="30%"
-              margin="8px 0px 8px 8px"
-              onClick={async (): Promise<void> => {
-                await handleDelete(account.id);
-              }}
-              label="Delete"
-            />
-          </AccountRow>
+          {currentAccount.toLowerCase() === account.address.toLowerCase() ? <></> :
+            <AccountRow alignItems="flex-end">
+              <MethodButton
+                width="30%"
+                margin="8px 0px 8px 8px"
+                onClick={async (): Promise<void> => {
+                  await handleDelete(account.id);
+                }}
+                label="Delete"
+              />
+            </AccountRow>
+          }
         </>
       )}
     </AccountContainer>

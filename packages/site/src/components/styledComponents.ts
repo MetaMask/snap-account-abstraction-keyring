@@ -89,6 +89,7 @@ export const AccountTitleContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 0px;
+  cursor: pointer;
 `;
 
 export const AccountTitle = styled.p`
