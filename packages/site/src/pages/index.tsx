@@ -59,13 +59,14 @@ const Index = () => {
   const [salt, setSalt] = useState<string | null>();
   const [bobaPaymasterSelected, setBobaPaymasterSelected] = useState<Boolean | null>();
 
-  const [transferToken, setTransferToken] = useState<string | null>('ETH');
+  const [transferToken, setTransferToken] = useState<string | null>('Boba');
   const [targetAccount, setTargetAccount] = useState<string | null>('0xcF044AB1e5b55203dC258F47756daFb7F8F01760');
   const [transferAmount, setTransferAmount] = useState<string>('0.01');
 
 
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
   const abiCoder = new ethers.AbiCoder();
@@ -103,12 +104,19 @@ const Index = () => {
   };
 
   const createAccount = async () => {
-    const newAccount = await client.createAccount({
-      privateKey: privateKey as string,
-      salt: salt as string,
-    });
-    await syncAccounts();
-    return newAccount;
+    setIsLoading(true);
+    try {
+      const newAccount = await client.createAccount({
+        privateKey: privateKey as string,
+        salt: salt as string,
+      });
+      await syncAccounts();
+      setIsLoading(false);
+      return newAccount;
+    } catch (error) {
+      setIsLoading(false);
+      return error;
+    }
   };
 
   const deleteAccount = async () => {
@@ -413,7 +421,8 @@ const Index = () => {
       ],
       action: {
         callback: async () => await createAccount(),
-        label: 'Create Account',
+        label: `Create Account`,
+        disabled: isLoading
       },
       successMessage: 'Smart Contract Account Created',
     },
