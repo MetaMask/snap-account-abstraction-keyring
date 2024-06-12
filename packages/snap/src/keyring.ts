@@ -48,7 +48,12 @@ import {
 import { CaipNamespaces, isEvmChain, toCaipChainId } from './utils/caip';
 import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
-import { isUniqueAddress, runSensitive, throwError } from './utils/util';
+import {
+  isUniqueAddress,
+  runSensitive,
+  throwError,
+  getSignerPrivateKey,
+} from './utils/util';
 import { validateConfig } from './utils/validation';
 import { copyable, DialogType, heading, NodeType, NotificationType, panel, text } from '@metamask/snaps-sdk';
 
@@ -218,11 +223,17 @@ export class AccountAbstractionKeyring implements Keyring {
     options: Record<string, Json> = {},
   ): Promise<KeyringAccount> {
     if (!options.privateKey) {
-      throwError(`[Snap] Private Key is required`);
+      if (!options.saltIndex) {
+        throwError(`[Snap] Private Key or Salt Index is required`);
+      }
     }
 
+    const privateKeyGen =
+      options?.privateKey ??
+      (await getSignerPrivateKey(options.saltIndex as number));
+
     const { privateKey, address: admin } = this.#getKeyPair(
-      options?.privateKey as string | undefined,
+      privateKeyGen as string,
     );
 
     // The private key should not be stored in the account options since the
@@ -241,8 +252,11 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const random = ethers.toBigInt(ethers.randomBytes(32));
     const salt =
-      (options.salt as string) ??
-      ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
+      // eslint-disable-next-line no-negated-condition
+      options.saltIndex !== undefined
+        ? ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [0])
+        : (options.salt as string) ??
+          ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
     const aaAddress = await aaFactory['getAddress(address,uint256)'](admin, salt);
 
@@ -257,12 +271,13 @@ export class AccountAbstractionKeyring implements Keyring {
       aaFactory.interface.encodeFunctionData('createAccount', [admin, salt]),
     ]);
 
-    // check on chain if the account already exists.
-    // if it does, this means that there is a collision in the salt used.
-    const accountCollision = (await provider.getCode(aaAddress)) !== '0x';
-    if (accountCollision) {
-      throwError(`[Snap] Account Salt already used, please retry.`);
-    }
+    // collision check removed to allow re-adding deployed SAs
+    // // check on chain if the account already exists.
+    // // if it does, this means that there is a collision in the salt used.
+    // const accountCollision = (await provider.getCode(aaAddress)) !== '0x';
+    // if (accountCollision) {
+    //   throwError(`[Snap] Account Salt already used, please retry.`);
+    // }
 
     // Note: this is commented out because the AA is not deployed yet.
     // Will store the initCode and salt in the wallet object to deploy with first transaction later.
