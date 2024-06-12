@@ -222,10 +222,8 @@ export class AccountAbstractionKeyring implements Keyring {
   async createAccount(
     options: Record<string, Json> = {},
   ): Promise<KeyringAccount> {
-    if (!options.privateKey) {
-      if (!options.saltIndex) {
-        throwError(`[Snap] Private Key or Salt Index is required`);
-      }
+    if (!options.privateKey && !options.saltIndex) {
+      throwError(`[Snap] Private Key or Salt Index is required`);
     }
 
     const privateKeyGen =
