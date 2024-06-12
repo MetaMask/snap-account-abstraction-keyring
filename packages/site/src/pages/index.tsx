@@ -61,7 +61,7 @@ const Index = () => {
 
   const [transferToken, setTransferToken] = useState<string | null>('ETH');
   const [targetAccount, setTargetAccount] = useState<string | null>('0xcF044AB1e5b55203dC258F47756daFb7F8F01760');
-  const [transferAmount, setTransferAmount] = useState<string | null>('2');
+  const [transferAmount, setTransferAmount] = useState<string>('0.01');
 
 
   const [accountId, setAccountId] = useState<string | null>();
@@ -308,7 +308,7 @@ const Index = () => {
     let transactionDetails: Record<string, any> = {
       payload: {
         to: targetAccount,
-        value: transferAmount,
+        value: parseUnits(transferAmount, 'ether'),
         data: '0x'
       },
       account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
@@ -328,7 +328,7 @@ const Index = () => {
       const txData =
         transferFunctionSelector +
         targetAccount?.slice(2).padStart(64, '0') +
-        (Number(transferAmount).toString(16)).padStart(64, '0');
+        (Number(parseUnits(transferAmount, 'ether')).toString(16)).padStart(64, '0');
 
       transactionDetails = {
         payload: {
