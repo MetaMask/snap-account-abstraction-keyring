@@ -26,6 +26,17 @@ export const connectSnap = async (
     version: snapPackageInfo.version,
   },
 ) => {
+  // check for current connected chain and force user to switch to sepolia.
+
+  const currentChain = window.ethereum.networkVersion;
+  if (currentChain !== '11155111') {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{
+        chainId: '0xAA36A7'
+      }]
+    })
+  }
   await window.ethereum.request({
     method: 'wallet_requestSnaps',
     params: {
