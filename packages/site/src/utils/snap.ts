@@ -34,6 +34,11 @@ export const connectSnap = async (
   });
 };
 
+export const loadAccountConnected = async () => {
+  const accounts: any = await window.ethereum.request({ method: 'eth_accounts', params: [] });
+  return accounts[0]
+}
+
 /**
  * Get the snap from MetaMask.
  *

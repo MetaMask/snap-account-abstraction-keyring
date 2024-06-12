@@ -14,6 +14,14 @@ export const StyledBox = styled(Box)`
   width: 100%;
 `;
 
+export const StyledIcon = styled.span`
+  width: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-right: 20px;
+`;
+
 export const InformationBox = styled.div<{ error: boolean }>`
   display: flex;
   background-color: ${({ error }) => (error ? '#B22222' : '#50c878')};

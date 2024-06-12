@@ -16,7 +16,7 @@ import { defaultSnapOrigin } from '../config';
 import { MetaMaskContext, MetamaskActions } from '../hooks';
 import { InputType } from '../types';
 import type { KeyringState } from '../utils';
-import { connectSnap, getSnap } from '../utils';
+import { connectSnap, getSnap, loadAccountConnected } from '../utils';
 
 const snapId = defaultSnapOrigin;
 
@@ -64,6 +64,7 @@ const Index = () => {
   const [transferAmount, setTransferAmount] = useState<string>('0.01');
 
 
+  const [selectedAccount, setSelectedAccount] = useState<string>('');
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -82,7 +83,8 @@ const Index = () => {
         return;
       }
       const accounts = await client.listAccounts();
-      console.log(`accounts loaded!`, accounts)
+      const currentAccount = await loadAccountConnected();
+      setSelectedAccount(currentAccount);
       // listRequests
       setSnapState({
         ...state,
@@ -92,6 +94,16 @@ const Index = () => {
     }
 
     getState().catch((error) => console.error(error));
+
+    const listenToAccountChange = async () => {
+      window.ethereum.on('accountsChanged', async () => {
+        //reset connection
+        const currentAccount = await loadAccountConnected();
+        setSelectedAccount(currentAccount);
+      })
+    }
+
+    listenToAccountChange().catch((error) => console.error(error));
 
   }, [state.installedSnap]);
 
@@ -286,7 +298,7 @@ const Index = () => {
   };
 
   const sendBobaTx = async () => {
-    if (!snapState || !snapState.accounts) {
+    if (!snapState || !snapState.accounts || !selectedAccount) {
       return false;
     }
 
@@ -344,7 +356,7 @@ const Index = () => {
           value: '0',
           data: txData,
         },
-        account: snapState.accounts[0]?.id || '', // TODO: need to use currently selected snap account
+        account: selectedAccount,
         scope: `eip155:${currentChainIdInt}`,
       };
     }
@@ -596,6 +608,7 @@ const Index = () => {
             <Divider />
             <DividerTitle>Accounts</DividerTitle>
             <AccountList
+              currentAccount={selectedAccount}
               accounts={snapState.accounts}
               handleDelete={async (accountIdToDelete) => {
                 await client.deleteAccount(accountIdToDelete);
