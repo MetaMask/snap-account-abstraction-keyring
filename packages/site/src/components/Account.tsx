@@ -76,8 +76,7 @@ export const Account = ({
               ))}
             </ul>
           </AccountRow> */}
-          {currentAccount.toLowerCase() === account.address.toLowerCase() ? <></> :
-            <AccountRow alignItems="flex-end">
+          <AccountRow alignItems="flex-end">
               <MethodButton
                 width="30%"
                 margin="8px 0px 8px 8px"
@@ -86,8 +85,7 @@ export const Account = ({
                 }}
                 label="Delete"
               />
-            </AccountRow>
-          }
+          </AccountRow>
         </>
       )}
     </AccountContainer>
