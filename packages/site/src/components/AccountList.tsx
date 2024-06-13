@@ -19,7 +19,7 @@ export const AccountList = ({
 }: {
   accounts: KeyringAccount[];
   handleDelete: (accountId: string) => Promise<void>;
-    currentAccount: string;
+    currentAccount?: KeyringAccount;
 }) => (
   <List>
     {accounts.map((account, index) => (
