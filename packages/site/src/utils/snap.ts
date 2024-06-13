@@ -1,5 +1,4 @@
 import snapPackageInfo from '../../../snap/package.json';
-import type { ChainConfigs } from '../components/ChainConfig';
 import { defaultSnapOrigin } from '../config';
 import type { GetSnapsResponse, Snap } from '../types';
 
@@ -26,6 +25,16 @@ export const connectSnap = async (
     version: snapPackageInfo.version,
   },
 ) => {
+  // check for current connected chain and force user to switch to boba sepolia.
+  const currentChain = window.ethereum.networkVersion;
+  if (currentChain !== '28882') {
+    await window.ethereum.request({
+      method: 'wallet_switchEthereumChain',
+      params: [{
+        chainId: '0x70d2'
+      }]
+    })
+  }
   await window.ethereum.request({
     method: 'wallet_requestSnaps',
     params: {
@@ -33,6 +42,11 @@ export const connectSnap = async (
     },
   });
 };
+
+export const loadAccountConnected = async () => {
+  const accounts: any = await window.ethereum.request({ method: 'eth_requestAccounts', params: [] });
+  return accounts[0]
+}
 
 /**
  * Get the snap from MetaMask.

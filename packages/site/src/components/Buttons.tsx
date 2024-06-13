@@ -78,7 +78,7 @@ type ActionButtonProps = {
 
 const ActionButton = styled.button<ActionButtonProps>`
   width: ${(props) => props.width};
-  
+
   border-radius: 999px;
   border: none;
   padding: 5px 20px;
@@ -107,7 +107,7 @@ export const ConnectButton = (props: ComponentProps<typeof Button>) => {
   return (
     <Button id="connectButton" {...props}>
       <MetaMaskFox />
-      <ButtonText>Connect</ButtonText>
+      <ButtonText>Connect To Boba Sepolia</ButtonText>
     </Button>
   );
 };
