@@ -1,6 +1,6 @@
 {
   "name": "@bobanetwork/snap-account-abstraction-keyring",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "An account abstraction keyring snap that integrates with MetaMask accounts on Boba Network",
   "keywords": [
     "metamask",

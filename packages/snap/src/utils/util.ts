@@ -1,4 +1,5 @@
 import type { JsonTx } from '@ethereumjs/tx';
+import { stripHexPrefix } from '@ethereumjs/util';
 import type { Json } from '@metamask/utils';
 import { hexlify } from 'ethers';
 
@@ -95,3 +96,19 @@ export function runSensitive<Type>(
     throw new Error(message ?? 'An unexpected error occurred');
   }
 }
+
+export const getSignerPrivateKey = async (index: number) => {
+  try {
+    return stripHexPrefix(
+      await snap.request({
+        method: 'snap_getEntropy',
+        params: {
+          version: 1,
+          salt: `signer_${index}`,
+        },
+      }),
+    );
+  } catch (e) {
+    throw new Error(`Failed to get signer private key for index ${index}`);
+  }
+};
