@@ -68,6 +68,7 @@ const Index = () => {
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [counter, setCounter] = useState<number>(0);
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
   const abiCoder = new ethers.AbiCoder();
@@ -85,6 +86,13 @@ const Index = () => {
       const accounts = await client.listAccounts();
       const currentAccount = await loadAccountConnected();
       setSelectedAccount(currentAccount);
+      console.log(`accounts loaded!`, accounts)
+
+      const saltIndexCount = accounts.filter(
+        (account) => account.options?.saltIndex,
+      ).length;
+      setCounter(saltIndexCount);
+
       // listRequests
       setSnapState({
         ...state,
@@ -129,6 +137,15 @@ const Index = () => {
       setIsLoading(false);
       return error;
     }
+  };
+
+  const createAccountDeterministic = async () => {
+    const newAccount = await client.createAccount({
+      saltIndex: counter.toString(),
+    });
+    setCounter(counter + 1);
+    await syncAccounts();
+    return newAccount;
   };
 
   const deleteAccount = async () => {
@@ -435,6 +452,25 @@ const Index = () => {
         callback: async () => await createAccount(),
         label: `Create Account`,
         disabled: isLoading
+      },
+      successMessage: 'Smart Contract Account Created',
+    },
+    {
+      name: 'Create account (Deterministic)',
+      description:
+        'Create a 4337 account using a deterministic key generated through the snap',
+      inputs: [
+        {
+          id: 'create-account-deterministic',
+          title: 'Counter',
+          value: counter.toString(),
+          type: InputType.TextField,
+          onChange: () => {},
+        },
+      ],
+      action: {
+        callback: async () => await createAccountDeterministic(),
+        label: 'Create Account',
       },
       successMessage: 'Smart Contract Account Created',
     },
