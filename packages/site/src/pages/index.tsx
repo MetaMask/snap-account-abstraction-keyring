@@ -123,8 +123,14 @@ const Index = () => {
     const listenToAccountChange = async () => {
       window.ethereum.on('accountsChanged', async () => {
         //reset connection
+        const accounts = await client.listAccounts();
         const currentAccount = await loadAccountConnected();
-        setSelectedAccount(currentAccount);
+        const account = accounts.find((acc) => acc.address.toLowerCase() === currentAccount.toLowerCase());
+        setSelectedAccount(account);
+        setSnapState({
+          ...snapState,
+          accounts,
+        });
       })
     }
 

@@ -44,7 +44,7 @@ export const connectSnap = async (
 };
 
 export const loadAccountConnected = async () => {
-  const accounts: any = await window.ethereum.request({ method: 'eth_accounts', params: [] });
+  const accounts: any = await window.ethereum.request({ method: 'eth_requestAccounts', params: [] });
   return accounts[0]
 }
 
