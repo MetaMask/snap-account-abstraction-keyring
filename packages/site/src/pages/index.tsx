@@ -377,7 +377,7 @@ const Index = () => {
     let transactionDetails: Record<string, any> = {
       payload: {
         to: targetAccount,
-        value: parseUnits(transferAmount, 'ether'), // as it's ethers
+        value: parseUnits(transferAmount, 'ether').toString(), // as it's ethers
         data: '0x'
       },
       account: selectedAccount?.id,
