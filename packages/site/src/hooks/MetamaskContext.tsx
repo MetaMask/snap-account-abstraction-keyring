@@ -2,11 +2,12 @@ import type { Dispatch, ReactNode, Reducer } from 'react';
 import React, { createContext, useEffect, useReducer } from 'react';
 
 import type { Snap } from '../types';
-import { hasMetaMask, getSnap } from '../utils';
+import { hasMetaMask, getSnap, isConnectedNetworkBoba } from '../utils';
 
 export type MetamaskState = {
   hasMetaMask: boolean;
   installedSnap?: Snap;
+  isBobaSepolia?: Snap;
   error?: Error;
 };
 
@@ -27,12 +28,18 @@ export const MetaMaskContext = createContext<
 
 export enum MetamaskActions {
   SetInstalled = 'SetInstalled',
+  SetNetwork = 'SetNetwork',
   SetMetaMaskDetected = 'SetMetaMaskDetected',
   SetError = 'SetError',
 }
 
 const reducer: Reducer<MetamaskState, MetamaskDispatch> = (state, action) => {
   switch (action.type) {
+    case MetamaskActions.SetNetwork:
+      return {
+        ...state,
+        isBobaSepolia: action.payload,
+      };
     case MetamaskActions.SetInstalled:
       return {
         ...state,
@@ -95,10 +102,27 @@ export const MetaMaskProvider = ({ children }: { children: ReactNode }) => {
         });
       }
 
+      /**
+       * Detect if the snap is installed.
+       */
+      async function detectNetworkInstalled() {
+        const isBobaSepolia = isConnectedNetworkBoba();
+        dispatch({
+          type: MetamaskActions.SetNetwork,
+          payload: isBobaSepolia,
+        });
+      }
+
       await detectMetaMask();
 
       if (state.hasMetaMask) {
-        await detectSnapInstalled();
+
+        await detectNetworkInstalled();
+
+        if (state.isBobaSepolia) {
+
+          await detectSnapInstalled();
+        }
       }
     };
 

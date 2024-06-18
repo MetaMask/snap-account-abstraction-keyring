@@ -103,6 +103,14 @@ export const InstallMetaMaskButton = () => (
   </Link>
 );
 
+export const InstallHcSnapButton = (props: ComponentProps<typeof Button>) => {
+  return (
+    <Button id="connectButton" {...props}>
+      <MetaMaskFox />
+      <ButtonText>Install Snap & Connect</ButtonText>
+    </Button>
+  );
+};
 export const ConnectButton = (props: ComponentProps<typeof Button>) => {
   return (
     <Button id="connectButton" {...props}>
@@ -148,6 +156,10 @@ export const HeaderButtons = ({
   }
 
   if (!state.installedSnap) {
+    return <InstallHcSnapButton onClick={onConnectClick} />;
+  }
+
+  if (!state.isBobaSepolia) {
     return <ConnectButton onClick={onConnectClick} />;
   }
 
