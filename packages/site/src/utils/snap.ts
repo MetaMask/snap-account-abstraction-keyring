@@ -28,13 +28,35 @@ export const connectSnap = async (
   // check for current connected chain and force user to switch to boba sepolia.
   const currentChain = window.ethereum.networkVersion;
   if (currentChain !== '28882') {
-    await window.ethereum.request({
-      method: 'wallet_switchEthereumChain',
-      params: [{
-        chainId: '0x70d2'
-      }]
-    })
+    try {
+      await window.ethereum.request({
+        method: 'wallet_switchEthereumChain',
+        params: [{
+          chainId: '0x70d2'
+        }]
+      })
+    } catch (error: any) {
+      if (error.code === 4902) {
+        await window.ethereum.request({
+          method: 'wallet_addEthereumChain',
+          params: [{
+            chainId: '0x70d2',
+            chainName: 'Boba Sepolia',
+            rpcUrls: ['https://sepolia.boba.network'],
+            nativeCurrency: {
+              name: 'ETH',
+              symbol: "ETH",
+              decimals: 18,
+            },
+            blockExplorerUrls: [
+              'https://testnet.bobascan.com',
+            ],
+          }],
+        })
+      }
+    }
   }
+
   await window.ethereum.request({
     method: 'wallet_requestSnaps',
     params: {
