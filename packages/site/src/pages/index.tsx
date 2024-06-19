@@ -4,7 +4,7 @@ import Grid from '@mui/material/Grid';
 import { ethers, parseUnits } from 'ethers';
 import React, { useContext, useEffect, useState } from 'react';
 
-import { Accordion, AccountList, Card, ConnectButton } from '../components';
+import { Accordion, AccountList, Card, ConnectButton, InstallHcSnapButton } from '../components';
 import {
   CardContainer,
   Container,
@@ -131,6 +131,17 @@ const Index = () => {
           ...snapState,
           accounts,
         });
+      });
+
+      // change in network.
+      window.ethereum.on('networkChanged', function (networkId) {
+        // Time to reload your interface with the new networkId
+        if (networkId !== 28882) {
+          dispatch({
+            type: MetamaskActions.SetNetwork,
+            payload: false,
+          });
+        }
       })
     }
 
@@ -363,7 +374,6 @@ const Index = () => {
 
       const hasSufficientDeposit = await checkDepositOnPaymaster();
       if (!hasSufficientDeposit) {
-        console.log('Does not have sufficient deposit');
         await setUpPaymaster();
 
         // TODO: wait here before the change reflects on-chain
@@ -449,6 +459,11 @@ const Index = () => {
     try {
       await connectSnap();
       const installedSnap = await getSnap();
+
+      dispatch({
+        type: MetamaskActions.SetNetwork,
+        payload: true,
+      });
 
       dispatch({
         type: MetamaskActions.SetInstalled,
@@ -650,13 +665,12 @@ const Index = () => {
 
   return (
     <Container>
-      {!state.installedSnap && (
+      {!state.isBobaSepolia ? (
         <CardContainer>
           <Card
             content={{
-              title: 'Connect',
               description:
-                'Get started by connecting to and installing the snap.',
+                'Please connect to Boba to use HC AA wallet app',
               button: (
                 <ConnectButton
                   onClick={handleConnectClick}
@@ -667,9 +681,26 @@ const Index = () => {
             disabled={!state.hasMetaMask}
           />
         </CardContainer>
-      )}
+      ) : !state.installedSnap ? (
+        <CardContainer>
+          <Card
+            content={{
+              title: 'Connect',
+              description:
+                'Get started by connecting to and installing the snap.',
+              button: (
+                <InstallHcSnapButton
+                  onClick={handleConnectClick}
+                  disabled={!state.hasMetaMask}
+                />
+              ),
+            }}
+            disabled={!state.hasMetaMask}
+          />
+        </CardContainer>
+      ) : <></>}
 
-      {state.installedSnap && (<StyledBox sx={{ flexGrow: 1 }}>
+      {state.installedSnap && state.isBobaSepolia && (<StyledBox sx={{ flexGrow: 1 }}>
         <Grid alignItems="flex-start" container spacing={4} columns={[1, 2, 3]}>
           <Grid item xs={8} sm={4} md={2}>
             <DividerTitle>Methods</DividerTitle>

@@ -134,3 +134,8 @@ export const isUsingPaymaster = async (): Promise<boolean> => {
 // };
 
 export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');
+
+export const isConnectedNetworkBoba = () => {
+  const currentChain = window.ethereum.networkVersion;
+  return currentChain === '28882'
+}

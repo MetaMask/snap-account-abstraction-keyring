@@ -16,6 +16,8 @@ type CardProps = {
 const CardWrapper = styled.div<{ fullWidth?: boolean; disabled: boolean }>`
   display: flex;
   flex-direction: column;
+  align-items: center;
+  justify-content: center;
   width: ${({ fullWidth }) => (fullWidth ? '100%' : '40rem')};
   background-color: ${({ theme }) => theme.colors.card?.default};
   padding: 3rem;
@@ -23,6 +25,11 @@ const CardWrapper = styled.div<{ fullWidth?: boolean; disabled: boolean }>`
   border-radius: 10px;
   box-shadow: ${({ theme }) => theme.shadows.default};
   filter: opacity(${({ disabled }) => (disabled ? '.4' : '1')});
+
+  button {
+    width: 100%;
+  }
+
   ${({ theme }) => theme.mediaQueries.small} {
     width: 100%;
     margin-top: 1.2rem;
