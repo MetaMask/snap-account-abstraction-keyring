@@ -16,3 +16,6 @@
 [submodule "packages/snap/lib/solady"]
 	path = packages/snap/lib/solady
 	url = https://github.com/vectorized/solady
+[submodule "packages/snap/lib/webauthn-sol"]
+	path = packages/snap/lib/webauthn-sol
+	url = https://github.com/base-org/webauthn-sol
