@@ -4,6 +4,7 @@ import type { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import '@typechain/hardhat';
 import '@nomicfoundation/hardhat-ethers';
+import "@nomicfoundation/hardhat-foundry";
 import 'dotenv/config';
 import type { NetworkUserConfig } from 'hardhat/types';
 
