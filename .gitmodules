@@ -13,3 +13,6 @@
 [submodule "packages/snap/lib/safe-singleton-deployer-sol"]
 	path = packages/snap/lib/safe-singleton-deployer-sol
 	url = https://github.com/wilsoncusack/safe-singleton-deployer-sol
+[submodule "packages/snap/lib/solady"]
+	path = packages/snap/lib/solady
+	url = https://github.com/vectorized/solady
