@@ -19,6 +19,3 @@
 [submodule "packages/snap/lib/openzeppelin-contracts"]
 	path = packages/snap/lib/openzeppelin-contracts
 	url = https://github.com/openzeppelin/openzeppelin-contracts
-[submodule "packages/snap/lib/foundry-oz-contracts"]
-	path = packages/snap/lib/foundry-oz-contracts
-	url = https://github.com/openzeppelin/openzeppelin-contracts

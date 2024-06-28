@@ -68,7 +68,7 @@ if (MNEMONIC && INFURA_PROJECT_ID) {
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.8.19',
+    version: '0.8.23',
     settings: {
       optimizer: {
         enabled: true,
