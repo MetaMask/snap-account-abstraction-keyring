@@ -11,7 +11,7 @@ import {
   Toggle,
 } from '../components';
 import { ChainConfigComponent } from '../components/ChainConfig';
-import { PaymasterDeployer } from '../components/PaymasterDeployer';
+// import { PaymasterDeployer } from '../components/PaymasterDeployer';
 import {
   CardContainer,
   Container,
@@ -277,7 +277,6 @@ const Index = () => {
             <Divider />
             <DividerTitle>Snap Configuration</DividerTitle>
             <ChainConfigComponent />
-            <PaymasterDeployer />
             <Divider />
           </Grid>
           <Grid item xs={4} sm={2} md={1}>

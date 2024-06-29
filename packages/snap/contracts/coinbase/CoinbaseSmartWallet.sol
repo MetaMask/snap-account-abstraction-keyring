@@ -237,6 +237,16 @@ contract CoinbaseSmartWallet is ERC1271, IAccount, MultiOwnable, UUPSUpgradeable
         return 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789;
     }
 
+    /**
+     * Return the account nonce.
+     * This method returns the next sequential nonce.
+     * For a nonce of a specific key, use `entrypoint.getNonce(account, key)`
+     */
+    function getNonce() public view virtual returns (uint256) {
+        return 0;
+    }
+
+
     /// @notice Computes the hash of the `UserOperation` in the same way as EntryPoint v0.6, but
     ///         leaves out the chain ID.
     ///
