@@ -8,6 +8,7 @@ const config: GatsbyConfig = {
   pathPrefix: process.env.GATSBY_PATH_PREFIX ?? '/',
 
   plugins: [
+    'gatsby-plugin-postcss',
     'gatsby-plugin-svgr',
     'gatsby-plugin-styled-components',
     {

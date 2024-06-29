@@ -6,20 +6,6 @@ import styled from 'styled-components';
 import { Footer, Header, AlertBanner, AlertType } from './components';
 import { GlobalStyle } from './config/theme';
 
-const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: 100vh;
-  max-width: 100vw;
-`;
-
-const BannerWrapper = styled.div`
-  padding-top: 25px;
-  padding-left: 5%;
-  padding-right: 5%;
-`;
-
 export type AppProps = {
   children: ReactNode;
 };
@@ -37,19 +23,10 @@ export const App: FunctionComponent<AppProps> = ({ children }) => {
         <title>Account Abstraction Snap</title>
       </Helmet>
       <GlobalStyle />
-      <Wrapper>
-        <BannerWrapper>
-          <AlertBanner
-            title={
-              "This is a developer tool for testing purposes. Don't use it to store real assets. Use with caution."
-            }
-            alertType={AlertType.Failure}
-          />
-        </BannerWrapper>
-        <Header />
+      <div className="bg-[url('/background.png')]">
         {children}
         <Footer />
-      </Wrapper>
+      </div>
     </>
   );
 };
