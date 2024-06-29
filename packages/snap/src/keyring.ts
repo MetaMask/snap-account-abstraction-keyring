@@ -4,7 +4,7 @@ import {
   addHexPrefix,
   Address,
   isValidPrivate,
-  stripHexPrefix,
+  // stripHexPrefix,
   toChecksumAddress,
 } from '@ethereumjs/util';
 import type {
@@ -41,9 +41,9 @@ import { logger } from './logger';
 import { saveState } from './stateManagement';
 import {
   EntryPoint__factory,
-  SimpleAccount__factory,
-  SimpleAccountFactory__factory,
-  VerifyingPaymaster__factory,
+  CoinbaseSmartWallet__factory,
+  CoinbaseSmartWalletFactory__factory,
+  // VerifyingPaymaster__factory,
 } from './types';
 import { CaipNamespaces, isEvmChain, toCaipChainId } from './utils/caip';
 import { getUserOperationHash } from './utils/ecdsa';
@@ -155,6 +155,7 @@ export class AccountAbstractionKeyring implements Keyring {
   async createAccount(
     options: Record<string, Json> = {},
   ): Promise<KeyringAccount> {
+    console.log('Creating account 2');
     if (!options.privateKey) {
       throwError(`[Snap] Private Key is required`);
     }
@@ -176,13 +177,40 @@ export class AccountAbstractionKeyring implements Keyring {
     // get factory contract by chain
     const aaFactory = await this.#getAAFactory(Number(chainId), signer);
     logger.info('[Snap] AA Factory Contract Address: ', aaFactory.target);
+    console.log('Chain ID: ', chainId);
+    console.log('Target: ', aaFactory.target);
 
-    const random = ethers.toBigInt(ethers.randomBytes(32));
+    // const salt = 2;
+
+    // const random = ethers.toBigInt(ethers.randomBytes(32));
+    // const salt =
+    //   (options.salt as string) ??
+    //   ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
+
     const salt =
-      (options.salt as string) ??
-      ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
+      '0x73c31044ac380f9d678c3a66715e07128c84b728ad7ac39c7c176b80e5fabaf9';
+    // const adminAbi = ethers.getBytes(
+    //   ethers.AbiCoder.defaultAbiCoder().encode(['address'], [admin]),
+    // );
 
-    const aaAddress = await aaFactory.getAccountAddress(admin, salt);
+    // const adminAbi = ethers.AbiCoder.defaultAbiCoder().encode(
+    //   ['address'],
+    //   [admin],
+    // );
+
+    const adminAbi = admin;
+
+    console.log('admin: ', admin);
+    console.log('adminAbi: ', adminAbi);
+    console.log('salt: ', salt);
+
+    // const aaAddress: string = await aaFactory.getAddress(
+    //   ['0x97df22132e5b1bea88ffcbbeac278db175212085'],
+    //   salt,
+    // );
+    // const aaAddress = await aaFactory.getAccountAddress(admin, salt);
+    const aaAddress = '0x80098689296c92a31ccdda1ca56473213800e25c';
+    console.log('aaAddress9: ', aaAddress);
 
     if (!isUniqueAddress(aaAddress, Object.values(this.#state.wallets))) {
       throw new Error(
@@ -192,13 +220,20 @@ export class AccountAbstractionKeyring implements Keyring {
 
     const initCode = ethers.concat([
       aaFactory.target as string,
-      aaFactory.interface.encodeFunctionData('createAccount', [admin, salt]),
+      aaFactory.interface.encodeFunctionData('createAccount', [
+        [adminAbi],
+        salt,
+      ]),
     ]);
+    console.log('Init Code: ', initCode);
 
     // check on chain if the account already exists.
     // if it does, this means that there is a collision in the salt used.
-    const accountCollision = (await provider.getCode(aaAddress)) !== '0x';
+    const existingDeployment = await provider.getCode(aaAddress);
+    const accountCollision = existingDeployment !== '0x';
+    console.log('Creating account');
     if (accountCollision) {
+      console.log(`${salt}: ${existingDeployment}`);
       throwError(`[Snap] Account Salt already used, please retry.`);
     }
 
@@ -388,9 +423,11 @@ export class AccountAbstractionKeyring implements Keyring {
     method: string;
     params: Json;
   }): Promise<Json> {
+    console.log('Handle signing request 2');
     const { chainId } = await provider.getNetwork();
     try {
       const parsedScope = parseCaipChainId(scope as CaipChainId);
+      console.log('Parsed Scope: ', parsedScope);
       if (String(chainId) !== parsedScope.reference) {
         throwError(
           `[Snap] Chain ID '${chainId}' mismatch with scope '${scope}'`,
@@ -410,6 +447,7 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Account does not support chain: ${scope}`);
     }
 
+    console.log('Method: ', method);
     switch (method) {
       case EthMethod.PrepareUserOperation: {
         const transactions = params as EthBaseTransaction[];
@@ -438,6 +476,7 @@ export class AccountAbstractionKeyring implements Keyring {
     address: string,
     transactions: EthBaseTransaction[],
   ): Promise<EthBaseUserOperation> {
+    console.log('prepareUserOperation 3');
     if (transactions.length !== 1) {
       throwError(`[Snap] Only one transaction per UserOp supported`);
     }
@@ -452,24 +491,32 @@ export class AccountAbstractionKeyring implements Keyring {
     );
 
     const wallet = this.#getWalletByAddress(address);
+    console.log('Wallet: ', wallet);
+    console.log('Address: ', address);
+    console.log('Address2: ', wallet.account.address);
     const signer = getSigner(wallet.privateKey);
 
     // eslint-disable-next-line camelcase
-    const aaInstance = SimpleAccount__factory.connect(
+    const aaInstance = CoinbaseSmartWallet__factory.connect(
       wallet.account.address, // AA address
       signer, // Admin signer
     );
 
     const { chainId } = await provider.getNetwork();
+    console.log('Chain ID: ', chainId);
 
     let nonce = '0x0';
     let initCode = '0x';
     try {
-      nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
+      nonce = `0x${(0 as BigNumberish).toString(
+        // nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
         16,
       )}`;
+      console.log('Nonce: ', nonce);
       const scope = toCaipChainId(CaipNamespaces.Eip155, chainId.toString());
+      console.log('Scope: ', scope);
       if (!Object.prototype.hasOwnProperty.call(wallet.chains, scope)) {
+        console.log('No scope');
         wallet.chains[scope] = true;
         await this.#saveState();
       }
@@ -477,14 +524,19 @@ export class AccountAbstractionKeyring implements Keyring {
       initCode = wallet.initCode;
     }
 
-    const chainConfig = this.#getChainConfig(Number(chainId));
-    if (!chainConfig?.bundlerUrl) {
-      throwError(`[Snap] Bundler URL not found for chain: ${chainId}`);
-    }
+    initCode =
+      '0x2b7849ba6b6ddd8df017fc9fc171eb88e774a32e3ffba36f000000000000000000000000000000000000000000000000000000000000004073c31044ac380f9d678c3a66715e07128c84b728ad7ac39c7c176b80e5fabaf900000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001497df22132e5b1bea88ffcbbeac278db175212085000000000000000000000000';
+    // const chainConfig = this.#getChainConfig(Number(chainId));
+    // if (!chainConfig?.bundlerUrl) {
+    //   console.log('No bundler URL');
+    //   throwError(`[Snap] Bundler URL not found for chain: ${chainId}`);
+    // }
 
-    const verifyingPaymasterAddress =
-      chainConfig?.customVerifyingPaymasterAddress;
+    // const verifyingPaymasterAddress =
+    //   chainConfig?.customVerifyingPaymasterAddress;
 
+    const bundlerUrl =
+      'https://bundler.biconomy.io/api/v2/11155111/nJPK7B3ru.dd7f7861-190d-41bd-af80-6877f74b8f44';
     const ethBaseUserOp: EthBaseUserOperation = {
       nonce,
       initCode,
@@ -494,51 +546,54 @@ export class AccountAbstractionKeyring implements Keyring {
         transaction.data ?? ethers.ZeroHash,
       ]),
       dummySignature: DUMMY_SIGNATURE,
-      dummyPaymasterAndData: getDummyPaymasterAndData(
-        verifyingPaymasterAddress,
-      ),
-      bundlerUrl: chainConfig.bundlerUrl,
+      dummyPaymasterAndData: getDummyPaymasterAndData(undefined),
+      bundlerUrl,
     };
+
+    console.log('EthBaseUserOp: ', ethBaseUserOp);
     return ethBaseUserOp;
   }
 
   async #patchUserOperation(
-    address: string,
-    userOp: EthUserOperation,
+    _address: string,
+    _userOp: EthUserOperation,
   ): Promise<EthUserOperationPatch> {
-    const wallet = this.#getWalletByAddress(address);
-    const signer = getSigner(wallet.privateKey);
-    const { chainId } = await provider.getNetwork();
-    const chainConfig = this.#getChainConfig(Number(chainId));
+    console.log('Patch User Operation');
+    return { paymasterAndData: '0x' };
 
-    const verifyingPaymasterAddress =
-      // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
-      chainConfig?.customVerifyingPaymasterAddress!;
+    // const wallet = this.#getWalletByAddress(address);
+    // const signer = getSigner(wallet.privateKey);
+    // const { chainId } = await provider.getNetwork();
+    // const chainConfig = this.#getChainConfig(Number(chainId));
 
-    if (!verifyingPaymasterAddress) {
-      return { paymasterAndData: '0x' };
-    }
+    // const verifyingPaymasterAddress =
+    //   // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain
+    //   chainConfig?.customVerifyingPaymasterAddress!;
 
-    const verifyingPaymaster = VerifyingPaymaster__factory.connect(
-      verifyingPaymasterAddress,
-      signer,
-    );
+    // if (!verifyingPaymasterAddress) {
+    //   return { paymasterAndData: '0x' };
+    // }
 
-    const verifyingSigner = getSigner(
-      chainConfig?.customVerifyingPaymasterSK ?? wallet.privateKey,
-    );
+    // const verifyingPaymaster = VerifyingPaymaster__factory.connect(
+    //   verifyingPaymasterAddress,
+    //   signer,
+    // );
 
-    // Create a hash that doesn't expire
-    const hash = await verifyingPaymaster.getHash(userOp, 0, 0);
-    const signature = await verifyingSigner.signMessage(ethers.getBytes(hash));
-    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-    const paymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
-      ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
-    )}${stripHexPrefix(signature)}`;
+    // const verifyingSigner = getSigner(
+    //   chainConfig?.customVerifyingPaymasterSK ?? wallet.privateKey,
+    // );
 
-    return {
-      paymasterAndData,
-    };
+    // // Create a hash that doesn't expire
+    // const hash = await verifyingPaymaster.getHash(userOp, 0, 0);
+    // const signature = await verifyingSigner.signMessage(ethers.getBytes(hash));
+    // // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    // const paymasterAndData = `${await verifyingPaymaster.getAddress()}${stripHexPrefix(
+    //   ethers.AbiCoder.defaultAbiCoder().encode(['uint48', 'uint48'], [0, 0]),
+    // )}${stripHexPrefix(signature)}`;
+
+    // return {
+    //   paymasterAndData,
+    // };
   }
 
   async #signUserOperation(
@@ -546,8 +601,10 @@ export class AccountAbstractionKeyring implements Keyring {
     userOp: EthUserOperation,
   ): Promise<string> {
     const wallet = this.#getWalletByAddress(address);
+    console.log('SIGN USER OPERATION', address);
     const signer = getSigner(wallet.privateKey);
     const { chainId } = await provider.getNetwork();
+    console.log('Chain ID: ', chainId);
     const entryPoint = await this.#getEntryPoint(Number(chainId), signer);
     logger.info(
       `[Snap] SignUserOperation:\n${JSON.stringify(userOp, null, 2)}`,
@@ -567,26 +624,30 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   async #getAAFactory(chainId: number, signer: ethers.Wallet) {
-    if (!this.#isSupportedChain(chainId)) {
-      throwError(`[Snap] Unsupported chain ID: ${chainId}`);
-    }
-    let factoryAddress: string;
-    const chainConfig = this.#getChainConfig(chainId);
-    if (chainConfig?.simpleAccountFactory) {
-      factoryAddress = chainConfig.simpleAccountFactory;
-    } else {
-      const entryPointVersion =
-        DEFAULT_ENTRYPOINTS[chainId]?.version.toString() ??
-        throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
-      factoryAddress =
-        (DEFAULT_AA_FACTORIES[entryPointVersion] as Record<string, string>)?.[
-          chainId.toString()
-        ] ??
-        throwError(
-          `[Snap] Unknown AA Factory address for chain ${chainId} and EntryPoint version ${entryPointVersion}`,
-        );
-    }
-    return SimpleAccountFactory__factory.connect(factoryAddress, signer);
+    // if (!this.#isSupportedChain(chainId)) {
+    //   throwError(`[Snap] Unsupported chain ID: ${chainId}`);
+    // }
+    // let factoryAddress: string;
+    // const chainConfig = this.#getChainConfig(chainId);
+    // if (chainConfig?.simpleAccountFactory) {
+    //   factoryAddress = chainConfig.simpleAccountFactory;
+    // } else {
+    //   const entryPointVersion =
+    //     DEFAULT_ENTRYPOINTS[chainId]?.version.toString() ??
+    //     throwError(`[Snap] Unknown EntryPoint for chain ${chainId}`);
+    //   factoryAddress =
+    //     (DEFAULT_AA_FACTORIES[entryPointVersion] as Record<string, string>)?.[
+    //       chainId.toString()
+    //     ] ??
+    //     throwError(
+    //       `[Snap] Unknown AA Factory address for chain ${chainId} and EntryPoint version ${entryPointVersion}`,
+    //     );
+    // }
+    return CoinbaseSmartWalletFactory__factory.connect(
+      '0x2b7849Ba6B6DDd8df017FC9fC171EB88E774a32E',
+      signer,
+    );
+    // return CoinbaseSmartWalletFactory__factory.connect(factoryAddress, signer);
   }
 
   async #getEntryPoint(chainId: number, signer: ethers.Wallet) {

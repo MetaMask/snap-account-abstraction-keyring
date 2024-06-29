@@ -1,3 +1,6 @@
+// eslint-disable-next-line import/no-unassigned-import
+import './src/styles/global.css';
+
 import type { GatsbyBrowser } from 'gatsby';
 import React, { StrictMode } from 'react';
 

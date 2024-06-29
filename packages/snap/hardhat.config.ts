@@ -4,6 +4,7 @@ import type { HardhatUserConfig } from 'hardhat/config';
 import '@nomicfoundation/hardhat-toolbox';
 import '@typechain/hardhat';
 import '@nomicfoundation/hardhat-ethers';
+import '@nomicfoundation/hardhat-foundry';
 import 'dotenv/config';
 import type { NetworkUserConfig } from 'hardhat/types';
 
@@ -67,7 +68,7 @@ if (MNEMONIC && INFURA_PROJECT_ID) {
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: '0.8.19',
+    version: '0.8.23',
     settings: {
       optimizer: {
         enabled: true,

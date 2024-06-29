@@ -109,6 +109,7 @@ export const Header = () => {
     <HeaderWrapper>
       <LogoWrapper>
         <Title>🔑 Snap Account Abstraction Keyring</Title>
+        <span className="text-3xl">TESTING</span>
       </LogoWrapper>
       <RightContainer>
         <Version />

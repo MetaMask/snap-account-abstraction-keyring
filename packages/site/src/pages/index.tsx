@@ -11,7 +11,7 @@ import {
   Toggle,
 } from '../components';
 import { ChainConfigComponent } from '../components/ChainConfig';
-import { PaymasterDeployer } from '../components/PaymasterDeployer';
+// import { PaymasterDeployer } from '../components/PaymasterDeployer';
 import {
   CardContainer,
   Container,
@@ -52,6 +52,7 @@ const Index = () => {
   const [salt, setSalt] = useState<string | null>();
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
+  const [pageNum, setPageNum] = useState<number>(0);
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
 
@@ -241,8 +242,94 @@ const Index = () => {
     },
   ];
 
+  const pages = [
+    {
+      title: 'Save Automatically',
+      subtitle: 'with Every Transaction',
+      text: 'Start saving effortlessly using Coinbase Smart Wallet and pay via Stripe.',
+      btn: 'Get started',
+      img: '/piggy.png',
+    },
+    {
+      title: 'Step 1',
+      subtitle: 'Install Snap',
+      text: 'Make sure you are using this Flask version. Then click the button below to install.',
+      btn: 'Install Snap',
+      img: '/install-perms.png',
+    },
+    {
+      title: 'Step 2',
+      subtitle: 'Select Saving Percentage',
+      text: "Choose the percentage of each transaction you'd like to Save.",
+      btn: 'Set Percentage',
+      img: '/select-pct.png',
+    },
+    {
+      title: 'Step 3',
+      subtitle: 'Setup Subscription',
+      text: 'Sign up for $5 per month to get gas-less transactions, auto savings, and monthly reports.',
+      btn: 'Hell ya, sign me up!',
+      img: '/credit-card.png',
+    },
+    {
+      title: 'Step 4',
+      subtitle: 'Create savings account',
+      text: 'Click the button below to create your new savings account. It will pop up a Metamask window to confirm the transaction.',
+      btn: 'Create Account',
+      img: '/create-account.png',
+    },
+    {
+      title: 'Step 5',
+      subtitle: 'Fund Your New Account',
+      text: 'Send money to your new savings account address',
+      btn: 'Copy address',
+      img: '/transfer.png',
+    },
+    {
+      title: 'Step 6',
+      subtitle: 'Start Using Your New Account',
+      text: 'Switch to your account in Metamask and transact anywhere on chain',
+      btn: 'Copy address',
+      img: '/switch-wallet.png',
+    },
+  ];
+
+  const page = pages[pageNum];
+  const { title, subtitle, text, btn, img } = page!;
+  const goNextPage = () => {
+    if (pageNum < pages.length - 1) {
+      setPageNum(pageNum + 1);
+    }
+  };
+
   return (
-    <Container>
+    <div className="p-24 bg-[url('/background.png')] bg-cover">
+      <div className="flex flex-row justify-between">
+        <div className="w-3/5">
+          <p className="text-7xl text-black mt-48">{title}</p>
+          <p className="text-7xl text-[#0002A1] mt-2">{subtitle}</p>
+          <p className="text-3xl my-6 text-black">{text}</p>
+          <div className="px-4">
+            <button
+              className="w-full p-12 rounded-sm mt-24 bg-white text-black text-4xl"
+              onClick={goNextPage}
+            >
+              {btn}
+            </button>
+          </div>
+        </div>
+        <div className="w-2/5">
+          <img src={img} />
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <div>
+        <h1 className="text-xl font-bold underline">Hello world!</h1>
+      </div>
       <CardContainer>
         {!state.installedSnap && (
           <Card
@@ -277,7 +364,6 @@ const Index = () => {
             <Divider />
             <DividerTitle>Snap Configuration</DividerTitle>
             <ChainConfigComponent />
-            <PaymasterDeployer />
             <Divider />
           </Grid>
           <Grid item xs={4} sm={2} md={1}>
@@ -297,7 +383,7 @@ const Index = () => {
           </Grid>
         </Grid>
       </StyledBox>
-    </Container>
+    </div>
   );
 };
 
