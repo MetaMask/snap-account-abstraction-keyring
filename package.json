@@ -26,6 +26,7 @@
   ],
   "scripts": {
     "build": "yarn workspaces foreach --parallel --verbose --topological run build",
+    "install:dapp": "yarn workspace @metamask/snap-account-abstraction-keyring-site install",
     "build:dapp": "yarn workspace @metamask/snap-account-abstraction-keyring-site build",
     "start:dapp": "yarn workspace @metamask/snap-account-abstraction-keyring-site start",
     "build:snap": "yarn workspace @metamask/snap-account-abstraction-keyring build",
