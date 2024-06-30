@@ -188,7 +188,7 @@ export class AccountAbstractionKeyring implements Keyring {
     //   ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
     const salt =
-      '0x73c31044ac380f9d678c3a66715e07128c84b728ad7ac39c7c176b80e5fabaf9';
+      '0x6ab328a5a13a9a4d304678b53f73493b1fe6c6ed24825a8b3dd15ee8433f616b';
     // const adminAbi = ethers.getBytes(
     //   ethers.AbiCoder.defaultAbiCoder().encode(['address'], [admin]),
     // );
@@ -209,7 +209,8 @@ export class AccountAbstractionKeyring implements Keyring {
     //   salt,
     // );
     // const aaAddress = await aaFactory.getAccountAddress(admin, salt);
-    const aaAddress = '0x80098689296c92a31ccdda1ca56473213800e25c';
+    const aaAddress =
+      '0x0000000000000000000000003f973ccda47b45c7a4f66cdd43cd715536eec70f';
     console.log('aaAddress9: ', aaAddress);
 
     if (!isUniqueAddress(aaAddress, Object.values(this.#state.wallets))) {

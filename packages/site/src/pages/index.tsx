@@ -242,61 +242,147 @@ const Index = () => {
     },
   ];
 
+  const openInNewTab = (url) => {
+    window.open(url, '_blank', 'noreferrer');
+  };
+
   const pages = [
     {
       title: 'Save Automatically',
       subtitle: 'with Every Transaction',
-      text: 'Start saving effortlessly using Coinbase Smart Wallet and pay via Stripe.',
+
+      text: (
+        <p className="text-3xl my-6 text-black">
+          Start saving effortlessly using Coinbase Smart Wallet and pay via
+          Stripe.
+        </p>
+      ),
       btn: 'Get started',
       img: '/piggy.png',
     },
     {
       title: 'Step 1',
       subtitle: 'Install Snap',
-      text: 'Make sure you are using this Flask version. Then click the button below to install.',
+      text: (
+        <div className="text-3xl my-6 text-black">
+          <ul className="list-disc list-inside space-y-4">
+            <li>
+              YOU MUST USE{' '}
+              <a
+                href="https://github.com/MetaMask/metamask-extension/pull/25098#issuecomment-2196458627"
+                target="_blank"
+                className="font-bold underline"
+              >
+                THIS VERSION
+              </a>{' '}
+              of Metamask/Flask.
+            </li>
+            <li> Install it on a Chrome profile without any other Metamask.</li>
+            <li>Then click the button below to install.</li>
+            <li>
+              It will open up a few setup screens, like the one to the right.
+            </li>
+            <li>
+              You are giving permission to install the Snap into your Metamask.
+            </li>
+          </ul>
+        </div>
+      ),
       btn: 'Install Snap',
       img: '/install-perms.png',
+      btnAction: async () => {
+        await handleConnectClick();
+      },
     },
     {
       title: 'Step 2',
       subtitle: 'Select Saving Percentage',
-      text: "Choose the percentage of each transaction you'd like to Save.",
+      text: (
+        <p className="text-3xl my-6 text-black">
+          Choose the percentage of each transaction you'd like to Save.
+        </p>
+      ),
+      beforeBtn: (
+        <div className="text-6xl text-black">
+          <label htmlFor="savingsPct">Select percent to save:</label>
+          <select id="savingsPct" name="savingsPct">
+            <option value="_0">0%</option>
+            <option value="_10">10%</option>
+            <option value="_20">20%</option>
+            <option value="_30">30%</option>
+            <option value="_40">40%</option>
+            <option value="_50">50%</option>
+            <option value="_60">60%</option>
+            <option value="_70">70%</option>
+            <option value="_80">80%</option>
+            <option value="_90">90%</option>
+            <option value="_100">100%</option>
+          </select>
+        </div>
+      ),
       btn: 'Set Percentage',
       img: '/select-pct.png',
     },
     {
       title: 'Step 3',
       subtitle: 'Setup Subscription',
-      text: 'Sign up for $5 per month to get gas-less transactions, auto savings, and monthly reports.',
+      text: (
+        <p className="text-3xl my-6 text-black">
+          Sign up for $5 per month to get gas-less transactions, auto savings,
+          and monthly reports.
+        </p>
+      ),
       btn: 'Hell ya, sign me up!',
       img: '/credit-card.png',
+      btnAction: async () => {
+        openInNewTab('https://buy.stripe.com/test_aEU7vH5ni3rw5nqaEE');
+      },
     },
     {
       title: 'Step 4',
       subtitle: 'Create savings account',
-      text: 'Click the button below to create your new savings account. It will pop up a Metamask window to confirm the transaction.',
+      text: (
+        <p className="text-3xl my-6 text-black">
+          Click the button below to create your new savings account. It will pop
+          up a Metamask window to confirm the transaction.
+        </p>
+      ),
       btn: 'Create Account',
       img: '/create-account.png',
     },
     {
       title: 'Step 5',
       subtitle: 'Fund Your New Account',
-      text: 'Send money to your new savings account address',
+      text: (
+        <p className="text-3xl my-6 text-black">
+          Send money to your new savings account address
+        </p>
+      ),
       btn: 'Copy address',
       img: '/transfer.png',
     },
     {
       title: 'Step 6',
       subtitle: 'Start Using Your New Account',
-      text: 'Switch to your account in Metamask and transact anywhere on chain',
+      text: (
+        <p className="text-3xl my-6 text-black">
+          'Switch to your account in Metamask and transact anywhere on chain
+        </p>
+      ),
       btn: 'Copy address',
       img: '/switch-wallet.png',
     },
   ];
 
   const page = pages[pageNum];
-  const { title, subtitle, text, btn, img } = page!;
-  const goNextPage = () => {
+  const { title, subtitle, text, btn, img, btnAction, beforeBtn } = page!;
+  const goNextPage = async () => {
+    // Run custom action for the button
+    if (btnAction) {
+      await btnAction();
+    }
+
+    // If no error, go to next step
     if (pageNum < pages.length - 1) {
       setPageNum(pageNum + 1);
     }
@@ -308,10 +394,12 @@ const Index = () => {
         <div className="w-3/5">
           <p className="text-7xl text-black mt-48">{title}</p>
           <p className="text-7xl text-[#0002A1] mt-2">{subtitle}</p>
-          <p className="text-3xl my-6 text-black">{text}</p>
+          {text}
           <div className="px-4">
+            {beforeBtn}
             <button
-              className="w-full p-12 rounded-sm mt-24 bg-white text-black text-4xl"
+              className="w-full p-12 rounded-sm mt-24 bg-slate-200 hover:bg-slate-400 text-black text-4xl"
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onClick={goNextPage}
             >
               {btn}

@@ -1,158 +1,66 @@
-# Simple Account Abstraction Snap
+# Locker HODL
 
-This repository contains a simple example of an account abstraction keyring snap.
+Locker HODL is a fork of Coinbase Smart Wallet that automatically saves and locks-up a little for you every time you use it.
 
-Keyring snaps enable developers to enhance MetaMask by adding new account
-types. These accounts are natively supported within the extension, appearing in
-MetaMask's UI, and can be used with dapps.
+As an unofficial fork, this wallet cannot be natively imported into wallet.coinbase.com.
+To get around this limitation, Locker HODL is packaged into a Metamask snap.
+Now you can use your Coinbase Smart Wallet from Metamask too.
 
-MetaMask Snaps is a system that allows anyone to safely expand the capabilities
-of MetaMask. A _snap_ is a program that we run in an isolated environment that
-can customize the wallet experience.
+Getting native tokens onto new wallets can be a pain.
+Locker HODL pays gas for you and bills your card via Stripe.
 
-## Snaps is pre-release software
+## Where to find it
 
-To interact with (your) Snaps, you will need to install [MetaMask
-Flask](https://metamask.io/flask/), a canary distribution for developers that
-provides access to upcoming features.
+- Base Sepolia
+  - implementation: [0x3a7B8aC9d9565EB9D32De95356e113190F857aB4](https://basescan.org/address/0x3a7B8aC9d9565EB9D32De95356e113190F857aB4)
+  - factory: [0x86FC046543717A67b03847BEDE9560FB4368d274](https://basescan.org/address/0x86FC046543717A67b03847BEDE9560FB4368d274)
 
-## Getting Started
+## Why you should care
 
-Clone the template-snap repository [using this
-template](https://github.com/MetaMask/template-snap-monorepo/generate) and
-setup the development environment:
+- The problem
+- Context about Auto HODL and Locker.
 
-```shell
-yarn install
+## How to use it
+
+TODO: Video link
+
+1. Install this version of Flask (Metamask)
+2. Go to website
+
+## How it's made
+
+- Metamask Snap account abstraction template
+- Added foundry and copied in Coinbase Smart Wallet
+- Modify Coinbase Smart Wallet code for saving features
+  - internal treasury that you can't spend beyond
+  - time-lock
+
+TODO: architecture diagram
+
+## Challenges
+
+## Local development
+
+### Deploy contracts
+
+1. Go to contract code: `cd packages/snap`
+1. Setup cast account: `cast wallet import hack2  --private-key PRIVATE_KEY_WITHOUT_0x`
+1. Setup env vars: `cp .env.sample .env`
+1. Deploy CoinbaseSmartWalletFactory: `make deploy`
+1. Copy deployment addresses for later
+
+### Setup snap
+
+There is an issue querying the address for a new account from the factory.
+You must hardcode the new account address in the snap code.
+To do this, interact with the factory you deployed, to get an address
+
+```
+cast call FACTORY_ADDRESS --rpc-url RPC_URL  --account CAST_ACCOUNT_NAME "getAddress(bytes[],uint256)" "[0xABI_ENCODED_OWNER]" 0x73c31044ac380f9d678c3a66715e07128c84b728ad7ac39c7c176b80e5fabaf9
 ```
 
-compile types
-```shell
-cd packages/snap && yarn compile
-```
+0x73.. is an arbitrary salt
 
-start the application (cd back into root of repository)
-```shell
-yarn start
-```
+## Credit
 
-## Cloning
-
-This repository contains GitHub Actions that you may find useful, see
-`.github/workflows` and [Releasing &
-Publishing](https://github.com/MetaMask/template-snap-monorepo/edit/main/README.md#releasing--publishing)
-below for more information.
-
-If you clone or create this repository outside the MetaMask GitHub
-organization, you probably want to run `./scripts/cleanup.sh` to remove some
-files that will not work properly outside the MetaMask GitHub organization.
-
-Note that the `action-publish-release.yml` workflow contains a step that
-publishes the frontend of this snap (contained in the `public/` directory) to
-GitHub pages. If you do not want to publish the frontend to GitHub pages,
-simply remove the step named "Publish to GitHub Pages" in that workflow.
-
-If you don't wish to use any of the existing GitHub actions in this repository,
-simply delete the `.github/workflows` directory.
-
-## Contributing
-
-### Testing and Linting
-
-Run `yarn test` to run the tests once.
-
-Run `yarn lint` to run the linter, or run `yarn lint:fix` to run the linter and
-fix any automatically fixable issues.
-
-### Releasing & Publishing
-
-The project follows the same release process as the other libraries in the
-MetaMask organization. The GitHub Actions
-[`action-create-release-pr`](https://github.com/MetaMask/action-create-release-pr)
-and
-[`action-publish-release`](https://github.com/MetaMask/action-publish-release)
-are used to automate the release process; see those repositories for more
-information about how they work.
-
-1. Choose a release version.
-
-   - The release version should be chosen according to SemVer. Analyze the
-     changes to see whether they include any breaking changes, new features, or
-     deprecations, then choose the appropriate SemVer version. See [the SemVer
-     specification](https://semver.org/) for more information.
-
-2. If this release is backporting changes onto a previous release, then ensure
-   there is a major version branch for that version (e.g. `1.x` for a `v1`
-   backport release).
-
-   - The major version branch should be set to the most recent release with
-     that major version. For example, when backporting a `v1.0.2` release,
-     you'd want to ensure there was a `1.x` branch that was set to the `v1.0.1`
-     tag.
-
-3. Trigger the
-   [`workflow_dispatch`](https://docs.github.com/en/actions/reference/events-that-trigger-workflows#workflow_dispatch)
-   event
-   [manually](https://docs.github.com/en/actions/managing-workflow-runs/manually-running-a-workflow)
-   for the `Create Release Pull Request` action to create the release PR.
-
-   - For a backport release, the base branch should be the major version branch
-     that you ensured existed in step 2. For a normal release, the base branch
-     should be the main branch for that repository (which should be the default
-     value).
-
-   - This should trigger the
-     [`action-create-release-pr`](https://github.com/MetaMask/action-create-release-pr)
-     workflow to create the release PR.
-
-4. Update the changelog to move each change entry into the appropriate change
-   category ([See here](https://keepachangelog.com/en/1.0.0/#types) for the
-   full list of change categories, and the correct ordering), and edit them to
-   be more easily understood by users of the package.
-
-   - Generally any changes that don't affect consumers of the package (e.g.
-     lockfile changes or development environment changes) are omitted.
-     Exceptions may be made for changes that might be of interest despite not
-     having an effect upon the published package (e.g. major test improvements,
-     security improvements, improved documentation, etc.).
-
-   - Try to explain each change in terms that users of the package would
-     understand (e.g. avoid referencing internal variables/concepts).
-
-   - Consolidate related changes into one change entry if it makes it easier to
-     explain.
-
-   - Run `yarn auto-changelog validate --rc` to check that the changelog is
-     correctly formatted.
-
-5. Review and QA the release.
-
-   - If changes are made to the base branch, the release branch will need to be
-     updated with these changes and review/QA will need to restart again. As
-     such, it's probably best to avoid merging other PRs into the base branch
-     while review is underway.
-
-6. Squash & Merge the release.
-
-   - This should trigger the
-     [`action-publish-release`](https://github.com/MetaMask/action-publish-release)
-     workflow to tag the final release commit and publish the release on
-     GitHub.
-
-7. Publish the release on npm.
-
-   - Be very careful to use a clean local environment to publish the release,
-     and follow exactly the same steps used during CI.
-
-   - Use `npm publish --dry-run` to examine the release contents to ensure the
-     correct files are included. Compare to previous releases if necessary
-     (e.g. using `https://unpkg.com/browse/[package name]@[package version]/`).
-
-   - Once you are confident the release contents are correct, publish the
-     release using `npm publish`.
-
-## Notes
-
-- Babel is used for transpiling TypeScript to JavaScript, so when building with
-  the CLI, `transpilationMode` must be set to `localOnly` (default) or
-  `localAndDeps`.
+Designs made by [@iiankitadixit](https://x.com/iiankitadixit)

@@ -85,3 +85,4 @@ packages/snap/.env
 # IntelliJ
 .idea/
 /.idea/
+.vercel
