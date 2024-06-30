@@ -3,7 +3,8 @@ import styled, { useTheme } from 'styled-components';
 
 import { MetaMask } from './MetaMask';
 import { PoweredBy } from './PoweredBy';
-import { ReactComponent as MetaMaskFox } from '../assets/metamask_fox.svg';
+import { ReactComponent as Coinbase } from '../assets/coinbase.svg';
+import { ReactComponent as Stripe } from '../assets/stripe.svg';
 
 const FooterWrapper = styled.footer`
   display: flex;
@@ -38,10 +39,18 @@ export const Footer = () => {
   return (
     <FooterWrapper>
       <PoweredByButton href="https://docs.metamask.io/" target="_blank">
-        <MetaMaskFox />
+        <Coinbase />
         <PoweredByContainer>
           <PoweredBy color={theme.colors.text?.muted ?? '#6A737D'} />
-          <MetaMask color={theme.colors.text?.default ?? '#24272A'} />
+          <span>Coinbase</span>
+        </PoweredByContainer>
+      </PoweredByButton>
+      <div className="mx-4"></div>
+      <PoweredByButton href="https://docs.metamask.io/" target="_blank">
+        <Stripe />
+        <PoweredByContainer>
+          <PoweredBy color={theme.colors.text?.muted ?? '#6A737D'} />
+          <span>Stripe</span>
         </PoweredByContainer>
       </PoweredByButton>
     </FooterWrapper>

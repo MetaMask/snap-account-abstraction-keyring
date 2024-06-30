@@ -64,6 +64,12 @@ if (MNEMONIC && INFURA_PROJECT_ID) {
       mnemonic: MNEMONIC,
     },
   };
+  networks.baseSepolia = {
+    url: `https://dry-necessary-snow.base-sepolia.quiknode.pro/a9746d5b73e75c2e4ad1af52534434a422b6315d/9`,
+    accounts: {
+      mnemonic: MNEMONIC,
+    },
+  };
 }
 
 const config: HardhatUserConfig = {

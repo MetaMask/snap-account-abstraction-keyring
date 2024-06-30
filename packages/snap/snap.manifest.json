@@ -1,13 +1,13 @@
 {
   "version": "0.3.0",
-  "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
-  "proposedName": "MetaMask Account Abstraction Snap Keyring",
+  "description": "Save with your Coinbase Smart Wallet every time you transact on-chain.",
+  "proposedName": "Locker HODL - Coinbase Smart Wallet",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/MetaMask/snap-account-abstraction-keyring.git"
   },
   "source": {
-    "shasum": "qwjUlkcHHuIqtuw7FSnM9WqujrOkP42G6BGMBRLiNAw=",
+    "shasum": "76dnvd74vriYp7tXLpFpmz4utaVqXtgypxfcBGogzTw=",
     "location": {
       "npm": {
         "filePath": "dist/bundle.js",

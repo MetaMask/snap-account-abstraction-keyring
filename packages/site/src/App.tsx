@@ -20,7 +20,7 @@ export const App: FunctionComponent<AppProps> = ({ children }) => {
     <>
       <Helmet>
         <meta charSet="utf-8" />
-        <title>Account Abstraction Snap</title>
+        <title>Locker HODL - Coinbase Smart Wallet</title>
       </Helmet>
       <GlobalStyle />
       <div className="bg-[url('/background.png')]">
