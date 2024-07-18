@@ -31,7 +31,7 @@
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
     "@lavamoat/allow-scripts": "^3.0.4",
-    "@metamask/keyring-api": "^6.0.0",
+    "@metamask/keyring-api": "^8.0.1",
     "@metamask/providers": "^16.0.0",
     "@mui/icons-material": "^5.14.0",
     "@mui/material": "^5.14.0",
