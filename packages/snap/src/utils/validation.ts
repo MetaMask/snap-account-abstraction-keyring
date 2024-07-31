@@ -1,6 +1,6 @@
 import { exactOptional } from '@metamask/keyring-api';
-import type { Hex } from '@metamask/utils';
 import { assert, define, object, StructError } from '@metamask/superstruct';
+import type { Hex } from '@metamask/utils';
 import { isValidHexAddress } from '@metamask/utils';
 import { ethers } from 'ethers';
 
