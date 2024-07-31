@@ -125,7 +125,6 @@ export const ChainConfigComponent = () => {
         [configKey]: value,
       },
     });
-    console.log(chainConfigs);
   };
 
   const updateChainConfig = async () => {
