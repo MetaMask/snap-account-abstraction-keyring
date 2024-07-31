@@ -5396,6 +5396,7 @@ __metadata:
     "@metamask/keyring-api": ^8.0.2
     "@metamask/snaps-cli": ^6.2.1
     "@metamask/snaps-sdk": ^6.1.1
+    "@metamask/superstruct": ^3.0.1
     "@metamask/utils": ^9.1.0
     "@nomicfoundation/hardhat-chai-matchers": ^2.0.0
     "@nomicfoundation/hardhat-ethers": ^3.0.0
@@ -5429,7 +5430,6 @@ __metadata:
     prettier: ^2.2.1
     rimraf: ^3.0.2
     solidity-coverage: ^0.8.1
-    superstruct: ^1.0.3
     ts-node: ^10.9.2
     typechain: ^8.3.2
     typescript: ^5.3.3
@@ -5578,7 +5578,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/superstruct@npm:^3.1.0":
+"@metamask/superstruct@npm:^3.0.1, @metamask/superstruct@npm:^3.1.0":
   version: 3.1.0
   resolution: "@metamask/superstruct@npm:3.1.0"
   checksum: 00e4d0c0aae8b25ccc1885c1db0bb4ed1590010570140c255e4deee3bf8a10c859c8fce5e475b4ae09c8a56316207af87585b91f7f5a5c028d668ccd111f19e3

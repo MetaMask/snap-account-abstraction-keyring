@@ -47,6 +47,7 @@
     "@ethereumjs/util": "^9.0.3",
     "@metamask/keyring-api": "^8.0.2",
     "@metamask/snaps-sdk": "^6.1.1",
+    "@metamask/superstruct": "^3.0.1",
     "@metamask/utils": "^9.1.0",
     "@openzeppelin/contracts": "^4.2.0",
     "dotenv": "^16.3.1",
@@ -90,7 +91,6 @@
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "solidity-coverage": "^0.8.1",
-    "superstruct": "^1.0.3",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "^5.3.3"
