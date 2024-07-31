@@ -45,13 +45,14 @@
   "dependencies": {
     "@ethereumjs/tx": "^5.3.0",
     "@ethereumjs/util": "^9.0.3",
-    "@metamask/keyring-api": "^6.0.0",
-    "@metamask/snaps-sdk": "^4.0.1",
-    "@metamask/utils": "^8.4.0",
+    "@metamask/keyring-api": "^8.0.2",
+    "@metamask/snaps-sdk": "^6.1.1",
+    "@metamask/superstruct": "^3.0.1",
+    "@metamask/utils": "^9.1.0",
     "@openzeppelin/contracts": "^4.2.0",
     "dotenv": "^16.3.1",
     "ethers": "^6.10.0",
-    "uuid": "^9.0.0"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@lavamoat/allow-scripts": "^3.0.3",
@@ -60,7 +61,7 @@
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
     "@metamask/eslint-config-typescript": "^12.1.0",
-    "@metamask/snaps-cli": "^3.0.0",
+    "@metamask/snaps-cli": "^6.2.1",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
@@ -90,7 +91,6 @@
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "solidity-coverage": "^0.8.1",
-    "superstruct": "^1.0.3",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "^5.3.3"
@@ -102,5 +102,13 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "hardhat>@nomicfoundation/ethereumjs-blockchain>level>classic-level": false,
+      "hardhat>@nomicfoundation/ethereumjs-tx>ethereum-cryptography>secp256k1": false,
+      "hardhat>keccak": false,
+      "ts-node>@swc/core": false
+    }
   }
 }

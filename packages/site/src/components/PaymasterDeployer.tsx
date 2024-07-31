@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import type { ChainConfigs } from './ChainConfig';
@@ -7,6 +7,7 @@ import { ErrorContainer } from './ErrorContainer';
 import { SuccessContainer } from './SuccessContainer';
 import { TextField } from './TextField';
 import verifyingPaymaster from '../../../snap/artifacts/contracts/samples/VerifyingPaymaster.sol/VerifyingPaymaster.json';
+import { MetaMaskContext } from '../hooks';
 import { getChainConfigs, saveChainConfig } from '../utils';
 
 const PaymasterDeployerContainer = styled.div`
@@ -33,6 +34,7 @@ const PaymasterDeployerContent = styled.div`
 `;
 
 export const PaymasterDeployer = () => {
+  const [state] = useContext(MetaMaskContext);
   const [paymasterAddress, setPaymasterAddress] = useState<string | null>(null);
   const [paymasterSecretKey, setPaymasterSecretKey] = useState<string | null>(
     null,
@@ -43,6 +45,9 @@ export const PaymasterDeployer = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>();
 
   useEffect(() => {
+    if (!state.installedSnap) {
+      return;
+    }
     getChainConfigs()
       .then((chainConfigs: ChainConfigs) => {
         setConfigs(chainConfigs);
@@ -51,7 +56,7 @@ export const PaymasterDeployer = () => {
       .catch((error) => {
         setError(error);
       });
-  }, []);
+  }, [state]);
 
   const deployPaymaster = async () => {
     // clear state

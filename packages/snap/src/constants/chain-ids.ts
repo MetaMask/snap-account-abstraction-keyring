@@ -13,4 +13,6 @@ export const CHAIN_IDS = {
   LINEA_GOERLI: 59140,
   POLYGON_MUMBAI: 80001,
   CELO_ALFAJORES: 44787,
+  // Local host
+  LOCALHOST: 1337,
 };

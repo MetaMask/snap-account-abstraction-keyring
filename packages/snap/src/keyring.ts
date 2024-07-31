@@ -264,6 +264,7 @@ export class AccountAbstractionKeyring implements Keyring {
   async updateAccount(account: KeyringAccount): Promise<void> {
     const wallet =
       this.#state.wallets[account.id] ??
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throwError(`Account '${account.id}' not found`);
 
     if (

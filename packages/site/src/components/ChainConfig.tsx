@@ -1,11 +1,12 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import styled from 'styled-components';
 
 import { ErrorContainer } from './ErrorContainer';
 import { StyledBox } from './styledComponents';
 import { SuccessContainer } from './SuccessContainer';
 import { TextField } from './TextField';
+import { MetaMaskContext } from '../hooks';
 import { getChainConfigs, saveChainConfig } from '../utils';
 import { chainIdToName } from '../utils/chains';
 
@@ -80,17 +81,21 @@ export type ChainConfigs = {
 };
 
 export const ChainConfigComponent = () => {
+  const [state] = useContext(MetaMaskContext);
   const [chainConfigs, setChainConfigs] = useState<ChainConfigs>({});
   const [chainSelected, setChainSelected] = useState<string>('');
   const [successMessage, setSuccessMessage] = useState<string | null>();
   const [error, setError] = useState<Error | undefined>();
 
   useEffect(() => {
+    if (!state.installedSnap) {
+      return;
+    }
     getChainConfigs()
       .then((configs) => setChainConfigs(configs))
       // eslint-disable-next-line @typescript-eslint/no-shadow
       .catch((error) => setError(error));
-  }, []);
+  }, [state]);
 
   useEffect(() => {
     // set default values for unknown chain
@@ -148,6 +153,7 @@ export const ChainConfigComponent = () => {
           {error && <ErrorContainer error={error.message} />}
           {successMessage && <SuccessContainer message={successMessage} />}
           <Select
+            data-testid="chain-select"
             value={chainSelected ?? ''}
             onChange={(event) => {
               setChainSelected(event.target.value);
@@ -157,7 +163,11 @@ export const ChainConfigComponent = () => {
               {'Select Chain'}
             </SelectItem>
             {Object.keys(chainConfigs).map((option: string) => (
-              <SelectItem value={option} key={option}>
+              <SelectItem
+                value={option}
+                key={option}
+                data-testid={`chain-id-${option}`}
+              >
                 {chainIdToName(option) ?? `Chain ${option}`}
               </SelectItem>
             ))}
@@ -171,6 +181,7 @@ export const ChainConfigComponent = () => {
                       <ChainDescription key={key}>{title}</ChainDescription>
                       <TextField
                         id={key}
+                        data-testid={key}
                         placeholder={
                           chainConfigs?.[chainSelected]?.[
                             key as keyof ChainConfig
@@ -183,10 +194,15 @@ export const ChainConfigComponent = () => {
                         }
                         style={{
                           borderColor:
-                            key === 'bundlerUrl' &&
-                            !chainConfigs[chainSelected]?.bundlerUrl
-                              ? 'red'
-                              : undefined,
+                            [
+                              'customVerifyingPaymasterSK',
+                              'customVerifyingPaymasterAddress',
+                            ].includes(key) ||
+                            chainConfigs[chainSelected]?.[
+                              key as keyof ChainConfig
+                            ]
+                              ? undefined
+                              : 'red',
                         }}
                         onChange={(event) =>
                           updateSpecificChainConfig(
@@ -203,7 +219,11 @@ export const ChainConfigComponent = () => {
             </StyledBox>
           )}
 
-          <button type="button" onClick={async () => updateChainConfig()}>
+          <button
+            data-testid="set-chain-config-btn"
+            type="button"
+            onClick={async () => updateChainConfig()}
+          >
             Set Chain Config
           </button>
         </ChainConfigContent>

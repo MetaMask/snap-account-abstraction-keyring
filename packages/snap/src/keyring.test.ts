@@ -390,9 +390,12 @@ describe('Keyring', () => {
 
   describe('Delete Account', () => {
     it('should delete an account', async () => {
-      const account = await keyring.createAccount({ privateKey: aaOwnerSk });
+      const account = await keyring.createAccount({
+        privateKey: aaOwnerSk,
+      });
       await keyring.deleteAccount(account.id);
       await expect(keyring.getAccount(account.id)).rejects.toThrow(
+        // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
         `Account '${account.id}' not found`,
       );
       expect(await keyring.listAccounts()).toStrictEqual([]);
