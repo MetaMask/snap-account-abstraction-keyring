@@ -48,6 +48,10 @@ const defaultState: KeyringState = {
         DEFAULT_AA_FACTORIES['0.6.0']?.[CHAIN_IDS.SEPOLIA] ?? '',
       entryPoint: DEFAULT_ENTRYPOINTS[CHAIN_IDS.SEPOLIA]?.address ?? '',
     },
+    [CHAIN_IDS.LOCALHOST]: {
+      simpleAccountFactory: '',
+      entryPoint: '',
+    },
   },
   usePaymaster: false,
 };
