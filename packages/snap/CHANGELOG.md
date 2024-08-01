@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Added localhost to ChainConfig ([#120](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/120))
+- Add localhost chain ID to chain config ([#120](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/120))
 
 ## [0.3.0]
 

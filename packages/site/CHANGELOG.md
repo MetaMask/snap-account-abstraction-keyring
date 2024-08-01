@@ -9,9 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.0]
 
-### Added
+### Changed
 
-- Added localhost to ChainConfig ([#120](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/120))
+- Better user feedback if selected chain ID is not correct ([#120](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/120))
+  - It nows display a red border in case of error
+
+### Fixed
+
+- Fixed issues with test IDs, context usage and state ([#120](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/120))
 
 ## [0.3.0]
 
