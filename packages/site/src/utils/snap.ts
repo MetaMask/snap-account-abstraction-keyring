@@ -60,7 +60,7 @@ export const getSnap = async (version?: string): Promise<Snap | undefined> => {
  * @param params - Optional parameters for the method.
  * @returns A promise that resolves to the result of the Snap method invocation.
  */
-const walletInvokeSnap = async (method: string, params?: JSON) => {
+const walletInvokeSnap = async (method: string, params: JSON = {} as JSON) => {
   return await window.ethereum.request({
     method: 'wallet_invokeSnap',
     params: {
