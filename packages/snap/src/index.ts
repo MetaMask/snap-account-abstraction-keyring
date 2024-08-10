@@ -59,17 +59,13 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   switch (request.method) {
     case InternalMethod.SendUserOpBoba:
     case InternalMethod.SendUserOpBobaPM: {
-      const {
-        id,
-        method,
-        params,
-      } = request;
+      const { id, method, params } = request;
       return (await getKeyring()).submitRequest({
         id,
         request: {
           method,
-          params
-        }
+          params,
+        },
       } as any);
     }
 

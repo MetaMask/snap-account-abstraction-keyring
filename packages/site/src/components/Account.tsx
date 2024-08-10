@@ -20,12 +20,12 @@ export const Account = ({
   account,
   handleDelete,
   count,
-  currentAccount
+  currentAccount,
 }: {
-    currentAccount?: any;
-    account: KeyringAccount;
-    handleDelete: (accountId: string) => Promise<void>;
-    count: number;
+  currentAccount?: any;
+  account: KeyringAccount;
+  handleDelete: (accountId: string) => Promise<void>;
+  count: number;
 }) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
 
@@ -34,21 +34,34 @@ export const Account = ({
       <AccountTitleContainer onClick={() => setIsCollapsed(!isCollapsed)}>
         <AccountTitle>
           Account {count + 1}
-          {currentAccount && currentAccount?.address && currentAccount?.address?.toLowerCase() === account.address.toLowerCase() ? <StyledIcon>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="1.5" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg></StyledIcon> : <></>}
-
+          {currentAccount &&
+          currentAccount?.address &&
+          currentAccount?.address?.toLowerCase() ===
+            account.address.toLowerCase() ? (
+            <StyledIcon>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+                />
+              </svg>
+            </StyledIcon>
+          ) : (
+            <></>
+          )}
         </AccountTitle>
         <AccountTitleIconContainer>
           {isCollapsed ? (
-            <ExpandMoreIcon
-              fontSize="large"
-            />
+            <ExpandMoreIcon fontSize="large" />
           ) : (
-            <ExpandLessIcon
-                fontSize="large"
-            />
+            <ExpandLessIcon fontSize="large" />
           )}
         </AccountTitleIconContainer>
       </AccountTitleContainer>
@@ -77,14 +90,14 @@ export const Account = ({
             </ul>
           </AccountRow> */}
           <AccountRow alignItems="flex-end">
-              <MethodButton
-                width="30%"
-                margin="8px 0px 8px 8px"
-                onClick={async (): Promise<void> => {
-                  await handleDelete(account.id);
-                }}
-                label="Delete"
-              />
+            <MethodButton
+              width="30%"
+              margin="8px 0px 8px 8px"
+              onClick={async (): Promise<void> => {
+                await handleDelete(account.id);
+              }}
+              label="Delete"
+            />
           </AccountRow>
         </>
       )}

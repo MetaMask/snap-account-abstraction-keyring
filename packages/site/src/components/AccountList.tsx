@@ -15,11 +15,11 @@ const List = styled.ul`
 export const AccountList = ({
   accounts,
   handleDelete,
-  currentAccount
+  currentAccount,
 }: {
   accounts: KeyringAccount[];
   handleDelete: (accountId: string) => Promise<void>;
-    currentAccount?: KeyringAccount;
+  currentAccount?: KeyringAccount;
 }) => (
   <List>
     {accounts.map((account, index) => (

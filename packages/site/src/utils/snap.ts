@@ -31,28 +31,30 @@ export const connectSnap = async (
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
-        params: [{
-          chainId: '0x70d2'
-        }]
-      })
+        params: [
+          {
+            chainId: '0x70d2',
+          },
+        ],
+      });
     } catch (error: any) {
       if (error.code === 4902) {
         await window.ethereum.request({
           method: 'wallet_addEthereumChain',
-          params: [{
-            chainId: '0x70d2',
-            chainName: 'Boba Sepolia',
-            rpcUrls: ['https://sepolia.boba.network'],
-            nativeCurrency: {
-              name: 'ETH',
-              symbol: "ETH",
-              decimals: 18,
+          params: [
+            {
+              chainId: '0x70d2',
+              chainName: 'Boba Sepolia',
+              rpcUrls: ['https://sepolia.boba.network'],
+              nativeCurrency: {
+                name: 'ETH',
+                symbol: 'ETH',
+                decimals: 18,
+              },
+              blockExplorerUrls: ['https://testnet.bobascan.com'],
             },
-            blockExplorerUrls: [
-              'https://testnet.bobascan.com',
-            ],
-          }],
-        })
+          ],
+        });
       }
     }
   }
@@ -66,9 +68,12 @@ export const connectSnap = async (
 };
 
 export const loadAccountConnected = async () => {
-  const accounts: any = await window.ethereum.request({ method: 'eth_requestAccounts', params: [] });
-  return accounts[0]
-}
+  const accounts: any = await window.ethereum.request({
+    method: 'eth_requestAccounts',
+    params: [],
+  });
+  return accounts[0];
+};
 
 /**
  * Get the snap from MetaMask.
@@ -159,5 +164,5 @@ export const isLocalSnap = (snapId: string) => snapId.startsWith('local:');
 
 export const isConnectedNetworkBoba = () => {
   const currentChain = window.ethereum.networkVersion;
-  return currentChain === '28882'
-}
+  return currentChain === '28882';
+};

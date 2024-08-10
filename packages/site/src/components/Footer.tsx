@@ -1,5 +1,6 @@
 import React from 'react';
 import styled, { useTheme } from 'styled-components';
+
 import Logo from '../assets/boba-logo.png';
 
 const FooterWrapper = styled.footer`
@@ -13,7 +14,7 @@ const FooterWrapper = styled.footer`
 
 const BobaLogo = styled.img`
   width: 50px;
-`
+`;
 
 const PoweredByButton = styled.a`
   display: flex;

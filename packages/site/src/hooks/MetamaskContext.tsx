@@ -116,11 +116,9 @@ export const MetaMaskProvider = ({ children }: { children: ReactNode }) => {
       await detectMetaMask();
 
       if (state.hasMetaMask) {
-
         await detectNetworkInstalled();
 
         if (state.isBobaSepolia) {
-
           await detectSnapInstalled();
         }
       }
