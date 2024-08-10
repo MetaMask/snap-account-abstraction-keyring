@@ -36,7 +36,15 @@ async function getKeyring(): Promise<AccountAbstractionKeyring> {
  * @returns True if the caller is allowed to call the method, false otherwise.
  */
 function hasPermission(origin: string, method: string): boolean {
-  return originPermissions.get(origin)?.includes(method) ?? false;
+  let baseUrl: string = origin
+  try {
+    // using baseUrl to e.g. have generic support for other ports, and to ignore query parameters, subpaths, ..
+    const { protocol, hostname } = new URL(origin);
+    baseUrl = `${protocol}//${hostname}`;
+  } catch {
+    console.warn('[Snap] Could not extract baseUrl from ', origin)
+  }
+  return originPermissions.get(baseUrl)?.includes(method) ?? false;
 }
 
 export const onRpcRequest: OnRpcRequestHandler = async ({
