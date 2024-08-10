@@ -4,4 +4,7 @@ export const CHAIN_IDS = {
   // Test Nets
   SEPOLIA: 11155111,
   BOBA_SEPOLIA: 28882,
+
+  // local
+  LOCAL: 901,
 };

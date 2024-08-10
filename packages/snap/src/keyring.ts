@@ -188,10 +188,10 @@ export function calcPreVerificationGas(userOp: any, overheads?: any): number {
   const ret = Math.round(
     // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
     callDataCost +
-      ov.fixed / ov.bundleSize +
-      // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
-      ov.perUserOp +
-      ov.perUserOpWord * lengthInWord,
+    ov.fixed / ov.bundleSize +
+    // eslint-disable-next-line @typescript-eslint/restrict-plus-operands
+    ov.perUserOp +
+    ov.perUserOpWord * lengthInWord,
   );
   return ret;
 }
@@ -269,7 +269,7 @@ export class AccountAbstractionKeyring implements Keyring {
       options.saltIndex !== undefined
         ? ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [0])
         : (options.salt as string) ??
-          ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
+        ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
     const aaAddress = await aaFactory['getAddress(address,uint256)'](
       admin,
@@ -454,7 +454,7 @@ export class AccountAbstractionKeyring implements Keyring {
           ? Buffer.from(hexToBytes(addHexPrefix(privateKey)))
           : // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore - available in snaps
-            Buffer.from(crypto.getRandomValues(new Uint8Array(32))),
+          Buffer.from(crypto.getRandomValues(new Uint8Array(32))),
       'Invalid private key',
     );
 
@@ -469,11 +469,11 @@ export class AccountAbstractionKeyring implements Keyring {
   }
 
   async #handleSigningRequest({
-    account,
-    scope,
-    method,
-    params,
-  }: {
+                                account,
+                                scope,
+                                method,
+                                params,
+                              }: {
     account: KeyringAccount;
     scope: string;
     method: string;
@@ -501,12 +501,13 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Account does not support chain: ${scope}`);
     }
 
+    /** @dev params is always an array, payload can be an array, or single tx */
+    const payload = (params as any)[0]?.payload
     /**
      * @param params
      * @dev Allow people to pass transactions as single object (as we do in examples rn) but also as array as intended
      */
-    const mapParamsToTransactions = (params: Json): EthBaseTransaction[] => {
-      const payload = (params as any)?.payload; // payload can be an array, or single tx
+    const mapParamsToTransactions = (params: any): EthBaseTransaction[] => {
       if (Array.isArray(payload)) {
         return payload as EthBaseTransaction[];
       }
@@ -514,8 +515,7 @@ export class AccountAbstractionKeyring implements Keyring {
     };
 
     /** @dev Allow developers to override certain params for debugging purposes. */
-    const overrides: UserOpOverrides | undefined = (params as any)
-      ?.overrides as UserOpOverrides; // TODO: We might want to use that object for the other RPC calls too
+    const overrides: UserOpOverrides | undefined = payload?.overrides as UserOpOverrides; // TODO: We might want to use that object for the other RPC calls too
 
     switch (method) {
       case InternalMethod.SendUserOpBoba: {
@@ -642,6 +642,7 @@ export class AccountAbstractionKeyring implements Keyring {
       data,
     ]);
 
+    throwError('snappp, ' + await entryPoint.getAddress() + " / "+ wallet.account.address + " / " + callDataReq)
     const callGasLimitReq =
       overrides?.callGasLimitReq ??
       (await provider.estimateGas({
@@ -725,12 +726,12 @@ export class AccountAbstractionKeyring implements Keyring {
 
     let pmPayload: (
       | {
-          value: string;
-          type: NodeType.Copyable;
-          sensitive?: boolean /* eslint-disable camelcase */ | undefined;
-        }
+      value: string;
+      type: NodeType.Copyable;
+      sensitive?: boolean /* eslint-disable camelcase */ | undefined;
+    }
       | { value: string; type: NodeType.Text; markdown?: boolean | undefined }
-    )[] = [];
+      )[] = [];
     if (paymasterType) {
       pmPayload = [text('Boba paymaster has been selected!')];
     }

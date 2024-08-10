@@ -1,4 +1,5 @@
 import { CHAIN_IDS } from './chain-ids';
+import 'dotenv/config';
 
 export const AA_CONFIG = {
   [CHAIN_IDS.BOBA_ETH]: {
@@ -25,5 +26,13 @@ export const AA_CONFIG = {
     bobaPaymaster: '0x8223388f7aF211d84289783ed97ffC5Fefa14256',
     bobaToken: '0x4200000000000000000000000000000000000023',
     bundlerUrl: 'https://bundler.sepolia.boba.network/rpc',
+  },
+  [CHAIN_IDS.LOCAL]: {
+    version: '0.6.0',
+    entryPoint: process.env.LOCAL_ENTRYPOINT,
+    simpleAccountFactory: process.env.LOCAL_SIMPLE_ACCOUNT_FACTORY,
+    bobaPaymaster: process.env.LOCAL_BOBAPAYMASTER,
+    bobaToken: '0x4200000000000000000000000000000000000023',
+    bundlerUrl: 'http://localhost:3300/rpc',
   },
 };
