@@ -11,7 +11,7 @@ const config: SnapConfig = {
   },
   environment: {
     DAPP_ORIGIN_PRODUCTION: 'https://gateway.boba.network/',
-    DAPP_ORIGIN_DEVELOPMENT: 'http://localhost:8000/',
+    DAPP_ORIGIN_DEVELOPMENT: 'http://0.0.0.0:8000/',
   },
   stats: {
     builtIns: {

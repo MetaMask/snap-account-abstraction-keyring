@@ -501,12 +501,13 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Account does not support chain: ${scope}`);
     }
 
+    /** @dev params is always an array, payload can be an array, or single tx */
+    const payload = (params as any)[0]?.payload
     /**
      * @param params
      * @dev Allow people to pass transactions as single object (as we do in examples rn) but also as array as intended
      */
-    const mapParamsToTransactions = (params: Json): EthBaseTransaction[] => {
-      const payload = (params as any)?.payload; // payload can be an array, or single tx
+    const mapParamsToTransactions = (params: any): EthBaseTransaction[] => {
       if (Array.isArray(payload)) {
         return payload as EthBaseTransaction[];
       }
@@ -514,8 +515,7 @@ export class AccountAbstractionKeyring implements Keyring {
     };
 
     /** @dev Allow developers to override certain params for debugging purposes. */
-    const overrides: UserOpOverrides | undefined = (params as any)
-      ?.overrides as UserOpOverrides; // TODO: We might want to use that object for the other RPC calls too
+    const overrides: UserOpOverrides | undefined = payload?.overrides as UserOpOverrides; // TODO: We might want to use that object for the other RPC calls too
 
     switch (method) {
       case InternalMethod.SendUserOpBoba: {
