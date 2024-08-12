@@ -1,6 +1,4 @@
 import { CHAIN_IDS } from './chain-ids';
-import * as dotenv from 'dotenv';
-dotenv.config()
 
 export const AA_CONFIG = {
   [CHAIN_IDS.BOBA_ETH]: {
