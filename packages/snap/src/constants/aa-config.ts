@@ -28,9 +28,9 @@ export const AA_CONFIG = {
   },
   [CHAIN_IDS.LOCAL]: {
     version: '0.6.0',
-    entryPoint: process.env.LOCAL_ENTRYPOINT,
-    simpleAccountFactory: process.env.LOCAL_SIMPLE_ACCOUNT_FACTORY,
-    bobaPaymaster: process.env.LOCAL_BOBAPAYMASTER,
+    entryPoint: '0x',
+    simpleAccountFactory: '0x',
+    bobaPaymaster: '0x',
     bobaToken: '0x4200000000000000000000000000000000000023',
     bundlerUrl: 'http://localhost:3300/rpc',
   },

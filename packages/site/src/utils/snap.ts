@@ -1,6 +1,7 @@
 import snapPackageInfo from '../../../snap/package.json';
 import { defaultSnapOrigin } from '../config';
 import type { GetSnapsResponse, Snap } from '../types';
+import {isLocal} from "../config/snap";
 
 /**
  * Get the installed snaps in MetaMask.
@@ -27,13 +28,16 @@ export const connectSnap = async (
 ) => {
   // check for current connected chain and force user to switch to boba sepolia.
   const currentChain = window.ethereum.networkVersion;
-  if (currentChain !== '28882') {
+  // 901 = local boba network
+  const desiredChain: string = isLocal ? '901' : '28882';
+  if (currentChain !== desiredChain) {
+    const hexDesiredChain = isLocal ? '0x385' : '0x70d2';
     try {
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [
           {
-            chainId: '0x70d2',
+            chainId: hexDesiredChain,
           },
         ],
       });
@@ -43,15 +47,21 @@ export const connectSnap = async (
           method: 'wallet_addEthereumChain',
           params: [
             {
-              chainId: '0x70d2',
-              chainName: 'Boba Sepolia',
-              rpcUrls: ['https://sepolia.boba.network'],
+              chainId: hexDesiredChain,
+              chainName: isLocal ? 'Boba Local' : 'Boba Sepolia',
+              rpcUrls: [
+                isLocal
+                  ? 'http://localhost:9545'
+                  : 'https://sepolia.boba.network',
+              ],
               nativeCurrency: {
                 name: 'ETH',
                 symbol: 'ETH',
                 decimals: 18,
               },
-              blockExplorerUrls: ['https://testnet.bobascan.com'],
+              blockExplorerUrls: [
+                isLocal ? '' : 'https://testnet.bobascan.com',
+              ],
             },
           ],
         });
