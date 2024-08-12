@@ -59,9 +59,7 @@ export const connectSnap = async (
                 symbol: 'ETH',
                 decimals: 18,
               },
-              blockExplorerUrls: [
-                isLocal ? '' : 'https://testnet.bobascan.com',
-              ],
+              blockExplorerUrls: ['https://testnet.bobascan.com'],
             },
           ],
         });
