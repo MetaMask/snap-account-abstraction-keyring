@@ -642,7 +642,6 @@ export class AccountAbstractionKeyring implements Keyring {
       data,
     ]);
 
-    throwError('snappp, ' + await entryPoint.getAddress() + " / "+ wallet.account.address + " / " + callDataReq)
     const callGasLimitReq =
       overrides?.callGasLimitReq ??
       (await provider.estimateGas({
