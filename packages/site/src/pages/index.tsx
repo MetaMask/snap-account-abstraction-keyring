@@ -68,6 +68,11 @@ const TOKEN_ADDR: any = {
     usdcToken: '0x4200000000000000000000000000000000000023',
     paymaster: '0x8223388f7aF211d84289783ed97ffC5Fefa14256',
   },
+  901: {
+    bobaToken: '0x4200000000000000000000000000000000000023',
+    usdcToken: '0x4200000000000000000000000000000000000023',
+    paymaster: '0x', // TODO: not supported locally yet
+  },
 };
 
 const Index = () => {
