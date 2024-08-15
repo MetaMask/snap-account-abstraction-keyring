@@ -111,6 +111,7 @@ export type UserOpOverrides = {
   callGasLimitReq?: string;
   maxFeePerGasReq?: string;
   maxPriorityFeePerGasReq?: string;
+  preVerificationGasReqMultiplier?: number;
 };
 
 // eslint-disable-next-line jsdoc/require-jsdoc
@@ -643,19 +644,23 @@ export class AccountAbstractionKeyring implements Keyring {
       data,
     ]);
 
+    const entrypointAddr = await entryPoint.getAddress();
+    console.log('Estimating callGas..', entrypointAddr, wallet.account.address, callDataReq, await provider.getNetwork(), await provider.getBalance(wallet.account.address));
     const callGasLimitReq =
       overrides?.callGasLimitReq ??
       (await provider.estimateGas({
-        from: await entryPoint.getAddress(),
+        from: entrypointAddr,
         to: wallet.account.address,
         data: callDataReq,
       }));
 
+    console.log('Init gas req');
     // eslint-disable-next-line prefer-template
     let initGasReq;
     if (initCode === null || initCode === '0x') {
       initGasReq = BigInt(0);
     } else {
+      console.log('Estimating initCode related calldata..');
       const deployerCallDataReq = `0x${initCode.substring(42)}`;
       initGasReq = await provider.estimateGas({
         to: initCode.substring(0, 42),
@@ -700,6 +705,7 @@ export class AccountAbstractionKeyring implements Keyring {
     if (chainId.toString() === '11155111') {
       preVerificationGasReq += 10000;
     }
+    preVerificationGasReq *= overrides?.preVerificationGasReqMultiplier ?? 1;
 
     // check if calculated preVerificationGas is adequate by calling eth_estimateUserOperationGas on the bundler here
 
@@ -915,7 +921,16 @@ export class AccountAbstractionKeyring implements Keyring {
 
       const data = await response.json();
       console.log('Response:', data);
-      console.log(data.error?.message);
+      if (data.error?.message) {
+        console.error(
+          'JSON ESTIMATE: ',
+          JSON.stringify(requestBody),
+          requestBody,
+          bundlerUrl,
+        );
+        // this might be a bundler related message during estimation, we must not continue and need to stop the user here
+        throw new Error(data.error.message);
+      }
       return data; // Return the data
     } catch (error) {
       console.error('Error:', error);
