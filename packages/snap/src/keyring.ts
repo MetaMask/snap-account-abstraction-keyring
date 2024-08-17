@@ -4,14 +4,12 @@ import {
   addHexPrefix,
   Address,
   isValidPrivate,
-  stripHexPrefix,
   toChecksumAddress,
 } from '@ethereumjs/util';
 import type {
   EthBaseTransaction,
   EthBaseUserOperation,
   EthUserOperation,
-  EthUserOperationPatch,
   Keyring,
   KeyringAccount,
   KeyringRequest,
@@ -112,6 +110,12 @@ export type UserOpOverrides = {
   maxFeePerGasReq?: string;
   maxPriorityFeePerGasReq?: string;
   preVerificationGasReqMultiplier?: number;
+};
+
+type IUserOpGasEstimate = {
+  callGasLimit: string | undefined;
+  preVerificationGas: string | undefined;
+  verificationGasLimit: string | undefined;
 };
 
 // eslint-disable-next-line jsdoc/require-jsdoc
@@ -618,6 +622,7 @@ export class AccountAbstractionKeyring implements Keyring {
           16,
         )}`;
       }
+      console.log('Using Nonce: ', nonce);
       if (!wallet.chains[chainId.toString()]) {
         wallet.chains[chainId.toString()] = true;
         await this.#saveState();
@@ -645,14 +650,19 @@ export class AccountAbstractionKeyring implements Keyring {
     ]);
 
     const entrypointAddr = await entryPoint.getAddress();
-    console.log('Estimating callGas..', entrypointAddr, wallet.account.address, callDataReq, await provider.getNetwork(), await provider.getBalance(wallet.account.address));
-    const callGasLimitReq =
-      overrides?.callGasLimitReq ??
-      (await provider.estimateGas({
-        from: entrypointAddr,
-        to: wallet.account.address,
-        data: callDataReq,
-      }));
+    let callGasLimitReq: string | bigint = 10000n;
+    try {
+      callGasLimitReq =
+        overrides?.callGasLimitReq ??
+        (await provider.estimateGas({
+          from: entrypointAddr,
+          to: wallet.account.address,
+          data: callDataReq,
+        }));
+    } catch (error: any) {
+      // can be safely ignored, as this is likely being overridden by the bundler reported callGasLimit
+      console.error(error);
+    }
 
     console.log('Init gas req');
     // eslint-disable-next-line prefer-template
@@ -721,13 +731,47 @@ export class AccountAbstractionKeyring implements Keyring {
       await entryPoint.getAddress(),
       chainConfig.bundlerUrl,
     );
-    const preVerificationGasFromBundler =
-      estimatedGas.result?.preVerificationGas;
-    if (
-      preVerificationGasFromBundler &&
-      preVerificationGasFromBundler > preVerificationGasReq
-    ) {
-      ethBaseUserOp.preVerificationGas = preVerificationGasFromBundler;
+    if (estimatedGas.preVerificationGas) {
+      const preVerificationGasBundler = parseInt(
+        estimatedGas.preVerificationGas,
+        16,
+      );
+      ethBaseUserOp.preVerificationGas = addHexPrefix(
+        (preVerificationGasBundler > preVerificationGasReq
+          ? preVerificationGasBundler
+          : preVerificationGasReq
+        ).toString(16),
+      );
+      console.log(
+        'Preverification gas set: ',
+        ethBaseUserOp.preVerificationGas,
+      );
+    }
+    if (estimatedGas.verificationGasLimit) {
+      const verificationGasLimitBundler = parseInt(
+        estimatedGas.verificationGasLimit,
+        16,
+      );
+      ethBaseUserOp.verificationGasLimit = addHexPrefix(
+        (verificationGasLimitBundler > verificationGasLimitReq
+          ? verificationGasLimitBundler
+          : verificationGasLimitReq
+        ).toString(16),
+      );
+      console.log(
+        'Set verificationGasLimit: ',
+        ethBaseUserOp.verificationGasLimit,
+      );
+    }
+    if (estimatedGas.callGasLimit) {
+      const callGasLimitBundler = parseInt(estimatedGas.callGasLimit, 16);
+      ethBaseUserOp.callGasLimit = addHexPrefix(
+        (callGasLimitBundler > Number(callGasLimitReq)
+          ? callGasLimitBundler
+          : callGasLimitReq
+        ).toString(16),
+      );
+      console.log('Set callgas limit: ', ethBaseUserOp.callGasLimit);
     }
 
     let pmPayload: (
@@ -878,7 +922,7 @@ export class AccountAbstractionKeyring implements Keyring {
     return ethBaseUserOp;
   }
 
-  async #sendUserOperation(userOp, entryPointAddress, bundlerUrl) {
+  async #sendUserOperation(userOp, entryPointAddress: string, bundlerUrl: string) {
     const requestBody = {
       method: 'eth_sendUserOperation',
       id: 1,
@@ -903,7 +947,11 @@ export class AccountAbstractionKeyring implements Keyring {
     }
   }
 
-  async #estimateUserOpGas(userOp, entryPointAddress, bundlerUrl) {
+  async #estimateUserOpGas(
+    userOp,
+    entryPointAddress,
+    bundlerUrl: string,
+  ): Promise<IUserOpGasEstimate> {
     const requestBody = {
       method: 'eth_estimateUserOperationGas',
       id: 1,
@@ -931,7 +979,18 @@ export class AccountAbstractionKeyring implements Keyring {
         // this might be a bundler related message during estimation, we must not continue and need to stop the user here
         throw new Error(data.error.message);
       }
-      return data; // Return the data
+      const resData = data?.result;
+      return {
+        verificationGasLimit: resData?.verificationGasLimit
+          ? addHexPrefix(resData?.verificationGasLimit)
+          : undefined,
+        preVerificationGas: resData?.preVerificationGas
+          ? addHexPrefix(resData?.preVerificationGas)
+          : undefined,
+        callGasLimit: resData?.callGasLimit
+          ? addHexPrefix(resData?.callGasLimit)
+          : undefined,
+      };
     } catch (error) {
       console.error('Error:', error);
       throw error;
