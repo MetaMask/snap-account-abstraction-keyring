@@ -4,14 +4,12 @@ import {
   addHexPrefix,
   Address,
   isValidPrivate,
-  stripHexPrefix,
   toChecksumAddress,
 } from '@ethereumjs/util';
 import type {
   EthBaseTransaction,
   EthBaseUserOperation,
   EthUserOperation,
-  EthUserOperationPatch,
   Keyring,
   KeyringAccount,
   KeyringRequest,
@@ -23,6 +21,15 @@ import {
   EthMethod,
   KeyringEvent,
 } from '@metamask/keyring-api';
+import type { NodeType } from '@metamask/snaps-sdk';
+import {
+  copyable,
+  DialogType,
+  heading,
+  NotificationType,
+  panel,
+  text,
+} from '@metamask/snaps-sdk';
 import type { CaipChainId, Json, JsonRpcRequest } from '@metamask/utils';
 import { hexToBytes, parseCaipChainId } from '@metamask/utils';
 import { Buffer } from 'buffer';
@@ -55,7 +62,6 @@ import {
   getSignerPrivateKey,
 } from './utils/util';
 import { validateConfig } from './utils/validation';
-import { copyable, DialogType, heading, NodeType, NotificationType, panel, text } from '@metamask/snaps-sdk';
 
 const unsupportedAAMethods = [
   EthMethod.SignTransaction,
@@ -98,14 +104,28 @@ export const DefaultGasOverheads = {
   sigSize: 65,
 };
 
+export type UserOpOverrides = {
+  nonce?: string;
+  callGasLimitReq?: string;
+  maxFeePerGasReq?: string;
+  maxPriorityFeePerGasReq?: string;
+  preVerificationGasReqMultiplier?: number;
+};
+
+type IUserOpGasEstimate = {
+  callGasLimit: string | undefined;
+  preVerificationGas: string | undefined;
+  verificationGasLimit: string | undefined;
+};
+
 // eslint-disable-next-line jsdoc/require-jsdoc
 export function packUserOp(op: any, forSignature = true): string {
   if (forSignature) {
     return ethers.AbiCoder.defaultAbiCoder().encode(
       // eslint-disable-next-line prettier/prettier
-      ['address','uint256', 'bytes32', 'bytes32',
+      ["address", "uint256", "bytes32", "bytes32",
         // eslint-disable-next-line prettier/prettier
-        'uint256', 'uint256', 'uint256', 'uint256', 'uint256',
+        "uint256", "uint256", "uint256", "uint256", "uint256",
         'bytes32',
       ],
       [
@@ -127,9 +147,9 @@ export function packUserOp(op: any, forSignature = true): string {
     // for the purpose of calculating gas cost encode also signature (and no keccak of bytes)
     return ethers.AbiCoder.defaultAbiCoder().encode(
       // eslint-disable-next-line prettier/prettier
-      ['address', 'uint256', 'bytes', 'bytes',
+      ["address", "uint256", "bytes", "bytes",
         // eslint-disable-next-line prettier/prettier
-        'uint256', 'uint256', 'uint256', 'uint256', 'uint256',
+        "uint256", "uint256", "uint256", "uint256", "uint256",
         'bytes',
         'bytes',
       ],
@@ -256,7 +276,10 @@ export class AccountAbstractionKeyring implements Keyring {
         : (options.salt as string) ??
           ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
-    const aaAddress = await aaFactory['getAddress(address,uint256)'](admin, salt);
+    const aaAddress = await aaFactory['getAddress(address,uint256)'](
+      admin,
+      salt,
+    );
 
     if (!isUniqueAddress(aaAddress, Object.values(this.#state.wallets))) {
       throw new Error(
@@ -395,13 +418,13 @@ export class AccountAbstractionKeyring implements Keyring {
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
 
-    const { scope } = (params as any)[0] || {}
-    console.log(`handling goes here`, scope, JSON.stringify(request))
+    const { scope } = (params as any)[0] || {};
+    console.log(`handling goes here`, scope, JSON.stringify(request));
     const signature = await this.#handleSigningRequest({
       account: this.#getWalletById(request.id).account,
       method,
       params,
-      scope: scope,
+      scope,
     });
     return {
       pending: false,
@@ -483,21 +506,38 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Account does not support chain: ${scope}`);
     }
 
+    /** @dev params is always an array, payload can be an array, or single tx */
+    const payload = (params as any)[0]?.payload;
+    /**
+     * @param params
+     * @dev Allow people to pass transactions as single object (as we do in examples rn) but also as array as intended
+     */
+    const mapParamsToTransactions = (): EthBaseTransaction[] => {
+      if (Array.isArray(payload)) {
+        return payload as EthBaseTransaction[];
+      }
+      return [payload as EthBaseTransaction];
+    };
+
+    /** @dev Allow developers to override certain params for debugging purposes. */
+    const overrides: UserOpOverrides | undefined =
+      payload?.overrides as UserOpOverrides; // TODO: We might want to use that object for the other RPC calls too
+
     switch (method) {
       case InternalMethod.SendUserOpBoba: {
         console.log('Trigger boba send request');
-        const transactions = params as EthBaseTransaction[];
+
         return await this.#prepareAndSignUserOperationBoba(
           account.address,
-          transactions,
+          mapParamsToTransactions(),
           '', // paymaster type
           '0x', /// paymaster address
           '0x', // fee token address
+          overrides,
         );
       }
 
       case InternalMethod.SendUserOpBobaPM: {
-        const transactions = params as EthBaseTransaction[];
         const chainConfig = this.#getChainConfig(Number(chainId));
         if (!chainConfig?.bobaPaymaster) {
           throwError(`[Snap] Paymaster not found for chain: ${chainId}`);
@@ -507,18 +547,21 @@ export class AccountAbstractionKeyring implements Keyring {
         }
         return await this.#prepareAndSignUserOperationBoba(
           account.address,
-          transactions,
+          mapParamsToTransactions(),
           'alt_fee',
           chainConfig.bobaPaymaster,
           chainConfig.bobaToken,
+          overrides,
         );
       }
 
       case EthMethod.PrepareUserOperation: {
-        const transactions = params as EthBaseTransaction[];
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore-error will fix type in next PR
-        return await this.#prepareUserOperation(account.address, transactions);
+        return await this.#prepareUserOperation(
+          account.address,
+          mapParamsToTransactions(),
+        );
       }
 
       // case EthMethod.PatchUserOperation: {
@@ -543,6 +586,7 @@ export class AccountAbstractionKeyring implements Keyring {
     paymasterType: string,
     paymasterAddr: string,
     tokenAddr: string,
+    overrides?: UserOpOverrides,
   ): Promise<EthUserOperation> {
     if (transactions.length !== 1) {
       throwError(`[Snap] Only one transaction per UserOp supported`);
@@ -571,9 +615,14 @@ export class AccountAbstractionKeyring implements Keyring {
     let nonce = '0x0';
     let initCode = '0x';
     try {
-      nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
-        16,
-      )}`;
+      if (overrides?.nonce) {
+        nonce = overrides.nonce;
+      } else {
+        nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
+          16,
+        )}`;
+      }
+      console.log('Using Nonce: ', nonce);
       if (!wallet.chains[chainId.toString()]) {
         wallet.chains[chainId.toString()] = true;
         await this.#saveState();
@@ -588,26 +637,41 @@ export class AccountAbstractionKeyring implements Keyring {
       throwError(`[Snap] Bundler URL not found for chain: ${chainId}`);
     }
 
-    // ethers.utils.hexlify(transaction.value)
-    // TODO: simplify transaction object to not have payload
+    const { to, value, data } = transaction;
+    if (!to || !value || !data) {
+      throwError(
+        `[Snap] Transaction object invalid. Missing either to, value or data field.`,
+      );
+    }
     const callDataReq = aaInstance.interface.encodeFunctionData('execute', [
-      (transaction as any).payload.to ?? ethers.ZeroAddress,
-      (transaction as any).payload.value ?? '0x00',
-      (transaction as any).payload.data ?? ethers.ZeroHash,
+      to,
+      value,
+      data,
     ]);
 
-    const callGasLimitReq = await provider.estimateGas({
-      from: await entryPoint.getAddress(),
-      to: wallet.account.address,
-      data: callDataReq,
-    });
+    const entrypointAddr = await entryPoint.getAddress();
+    let callGasLimitReq: string | bigint = 10000n;
+    try {
+      callGasLimitReq =
+        overrides?.callGasLimitReq ??
+        (await provider.estimateGas({
+          from: entrypointAddr,
+          to: wallet.account.address,
+          data: callDataReq,
+        }));
+    } catch (error: any) {
+      // can be safely ignored, as this is likely being overridden by the bundler reported callGasLimit
+      console.error(error);
+    }
 
+    console.log('Init gas req');
     // eslint-disable-next-line prefer-template
     let initGasReq;
     if (initCode === null || initCode === '0x') {
       initGasReq = BigInt(0);
     } else {
-      const deployerCallDataReq = '0x' + initCode.substring(42);
+      console.log('Estimating initCode related calldata..');
+      const deployerCallDataReq = `0x${initCode.substring(42)}`;
       initGasReq = await provider.estimateGas({
         to: initCode.substring(0, 42),
         data: deployerCallDataReq,
@@ -618,9 +682,14 @@ export class AccountAbstractionKeyring implements Keyring {
     const verificationGasLimitReq = BigInt(100000) + initGasReq;
 
     const feeData = await provider.getFeeData();
-    const maxFeePerGasReq = feeData.maxFeePerGas ?? BigInt('1000000000');
+    const maxFeePerGasReq =
+      overrides?.maxFeePerGasReq ??
+      feeData.maxFeePerGas ??
+      BigInt('1000000000');
     const maxPriorityFeePerGasReq =
-      feeData.maxPriorityFeePerGas ?? BigInt('1000000000');
+      overrides?.maxPriorityFeePerGasReq ??
+      feeData.maxPriorityFeePerGas ??
+      BigInt('1000000000');
 
     const paymasterAndDataReq = await this.#getPaymasterAndData(
       paymasterType,
@@ -646,6 +715,7 @@ export class AccountAbstractionKeyring implements Keyring {
     if (chainId.toString() === '11155111') {
       preVerificationGasReq += 10000;
     }
+    preVerificationGasReq *= overrides?.preVerificationGasReqMultiplier ?? 1;
 
     // check if calculated preVerificationGas is adequate by calling eth_estimateUserOperationGas on the bundler here
 
@@ -655,50 +725,97 @@ export class AccountAbstractionKeyring implements Keyring {
       signature: DUMMY_SIGNATURE,
     };
 
-    console.log(ethBaseUserOp)
+    console.log(ethBaseUserOp);
     const estimatedGas = await this.#estimateUserOpGas(
       ethBaseUserOp,
       await entryPoint.getAddress(),
       chainConfig.bundlerUrl,
     );
-    const preVerificationGasFromBundler = estimatedGas.result?.preVerificationGas;
-    if (
-      preVerificationGasFromBundler &&
-      preVerificationGasFromBundler > preVerificationGasReq
-    ) {
-      ethBaseUserOp.preVerificationGas = preVerificationGasFromBundler;
+    if (estimatedGas.preVerificationGas) {
+      const preVerificationGasBundler = parseInt(
+        estimatedGas.preVerificationGas,
+        16,
+      );
+      ethBaseUserOp.preVerificationGas = addHexPrefix(
+        (preVerificationGasBundler > preVerificationGasReq
+          ? preVerificationGasBundler
+          : preVerificationGasReq
+        ).toString(16),
+      );
+      console.log(
+        'Preverification gas set: ',
+        ethBaseUserOp.preVerificationGas,
+      );
+    }
+    if (estimatedGas.verificationGasLimit) {
+      const verificationGasLimitBundler = parseInt(
+        estimatedGas.verificationGasLimit,
+        16,
+      );
+      ethBaseUserOp.verificationGasLimit = addHexPrefix(
+        (verificationGasLimitBundler > verificationGasLimitReq
+          ? verificationGasLimitBundler
+          : verificationGasLimitReq
+        ).toString(16),
+      );
+      console.log(
+        'Set verificationGasLimit: ',
+        ethBaseUserOp.verificationGasLimit,
+      );
+    }
+    if (estimatedGas.callGasLimit) {
+      const callGasLimitBundler = parseInt(estimatedGas.callGasLimit, 16);
+      ethBaseUserOp.callGasLimit = addHexPrefix(
+        (callGasLimitBundler > Number(callGasLimitReq)
+          ? callGasLimitBundler
+          : callGasLimitReq
+        ).toString(16),
+      );
+      console.log('Set callgas limit: ', ethBaseUserOp.callGasLimit);
     }
 
-    let pmPayload: ({ value: string; type: NodeType.Copyable; sensitive?: boolean /* eslint-disable camelcase */ | undefined; } | { value: string; type: NodeType.Text; markdown?: boolean | undefined; })[] = [];
+    let pmPayload: (
+      | {
+          value: string;
+          type: NodeType.Copyable;
+          sensitive?: boolean /* eslint-disable camelcase */ | undefined;
+        }
+      | { value: string; type: NodeType.Text; markdown?: boolean | undefined }
+    )[] = [];
     if (paymasterType) {
-      pmPayload = [text("Boba paymaster has been selected!")];
+      pmPayload = [text('Boba paymaster has been selected!')];
     }
 
     // For Funds transfer (specific tokens) modify dialog accordingly,
     // for general tx show general dialog
-    const result = await snap.request({
-      method: "snap_dialog",
+    const result = (await snap.request({
+      method: 'snap_dialog',
       params: {
         type: DialogType.Confirmation,
         // id: "ghjkl",
         content: panel([
-          heading("Sending Tx to!"),
+          heading('Sending Tx to!'),
           ...pmPayload,
-          text("Target Address"),
-          copyable((transaction as any).payload.to),
-          text("Tx Value"),
-          copyable((transaction as any).payload.value),
-          text("Tx Data"),
-          copyable((transaction as any).payload.data),
+          text('Target Address'),
+          copyable(to),
+          text('Tx Value'),
+          copyable(value),
+          text('Tx Data'),
+          copyable(data),
         ]),
       },
-    }) as any;
+    })) as any;
 
     if (!result) {
-      throw new Error(
-        `User declien transaction!`,
-      );
+      throw new Error(`User declined transaction!`);
     }
+
+    ethBaseUserOp.signature = '0x';
+    const userOpHash = getUserOperationHash(
+      ethBaseUserOp,
+      await entryPoint.getAddress(),
+      chainId.toString(10),
+    );
 
     const signedUserOp = await this.#signUserOperation(address, ethBaseUserOp);
     console.log(signedUserOp);
@@ -712,23 +829,21 @@ export class AccountAbstractionKeyring implements Keyring {
     );
     console.log(bundlerRes);
     if (!bundlerRes.result) {
-      console.log(bundlerRes.error)
-      throw new Error(
-        `UserOp Failed ${bundlerRes.error.message}`,
-      );
+      console.log(bundlerRes.error);
+      throw new Error(`UserOp Failed ${bundlerRes.error.message}`);
     }
 
-    await snap.request({
-      method: "snap_dialog",
+    (await snap.request({
+      method: 'snap_dialog',
       params: {
         type: DialogType.Alert,
         content: panel([
-          heading("Transaction Success!"),
-          text("UserOP has been send to bundler"),
+          heading('Transaction Success!'),
+          text(`UserOP has been send to bundler: ${userOpHash} (UserOp Hash)`),
           copyable(signedUserOp),
         ]),
       },
-    }) as any;
+    })) as any;
 
     return ethBaseUserOp;
   }
@@ -807,7 +922,7 @@ export class AccountAbstractionKeyring implements Keyring {
     return ethBaseUserOp;
   }
 
-  async #sendUserOperation(userOp, entryPointAddress, bundlerUrl) {
+  async #sendUserOperation(userOp, entryPointAddress: string, bundlerUrl: string) {
     const requestBody = {
       method: 'eth_sendUserOperation',
       id: 1,
@@ -832,7 +947,11 @@ export class AccountAbstractionKeyring implements Keyring {
     }
   }
 
-  async #estimateUserOpGas(userOp, entryPointAddress, bundlerUrl) {
+  async #estimateUserOpGas(
+    userOp,
+    entryPointAddress,
+    bundlerUrl: string,
+  ): Promise<IUserOpGasEstimate> {
     const requestBody = {
       method: 'eth_estimateUserOperationGas',
       id: 1,
@@ -850,8 +969,28 @@ export class AccountAbstractionKeyring implements Keyring {
 
       const data = await response.json();
       console.log('Response:', data);
-      console.log(data.error?.message);
-      return data; // Return the data
+      if (data.error?.message) {
+        console.error(
+          'JSON ESTIMATE: ',
+          JSON.stringify(requestBody),
+          requestBody,
+          bundlerUrl,
+        );
+        // this might be a bundler related message during estimation, we must not continue and need to stop the user here
+        throw new Error(data.error.message);
+      }
+      const resData = data?.result;
+      return {
+        verificationGasLimit: resData?.verificationGasLimit
+          ? addHexPrefix(resData?.verificationGasLimit)
+          : undefined,
+        preVerificationGas: resData?.preVerificationGas
+          ? addHexPrefix(resData?.preVerificationGas)
+          : undefined,
+        callGasLimit: resData?.callGasLimit
+          ? addHexPrefix(resData?.callGasLimit)
+          : undefined,
+      };
     } catch (error) {
       console.error('Error:', error);
       throw error;

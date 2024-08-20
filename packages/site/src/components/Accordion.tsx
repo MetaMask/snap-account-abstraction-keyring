@@ -63,11 +63,13 @@ export const Accordion = ({ items }: any) => {
               )}
             </AccordionHeader>
             <AccordionContent isOpen={activeIndexes.includes(index)}>
-              <StyledBox sx={{
-                flexGrow: 1,
-                width: "-webkit-fill-available",
-                marginBottom: '10px'
-              }}>
+              <StyledBox
+                sx={{
+                  flexGrow: 1,
+                  width: '-webkit-fill-available',
+                  marginBottom: '10px',
+                }}
+              >
                 <Method
                   description={item.description}
                   inputs={item.inputs}

@@ -4,7 +4,13 @@ import Grid from '@mui/material/Grid';
 import { ethers, parseUnits } from 'ethers';
 import React, { useContext, useEffect, useState } from 'react';
 
-import { Accordion, AccountList, Card, ConnectButton, InstallHcSnapButton } from '../components';
+import {
+  Accordion,
+  AccountList,
+  Card,
+  ConnectButton,
+  InstallHcSnapButton,
+} from '../components';
 import {
   CardContainer,
   Container,
@@ -33,18 +39,17 @@ const initialState: {
 const tokenList = {
   Boba: {
     symbol: 'BOBA',
-    decimals: 18
-
+    decimals: 18,
   },
   ETH: {
     symbol: 'ETH',
-    decimals: 18
+    decimals: 18,
   },
   USDC: {
     symbol: 'USDC',
-    decimals: 6
-  }
-}
+    decimals: 6,
+  },
+};
 
 // TODO: used shared address file on the gateway
 const TOKEN_ADDR: any = {
@@ -63,6 +68,11 @@ const TOKEN_ADDR: any = {
     usdcToken: '0x4200000000000000000000000000000000000023',
     paymaster: '0x8223388f7aF211d84289783ed97ffC5Fefa14256',
   },
+  901: {
+    bobaToken: '0x4200000000000000000000000000000000000023',
+    usdcToken: '0x4200000000000000000000000000000000000023',
+    paymaster: '0x', // TODO: not supported locally yet
+  },
 };
 
 const Index = () => {
@@ -73,12 +83,15 @@ const Index = () => {
   // internal development and testing tool.
   const [privateKey, setPrivateKey] = useState<string | null>();
   const [salt, setSalt] = useState<string | null>();
-  const [bobaPaymasterSelected, setBobaPaymasterSelected] = useState<Boolean | null>();
+  const [bobaPaymasterSelected, setBobaPaymasterSelected] = useState<
+    boolean | null
+  >();
 
   const [transferToken, setTransferToken] = useState<string | null>('Boba');
-  const [targetAccount, setTargetAccount] = useState<string | null>('0xcF044AB1e5b55203dC258F47756daFb7F8F01760');
+  const [targetAccount, setTargetAccount] = useState<string | null>(
+    '0xcF044AB1e5b55203dC258F47756daFb7F8F01760',
+  );
   const [transferAmount, setTransferAmount] = useState<string>('0.01');
-
 
   const [selectedAccount, setSelectedAccount] = useState<KeyringAccount>();
   const [accountId, setAccountId] = useState<string | null>();
@@ -101,7 +114,9 @@ const Index = () => {
       }
       const accounts = await client.listAccounts();
       const currentAccount = await loadAccountConnected();
-      const account = accounts.find((acc) => acc.address.toLowerCase() === currentAccount.toLowerCase());
+      const account = accounts.find(
+        (acc) => acc.address.toLowerCase() === currentAccount.toLowerCase(),
+      );
 
       setSelectedAccount(account);
 
@@ -122,10 +137,12 @@ const Index = () => {
 
     const listenToAccountChange = async () => {
       window.ethereum.on('accountsChanged', async () => {
-        //reset connection
+        // reset connection
         const accounts = await client.listAccounts();
         const currentAccount = await loadAccountConnected();
-        const account = accounts.find((acc) => acc.address.toLowerCase() === currentAccount.toLowerCase());
+        const account = accounts.find(
+          (acc) => acc.address.toLowerCase() === currentAccount.toLowerCase(),
+        );
         setSelectedAccount(account);
         setSnapState({
           ...snapState,
@@ -142,11 +159,10 @@ const Index = () => {
             payload: false,
           });
         }
-      })
-    }
+      });
+    };
 
     listenToAccountChange().catch((error) => console.error(error));
-
   }, [state.installedSnap]);
 
   const syncAccounts = async () => {
@@ -196,7 +212,12 @@ const Index = () => {
     await syncAccounts();
   };
 
-  const sendCustomTx = async (target: any, value: string, txData: string, paymasterOverride: boolean) => {
+  const sendCustomTx = async (
+    target: any,
+    value: string,
+    txData: string,
+    paymasterOverride: boolean,
+  ) => {
     if (!snapState || !snapState.accounts) {
       return false;
     }
@@ -206,10 +227,10 @@ const Index = () => {
     })) as string;
     const currentChainIdInt = parseInt(currentChainId, 16);
 
-    let transactionDetails: Record<string, any> = {
+    const transactionDetails: Record<string, any> = {
       payload: {
         to: target,
-        value: value,
+        value,
         data: txData,
       },
       account: selectedAccount?.id,
@@ -243,7 +264,7 @@ const Index = () => {
           id: selectedAccount?.id,
         },
       },
-    })
+    });
 
     return submitRes;
   };
@@ -264,23 +285,31 @@ const Index = () => {
 
     const callObject = {
       to: TOKEN_ADDR[currentChainIdInt]?.paymaster,
-      data: ethers.hexlify(ethers.concat([ethers.FunctionFragment.getSelector("depositInfo", ["address", "address"]), data]))
+      data: ethers.hexlify(
+        ethers.concat([
+          ethers.FunctionFragment.getSelector('depositInfo', [
+            'address',
+            'address',
+          ]),
+          data,
+        ]),
+      ),
     };
     const depositInfo = await window.ethereum.request({
       method: 'eth_call',
-      params: [callObject, 'latest']
+      params: [callObject, 'latest'],
     });
 
     const decodedData = abiCoder.decode(
       ['uint256', 'uint256'],
-      depositInfo as any
+      depositInfo as any,
     );
 
     const depositAmount = decodedData[0];
 
-    console.log('deposit amount', depositAmount)
+    console.log('deposit amount', depositAmount);
 
-    const hasSufficientDeposit = depositAmount >= (ethers.parseEther('1'));
+    const hasSufficientDeposit = depositAmount >= ethers.parseEther('1');
     return hasSufficientDeposit;
   };
 
@@ -294,20 +323,32 @@ const Index = () => {
     })) as string;
     const currentChainIdInt = parseInt(currentChainId, 16);
 
-    const funcSelector = ethers.FunctionFragment.getSelector("addDepositFor", ["address", "address", "uint256"]);
+    const funcSelector = ethers.FunctionFragment.getSelector('addDepositFor', [
+      'address',
+      'address',
+      'uint256',
+    ]);
 
     const encodedParams = abiCoder.encode(
       ['address', 'address', 'uint256'],
-      [TOKEN_ADDR[currentChainIdInt]?.bobaToken, selectedAccount?.address, ethers.parseEther('1')],
+      [
+        TOKEN_ADDR[currentChainIdInt]?.bobaToken,
+        selectedAccount?.address,
+        ethers.parseEther('1'),
+      ],
     );
 
     const txData = ethers.hexlify(ethers.concat([funcSelector, encodedParams]));
 
-    await sendCustomTx(TOKEN_ADDR[currentChainIdInt]?.paymaster, '0', txData, false)
+    await sendCustomTx(
+      TOKEN_ADDR[currentChainIdInt]?.paymaster,
+      '0',
+      txData,
+      false,
+    );
   };
 
   const checkApproval = async () => {
-
     if (!selectedAccount) {
       return false;
     }
@@ -324,16 +365,25 @@ const Index = () => {
 
     const callObject = {
       to: TOKEN_ADDR[currentChainIdInt]?.bobaToken,
-      data: ethers.hexlify(ethers.concat([ethers.FunctionFragment.getSelector("allowance", ["address", "address"]), data]))
+      data: ethers.hexlify(
+        ethers.concat([
+          ethers.FunctionFragment.getSelector('allowance', [
+            'address',
+            'address',
+          ]),
+          data,
+        ]),
+      ),
     };
     const allowance = await window.ethereum.request({
       method: 'eth_call',
-      params: [callObject, 'latest']
+      params: [callObject, 'latest'],
     });
     const allowanceBigNumber = ethers.toBigInt(allowance as any);
-    console.log('allowance ', allowanceBigNumber)
+    console.log('allowance ', allowanceBigNumber);
 
-    const hasSufficientApproval = allowanceBigNumber >= (ethers.parseEther('50000'));
+    const hasSufficientApproval =
+      allowanceBigNumber >= ethers.parseEther('50000');
     return hasSufficientApproval;
   };
 
@@ -343,7 +393,10 @@ const Index = () => {
     })) as string;
     const currentChainIdInt = parseInt(currentChainId, 16);
 
-    const funcSelector = ethers.FunctionFragment.getSelector("approve", ["address", "uint256"]);
+    const funcSelector = ethers.FunctionFragment.getSelector('approve', [
+      'address',
+      'uint256',
+    ]);
     const paymasterAddr = TOKEN_ADDR[currentChainIdInt]?.paymaster;
     const amount = ethers.MaxUint256;
 
@@ -354,7 +407,12 @@ const Index = () => {
 
     const txData = ethers.hexlify(ethers.concat([funcSelector, encodedParams]));
 
-    await sendCustomTx(TOKEN_ADDR[currentChainIdInt]?.bobaToken, '0', txData, false)
+    await sendCustomTx(
+      TOKEN_ADDR[currentChainIdInt]?.bobaToken,
+      '0',
+      txData,
+      false,
+    );
   };
 
   const sendBobaTx = async () => {
@@ -388,7 +446,7 @@ const Index = () => {
       payload: {
         to: targetAccount,
         value: parseUnits(transferAmount, 'ether').toString(), // as it's ethers
-        data: '0x'
+        data: '0x',
       },
       account: selectedAccount?.id,
       scope: `eip155:${currentChainIdInt}`,
@@ -399,10 +457,10 @@ const Index = () => {
       let tokenAmount;
       if (transferToken === 'Boba') {
         tokenAddress = TOKEN_ADDR[currentChainIdInt]?.bobaToken;
-        tokenAmount = parseUnits(transferAmount, tokenList.Boba.decimals)
+        tokenAmount = parseUnits(transferAmount, tokenList.Boba.decimals);
       } else if (transferToken === 'USDC') {
         tokenAddress = TOKEN_ADDR[currentChainIdInt]?.usdcToken;
-        tokenAmount = parseUnits(transferAmount, tokenList.USDC.decimals)
+        tokenAmount = parseUnits(transferAmount, tokenList.USDC.decimals);
       }
 
       // TODO: use ethers
@@ -410,7 +468,7 @@ const Index = () => {
       const txData =
         transferFunctionSelector +
         targetAccount?.slice(2).padStart(64, '0') +
-        (Number(tokenAmount).toString(16)).padStart(64, '0');
+        Number(tokenAmount).toString(16).padStart(64, '0');
 
       transactionDetails = {
         payload: {
@@ -437,10 +495,10 @@ const Index = () => {
           params: [transactionDetails],
           id: snapState.accounts[0]?.id || '',
         },
-      }
-    })
+      },
+    });
 
-    let submitRes = await window.ethereum.request({
+    const submitRes = await window.ethereum.request({
       method: 'wallet_invokeSnap',
       params: {
         snapId: defaultSnapOrigin,
@@ -450,7 +508,7 @@ const Index = () => {
           id: selectedAccount?.id,
         },
       },
-    })
+    });
 
     return submitRes;
   };
@@ -501,7 +559,7 @@ const Index = () => {
       action: {
         callback: async () => await createAccount(),
         label: `Create Account`,
-        disabled: isLoading
+        disabled: isLoading,
       },
       successMessage: 'Smart Contract Account Created',
     },
@@ -565,7 +623,8 @@ const Index = () => {
           value: transferAmount,
           type: InputType.TextField,
           placeholder: 'E.g. 0.00',
-          onChange: (event: any) => setTransferAmount(event.currentTarget.value),
+          onChange: (event: any) =>
+            setTransferAmount(event.currentTarget.value),
         },
         {
           id: 'transfer-fund-boba-paymaster',
@@ -573,7 +632,8 @@ const Index = () => {
           value: bobaPaymasterSelected,
           type: InputType.CheckBox,
           placeholder: 'E.g. 0.00',
-          onChange: (event: any) => setBobaPaymasterSelected(event.target.checked),
+          onChange: (event: any) =>
+            setBobaPaymasterSelected(event.target.checked),
         },
       ],
       action: {
@@ -669,8 +729,7 @@ const Index = () => {
         <CardContainer>
           <Card
             content={{
-              description:
-                'Please connect to Boba to use HC AA wallet app',
+              description: 'Please connect to Boba to use HC AA wallet app',
               button: (
                 <ConnectButton
                   onClick={handleConnectClick}
@@ -698,32 +757,41 @@ const Index = () => {
             disabled={!state.hasMetaMask}
           />
         </CardContainer>
-      ) : <></>}
+      ) : (
+        <></>
+      )}
 
-      {state.installedSnap && state.isBobaSepolia && (<StyledBox sx={{ flexGrow: 1 }}>
-        <Grid alignItems="flex-start" container spacing={4} columns={[1, 2, 3]}>
-          <Grid item xs={8} sm={4} md={2}>
-            <DividerTitle>Methods</DividerTitle>
-            <Accordion items={accountManagementMethods} />
+      {state.installedSnap && state.isBobaSepolia && (
+        <StyledBox sx={{ flexGrow: 1 }}>
+          <Grid
+            alignItems="flex-start"
+            container
+            spacing={4}
+            columns={[1, 2, 3]}
+          >
+            <Grid item xs={8} sm={4} md={2}>
+              <DividerTitle>Methods</DividerTitle>
+              <Accordion items={accountManagementMethods} />
+            </Grid>
+            <Grid item xs={4} sm={2} md={1}>
+              <Divider />
+              <DividerTitle>Accounts</DividerTitle>
+              <AccountList
+                currentAccount={selectedAccount as any}
+                accounts={snapState.accounts}
+                handleDelete={async (accountIdToDelete) => {
+                  await client.deleteAccount(accountIdToDelete);
+                  const accounts = await client.listAccounts();
+                  setSnapState({
+                    ...snapState,
+                    accounts,
+                  });
+                }}
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={4} sm={2} md={1}>
-            <Divider />
-            <DividerTitle>Accounts</DividerTitle>
-            <AccountList
-              currentAccount={selectedAccount as any}
-              accounts={snapState.accounts}
-              handleDelete={async (accountIdToDelete) => {
-                await client.deleteAccount(accountIdToDelete);
-                const accounts = await client.listAccounts();
-                setSnapState({
-                  ...snapState,
-                  accounts,
-                });
-              }}
-            />
-          </Grid>
-        </Grid>
-      </StyledBox>)}
+        </StyledBox>
+      )}
     </Container>
   );
 };

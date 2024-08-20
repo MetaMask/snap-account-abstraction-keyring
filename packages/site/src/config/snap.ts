@@ -4,3 +4,5 @@
  */
 export const defaultSnapOrigin =
   process.env.GATSBY_SNAP_ORIGIN ?? `local:http://localhost:8080`;
+
+export const isLocal = process.env.USE_LOCAL_NETWORK?.toLowerCase() === 'true';

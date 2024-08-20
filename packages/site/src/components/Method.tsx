@@ -149,7 +149,7 @@ export const Method = ({
       style={{
         margin: '0 auto',
         overflowX: 'hidden',
-        width: '75%'
+        width: '75%',
       }}
     >
       <StyledDescription>{description}</StyledDescription>
