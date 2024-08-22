@@ -70,7 +70,7 @@ jobs:
     name: Publish release
     permissions:
       contents: write
-    uses: ./.github/workflows/publish-release.yml
+    uses: ./.github/workflows/boba-publish-release.yml
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
       PUBLISH_DOCS_TOKEN: ${{ secrets.PUBLISH_DOCS_TOKEN }}
