@@ -33,6 +33,6 @@ export const AA_CONFIG = {
     simpleAccountFactory: '0x',
     bobaPaymaster: '0x',
     bobaToken: '0x4200000000000000000000000000000000000023',
-    bundlerUrl: 'http://localhost:3300/rpc',
+    bundlerUrl: 'http://localhost:3300',
   },
 };
