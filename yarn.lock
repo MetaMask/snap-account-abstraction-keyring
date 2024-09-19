@@ -5147,18 +5147,19 @@ __metadata:
   linkType: hard
 
 "@metamask/keyring-api@npm:^8.0.2":
-  version: 8.0.2
-  resolution: "@metamask/keyring-api@npm:8.0.2"
+  version: 8.1.1
+  resolution: "@metamask/keyring-api@npm:8.1.1"
   dependencies:
     "@metamask/snaps-sdk": ^6.1.0
     "@metamask/superstruct": ^3.1.0
     "@metamask/utils": ^9.1.0
     "@types/uuid": ^9.0.8
     bech32: ^2.0.0
+    deepmerge: ^4.2.2
     uuid: ^9.0.1
   peerDependencies:
     "@metamask/providers": ">=15 <18"
-  checksum: e55ba797cc074a9154d971e3754b63098cb7cd01291216a767dd33ae424e7473075452884c58e037489751a3443575a4bff846b224664184b87e31ad199245ff
+  checksum: 294632322e3d087d79081b8a47e8e9f8e4b68b087382550e939bbbbcfc4c8e2539ca544d39f995bb6bee40831da9fd1b77cebf85a1ce0f9edd754cb3b0b9f79d
   languageName: node
   linkType: hard
 
