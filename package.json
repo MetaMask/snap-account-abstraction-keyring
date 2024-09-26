@@ -1,6 +1,6 @@
 {
   "name": "@metamask/snap-account-abstraction-keyring-monorepo",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
   "keywords": [
