@@ -17,12 +17,8 @@ import type {
   KeyringRequest,
   SubmitRequestResponse,
 } from '@metamask/keyring-api';
-import {
-  emitSnapKeyringEvent,
-  EthAccountType,
-  EthMethod,
-  KeyringEvent,
-} from '@metamask/keyring-api';
+import { EthAccountType, EthMethod, KeyringEvent } from '@metamask/keyring-api';
+import { emitSnapKeyringEvent } from '@metamask/keyring-snap-sdk';
 import type { CaipChainId, Json, JsonRpcRequest } from '@metamask/utils';
 import { hexToBytes, parseCaipChainId } from '@metamask/utils';
 import { Buffer } from 'buffer';
@@ -212,10 +208,12 @@ export class AccountAbstractionKeyring implements Keyring {
     // }
 
     try {
+      const scope = toCaipChainId(CaipNamespaces.Eip155, chainId.toString());
       const account: KeyringAccount = {
         id: uuid(),
         options,
         address: aaAddress,
+        scopes: [scope],
         methods: [
           // 4337 methods
           EthMethod.PrepareUserOperation,
@@ -229,7 +227,7 @@ export class AccountAbstractionKeyring implements Keyring {
         admin, // Address of the admin account from private key
         privateKey,
         chains: {
-          [toCaipChainId(CaipNamespaces.Eip155, chainId.toString())]: false,
+          [scope]: false,
         },
         salt,
         initCode,
