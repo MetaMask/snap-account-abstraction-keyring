@@ -5504,7 +5504,7 @@ __metadata:
     "@metamask/snaps-cli": ^6.2.1
     "@metamask/snaps-sdk": ^6.1.1
     "@metamask/superstruct": ^3.0.1
-    "@metamask/utils": ^9.1.0
+    "@metamask/utils": ^11.0.1
     "@nomicfoundation/hardhat-chai-matchers": ^2.0.0
     "@nomicfoundation/hardhat-ethers": ^3.0.0
     "@nomicfoundation/hardhat-network-helpers": ^1.0.0
