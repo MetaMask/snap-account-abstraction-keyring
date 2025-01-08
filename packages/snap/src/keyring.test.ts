@@ -7,7 +7,7 @@ import type {
   EthUserOperation,
   KeyringAccount,
 } from '@metamask/keyring-api';
-import { EthMethod } from '@metamask/keyring-api';
+import { EthAccountType, EthMethod, EthScopes } from '@metamask/keyring-api';
 import type { Signer } from 'ethers';
 import { ethers } from 'hardhat';
 import * as jestExtended from 'jest-extended';
@@ -354,7 +354,8 @@ describe('Keyring', () => {
         options: {
           updated: true,
         },
-        type: 'eip155:eoa',
+        type: EthAccountType.Eoa,
+        scopes: [EthScopes.Namespace],
         address: aaAccount.address,
         methods: aaAccount.methods,
       };
