@@ -17,12 +17,8 @@ import type {
   KeyringRequest,
   SubmitRequestResponse,
 } from '@metamask/keyring-api';
-import {
-  emitSnapKeyringEvent,
-  EthAccountType,
-  EthMethod,
-  KeyringEvent,
-} from '@metamask/keyring-api';
+import { EthAccountType, EthMethod, KeyringEvent } from '@metamask/keyring-api';
+import { emitSnapKeyringEvent } from '@metamask/keyring-snap-sdk';
 import type { CaipChainId, Json, JsonRpcRequest } from '@metamask/utils';
 import { hexToBytes, parseCaipChainId } from '@metamask/utils';
 import { Buffer } from 'buffer';
