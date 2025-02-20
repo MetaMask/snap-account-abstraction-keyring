@@ -5142,7 +5142,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/key-tree@npm:^10.0.1":
+"@metamask/key-tree@npm:^10.0.2":
   version: 10.0.2
   resolution: "@metamask/key-tree@npm:10.0.2"
   dependencies:
@@ -5315,9 +5315,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/providers@npm:^18.1.1":
-  version: 18.3.1
-  resolution: "@metamask/providers@npm:18.3.1"
+"@metamask/providers@npm:^20.0.0":
+  version: 20.0.0
+  resolution: "@metamask/providers@npm:20.0.0"
   dependencies:
     "@metamask/json-rpc-engine": ^10.0.2
     "@metamask/json-rpc-middleware-stream": ^8.0.6
@@ -5332,7 +5332,7 @@ __metadata:
     readable-stream: ^3.6.2
   peerDependencies:
     webextension-polyfill: ^0.10.0 || ^0.11.0 || ^0.12.0
-  checksum: 626112e3bdaa3b63c041ac0d280777419109a1ed2a6cdd50c1b3c7700c53d2e342f93748244a58a74d2e94357fe9eed1137317acff4df9ee0586798e02cfe00d
+  checksum: a1de74a389795eb8db0aecac852b0e23f831f80c26bf455302b8691be775bc4bbad6a8aa9fd2123b3fd110e8b779d9c5abfedce1885566a2e5126d8447339cd4
   languageName: node
   linkType: hard
 
@@ -5356,7 +5356,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/rpc-errors@npm:^7.0.1, @metamask/rpc-errors@npm:^7.0.2":
+"@metamask/rpc-errors@npm:^7.0.2":
   version: 7.0.2
   resolution: "@metamask/rpc-errors@npm:7.0.2"
   dependencies:
@@ -5630,29 +5630,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/snaps-sdk@npm:^6.0.0, @metamask/snaps-sdk@npm:^6.1.0, @metamask/snaps-sdk@npm:^6.1.1":
-  version: 6.1.1
-  resolution: "@metamask/snaps-sdk@npm:6.1.1"
+"@metamask/snaps-sdk@npm:^6.0.0, @metamask/snaps-sdk@npm:^6.1.0, @metamask/snaps-sdk@npm:^6.1.1, @metamask/snaps-sdk@npm:^6.7.0":
+  version: 6.18.0
+  resolution: "@metamask/snaps-sdk@npm:6.18.0"
   dependencies:
-    "@metamask/key-tree": ^9.1.2
-    "@metamask/providers": ^17.1.2
-    "@metamask/rpc-errors": ^6.3.1
+    "@metamask/key-tree": ^10.0.2
+    "@metamask/providers": ^20.0.0
+    "@metamask/rpc-errors": ^7.0.2
     "@metamask/superstruct": ^3.1.0
-    "@metamask/utils": ^9.1.0
-  checksum: 24e5468e46cf597e21140f3877e27e06705e1f8976794a0e9fa56af43c2869f506218d309699cb80607fea78a193453bf36a5a45ae056b508909fdd77d82e8d8
-  languageName: node
-  linkType: hard
-
-"@metamask/snaps-sdk@npm:^6.7.0":
-  version: 6.14.0
-  resolution: "@metamask/snaps-sdk@npm:6.14.0"
-  dependencies:
-    "@metamask/key-tree": ^10.0.1
-    "@metamask/providers": ^18.1.1
-    "@metamask/rpc-errors": ^7.0.1
-    "@metamask/superstruct": ^3.1.0
-    "@metamask/utils": ^10.0.0
-  checksum: b3249976538664f9bf40b5bedc307c42940fb105e2e292f38668853d581ebcedf274978dbe4af331383f743ed87ee587c0e3e5eac834765aefa199920d86b898
+    "@metamask/utils": ^11.2.0
+  checksum: 13f1a16675fd869f7d34664ede6cc11a990cb785edf940e9e9b14fabcde70edd97b9cf40a4b7053f64bf35958fd3c61d5f803de85fdef0fa89a5033f7f31adb2
   languageName: node
   linkType: hard
 
@@ -5706,23 +5693,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@metamask/utils@npm:^10.0.0":
-  version: 10.0.1
-  resolution: "@metamask/utils@npm:10.0.1"
-  dependencies:
-    "@ethereumjs/tx": ^4.2.0
-    "@metamask/superstruct": ^3.1.0
-    "@noble/hashes": ^1.3.1
-    "@scure/base": ^1.1.3
-    "@types/debug": ^4.1.7
-    debug: ^4.3.4
-    pony-cause: ^2.1.10
-    semver: ^7.5.4
-    uuid: ^9.0.1
-  checksum: 4c350c7a1c881c6af446319942392e6eb62411bff9c512166d816d39702c7b4926a982ebfd56ada317f9332a5416b3211c09e022674cee8272228658977ba851
-  languageName: node
-  linkType: hard
-
 "@metamask/utils@npm:^11.0.1":
   version: 11.0.1
   resolution: "@metamask/utils@npm:11.0.1"
@@ -5737,6 +5707,23 @@ __metadata:
     semver: ^7.5.4
     uuid: ^9.0.1
   checksum: a5072f87157f6763328767bf1ddc01deb94e13f32af58d0993e0450e7e211fb29882280a1013cbdc7752b152a662be3d9beef8129a9097dba7d465389c398b3c
+  languageName: node
+  linkType: hard
+
+"@metamask/utils@npm:^11.2.0":
+  version: 11.2.0
+  resolution: "@metamask/utils@npm:11.2.0"
+  dependencies:
+    "@ethereumjs/tx": ^4.2.0
+    "@metamask/superstruct": ^3.1.0
+    "@noble/hashes": ^1.3.1
+    "@scure/base": ^1.1.3
+    "@types/debug": ^4.1.7
+    debug: ^4.3.4
+    pony-cause: ^2.1.10
+    semver: ^7.5.4
+    uuid: ^9.0.1
+  checksum: f3befb538783f50ac0573468a44ae1331b39318263fd895ff24119f26c57a7c4ab90d4f8593d13bc558023802a07b031aed555c1a096aee0ab6b7ff4cbaa81e1
   languageName: node
   linkType: hard
 
