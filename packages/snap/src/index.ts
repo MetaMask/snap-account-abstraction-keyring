@@ -87,8 +87,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore TODO: fix types
 export const onKeyringRequest: OnKeyringRequestHandler = async ({
   origin,
   request,
@@ -106,5 +104,5 @@ export const onKeyringRequest: OnKeyringRequestHandler = async ({
   }
 
   // Handle keyring methods.
-  return handleKeyringRequest(await getKeyring(), request);
+  return (await handleKeyringRequest(await getKeyring(), request)) ?? null;
 };
