@@ -48,7 +48,7 @@
     "@metamask/keyring-api": "^13.0.0",
     "@metamask/keyring-snap-sdk": "^1.1.0",
     "@metamask/keyring-utils": "^1.0.0",
-    "@metamask/snaps-sdk": "^6.1.1",
+    "@metamask/snaps-sdk": "^9.2.0",
     "@metamask/superstruct": "^3.0.1",
     "@metamask/utils": "^9.1.0",
     "@openzeppelin/contracts": "^4.2.0",
