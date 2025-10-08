@@ -1,7 +1,7 @@
 {
   "name": "@metamask/snap-account-abstraction-keyring-site",
   "version": "0.5.0",
-  "private": true,
+  "description": "A snap account abstraction keyring dapp used in MetaMask e2e tests.",
   "license": "(MIT-0 OR Apache-2.0)",
   "scripts": {
     "build": "rimraf .cache && cross-env GATSBY_TELEMETRY_DISABLED=1 gatsby build --prefix-paths",
@@ -14,6 +14,12 @@
     "lint:changelog": "auto-changelog validate --prettier",
     "lint:types": "tsc --noEmit",
     "start": "rimraf .cache && cross-env GATSBY_TELEMETRY_DISABLED=1 gatsby develop"
+  },
+  "files": [
+    "public"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "browserslist": {
     "production": [
