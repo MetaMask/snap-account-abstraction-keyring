@@ -7,9 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.0.0]
-### Uncategorized
-- fix: returns `null` if `handleKeyringRequest` returns `undefined`/`void` ([#180](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/180))
-- chore(site): bump `ethers@^5.8.0` ([#179](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/179))
+### Fixed
+- Returns `null` if `handleKeyringRequest` returns `undefined`/`void` ([#180](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/180))
+
+### Changed
+- Bump `ethers@^5.8.0` ([#179](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/179))
 
 ## [0.5.0]
 ### Changed

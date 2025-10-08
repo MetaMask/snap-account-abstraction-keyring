@@ -7,10 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ## [1.0.0]
-### Uncategorized
-- chore: make @metamask/snap-account-abstraction-keyring-site publishable ([#215](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/215))
-- chore: use new CentraNo1 font ([#184](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/184))
-- chore(site): bump `ethers@^5.8.0` ([#179](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/179))
+### Changed
+- Make @metamask/snap-account-abstraction-keyring-site publishable ([#215](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/215))
+- Use new CentraNo1 font ([#184](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/184))
+- Bump `ethers@^5.8.0` ([#179](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/179))
 
 ## [0.5.0]
 ### Changed
