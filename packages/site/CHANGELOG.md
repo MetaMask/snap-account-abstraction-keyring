@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0]
+
+### Changed
+
+- Make `@metamask/snap-account-abstraction-keyring-site` publishable ([#215](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/215))
+- Use new CentraNo1 font ([#184](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/184))
+
 ## [0.5.0]
 
 ### Changed
@@ -65,7 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.4.0...v0.4.1

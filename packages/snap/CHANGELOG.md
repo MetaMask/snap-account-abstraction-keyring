@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0]
+
+### Changed
+
+- Bump `ethers@^5.8.0` ([#179](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/179))
+
+### Fixed
+
+- Return `null` if `handleKeyringRequest` returns `undefined`/`void` ([#180](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/180))
+
 ## [0.5.0]
 
 ### Changed
@@ -70,7 +80,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial release.
 
-[Unreleased]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.5.0...v1.0.0
 [0.5.0]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.4.2...v0.5.0
 [0.4.2]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.4.1...v0.4.2
 [0.4.1]: https://github.com/MetaMask/snap-account-abstraction-keyring/compare/v0.4.0...v0.4.1
