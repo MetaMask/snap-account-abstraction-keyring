@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Returns `null` if `handleKeyringRequest` returns `undefined`/`void` ([#180](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/180))
+- Return `null` if `handleKeyringRequest` returns `undefined`/`void` ([#180](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/180))
 
 ## [0.5.0]
 
