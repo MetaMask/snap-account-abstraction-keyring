@@ -1,9 +1,10 @@
 import { KeyringRpcMethod } from '@metamask/keyring-api';
 
 export enum InternalMethod {
-  ToggleSyncApprovals = 'snap.internal.toggleSynchronousApprovals',
-  IsSynchronousMode = 'snap.internal.isSynchronousMode',
+  TogglePaymasterUsage = 'snap.internal.togglePaymasterUsage',
+  IsUsingPaymaster = 'snap.internal.isUsingPaymaster',
   SetConfig = 'snap.internal.setConfig',
+  GetConfigs = 'snap.internal.getConfigs',
 }
 
 export const originPermissions = new Map<string, string[]>([
@@ -32,13 +33,15 @@ export const originPermissions = new Map<string, string[]>([
       KeyringRpcMethod.UpdateAccount,
       KeyringRpcMethod.DeleteAccount,
       KeyringRpcMethod.ExportAccount,
-      KeyringRpcMethod.SubmitRequest,
       KeyringRpcMethod.ListRequests,
       KeyringRpcMethod.GetRequest,
       KeyringRpcMethod.ApproveRequest,
       KeyringRpcMethod.RejectRequest,
       // Custom methods
       InternalMethod.SetConfig,
+      InternalMethod.GetConfigs,
+      InternalMethod.TogglePaymasterUsage,
+      InternalMethod.IsUsingPaymaster,
     ],
   ],
   [
@@ -52,13 +55,15 @@ export const originPermissions = new Map<string, string[]>([
       KeyringRpcMethod.UpdateAccount,
       KeyringRpcMethod.DeleteAccount,
       KeyringRpcMethod.ExportAccount,
-      KeyringRpcMethod.SubmitRequest,
       KeyringRpcMethod.ListRequests,
       KeyringRpcMethod.GetRequest,
       KeyringRpcMethod.ApproveRequest,
       KeyringRpcMethod.RejectRequest,
       // Custom methods
       InternalMethod.SetConfig,
+      InternalMethod.GetConfigs,
+      InternalMethod.TogglePaymasterUsage,
+      InternalMethod.IsUsingPaymaster,
     ],
   ],
 ]);

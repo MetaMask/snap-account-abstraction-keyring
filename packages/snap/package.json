@@ -1,6 +1,6 @@
 {
   "name": "@metamask/snap-account-abstraction-keyring",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
   "keywords": [
     "metamask",
@@ -26,7 +26,6 @@
     "snap.manifest.json"
   ],
   "scripts": {
-    "allow-scripts": "yarn workspace @metamask/snap-account-abstraction-keyring allow-scripts",
     "compile": "hardhat compile",
     "build": "mm-snap build",
     "build:clean": "yarn clean && yarn build",
@@ -40,27 +39,31 @@
     "lint:types": "tsc --noEmit",
     "serve": "mm-snap serve",
     "start": "NODE_ENV='development' mm-snap watch",
-    "test": "jest --detectOpenHandles"
+    "test": "jest --detectOpenHandles",
+    "test:coverage": "jest --detectOpenHandles --coverage"
   },
   "dependencies": {
-    "@ethereumjs/tx": "^5.1.0",
-    "@ethereumjs/util": "^9.0.1",
-    "@metamask/keyring-api": "^3.0.0",
-    "@metamask/snaps-sdk": "^2.0.0",
-    "@metamask/utils": "^8.1.0",
+    "@ethereumjs/tx": "^5.3.0",
+    "@ethereumjs/util": "^9.0.3",
+    "@metamask/keyring-api": "^13.0.0",
+    "@metamask/keyring-snap-sdk": "^1.1.0",
+    "@metamask/keyring-utils": "^1.0.0",
+    "@metamask/snaps-sdk": "^6.1.1",
+    "@metamask/superstruct": "^3.0.1",
+    "@metamask/utils": "^9.1.0",
     "@openzeppelin/contracts": "^4.2.0",
     "dotenv": "^16.3.1",
     "ethers": "^6.10.0",
-    "uuid": "^9.0.0"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
-    "@lavamoat/allow-scripts": "^2.0.3",
+    "@lavamoat/allow-scripts": "^3.0.3",
     "@metamask/auto-changelog": "^3.3.0",
     "@metamask/eslint-config": "^12.2.0",
     "@metamask/eslint-config-jest": "^12.1.0",
     "@metamask/eslint-config-nodejs": "^12.1.0",
     "@metamask/eslint-config-typescript": "^12.1.0",
-    "@metamask/snaps-cli": "^3.0.0",
+    "@metamask/snaps-cli": "^6.2.1",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
     "@nomicfoundation/hardhat-network-helpers": "^1.0.0",
@@ -71,6 +74,7 @@
     "@types/chai": "^4.3.11",
     "@types/mocha": "^10.0.6",
     "@types/node": "^20.10.8",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.33.0",
     "@typescript-eslint/parser": "^5.33.0",
     "chai": "^4.3.7",
@@ -86,10 +90,10 @@
     "hardhat": "^2.19.4",
     "hardhat-gas-reporter": "^1.0.8",
     "jest": "^29.7.0",
+    "jest-extended": "^4.0.2",
     "prettier": "^2.2.1",
     "rimraf": "^3.0.2",
     "solidity-coverage": "^0.8.1",
-    "superstruct": "^1.0.3",
     "ts-node": "^10.9.2",
     "typechain": "^8.3.2",
     "typescript": "^5.3.3"
@@ -101,5 +105,13 @@
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org/"
+  },
+  "lavamoat": {
+    "allowScripts": {
+      "hardhat>@nomicfoundation/ethereumjs-blockchain>level>classic-level": false,
+      "hardhat>@nomicfoundation/ethereumjs-tx>ethereum-cryptography>secp256k1": false,
+      "hardhat>keccak": false,
+      "ts-node>@swc/core": false
+    }
   }
 }

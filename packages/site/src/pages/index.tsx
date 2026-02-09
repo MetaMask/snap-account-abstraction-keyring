@@ -1,10 +1,17 @@
 import type { KeyringAccount, KeyringRequest } from '@metamask/keyring-api';
-import { KeyringSnapRpcClient } from '@metamask/keyring-api';
+import { KeyringSnapRpcClient } from '@metamask/keyring-snap-client';
 import Grid from '@mui/material/Grid';
-import React, { useContext, useEffect, useState } from 'react';
-import * as uuid from 'uuid';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 
-import { Accordion, AccountList, Card, ConnectButton } from '../components';
+import {
+  Accordion,
+  AccountList,
+  Card,
+  ConnectButton,
+  Toggle,
+} from '../components';
+import { ChainConfigComponent } from '../components/ChainConfig';
+import { PaymasterDeployer } from '../components/PaymasterDeployer';
 import {
   CardContainer,
   Container,
@@ -16,18 +23,23 @@ import { defaultSnapOrigin } from '../config';
 import { MetamaskActions, MetaMaskContext } from '../hooks';
 import { InputType } from '../types';
 import type { KeyringState } from '../utils';
-import { connectSnap, getSnap } from '../utils';
+import {
+  connectSnap,
+  getSnap,
+  isUsingPaymaster,
+  togglePaymasterUsage,
+} from '../utils';
 
 const snapId = defaultSnapOrigin;
 
 const initialState: {
   pendingRequests: KeyringRequest[];
   accounts: KeyringAccount[];
-  useSynchronousApprovals: boolean;
+  usePaymaster: boolean;
 } = {
   pendingRequests: [],
   accounts: [],
-  useSynchronousApprovals: true,
+  usePaymaster: false,
 };
 
 const Index = () => {
@@ -40,8 +52,6 @@ const Index = () => {
   const [salt, setSalt] = useState<string | null>();
   const [accountId, setAccountId] = useState<string | null>();
   const [accountObject, setAccountObject] = useState<string | null>();
-  // UserOp method state
-  const [chainConfig, setChainConfigObject] = useState<string | null>();
 
   const client = new KeyringSnapRpcClient(snapId, window.ethereum);
 
@@ -56,13 +66,24 @@ const Index = () => {
         return;
       }
       const accounts = await client.listAccounts();
+      const usePaymaster = await isUsingPaymaster();
       setSnapState({
+        ...state,
         accounts,
+        usePaymaster,
       });
     }
 
     getState().catch((error) => console.error(error));
   }, [state.installedSnap]);
+
+  const handleUsePaymasterToggle = useCallback(async () => {
+    await togglePaymasterUsage();
+    setSnapState({
+      ...snapState,
+      usePaymaster: !snapState.usePaymaster,
+    });
+  }, [snapState]);
 
   const syncAccounts = async () => {
     const accounts = await client.listAccounts();
@@ -95,22 +116,6 @@ const Index = () => {
     await syncAccounts();
   };
 
-  const setChainConfig = async () => {
-    if (!chainConfig) {
-      return;
-    }
-    const request: KeyringRequest = {
-      id: uuid.v4(),
-      scope: '',
-      account: uuid.v4(),
-      request: {
-        method: 'snap.internal.setConfig',
-        params: [JSON.parse(chainConfig)],
-      },
-    };
-    await client.submitRequest(request);
-  };
-
   const handleConnectClick = async () => {
     try {
       await connectSnap();
@@ -125,37 +130,6 @@ const Index = () => {
       dispatch({ type: MetamaskActions.SetError, payload: error });
     }
   };
-
-  const userOpMethods = [
-    {
-      name: 'Set Chain Config',
-      description:
-        'Set account abstraction configuration options for the current chain.',
-      inputs: [
-        {
-          id: 'set-chain-config-chain-config-object',
-          title: 'Chain Config Object',
-          type: InputType.TextArea,
-          placeholder:
-            '{\n' +
-            '    "simpleAccountFactory": "0x97a0924bf222499cBa5C29eA746E82F230730293",\n' +
-            '    "entryPoint": "0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789",\n' +
-            '    "bundlerUrl": "https://bundler.example.com/rpc",\n' +
-            '    "customVerifyingPaymasterPK": "abcd1234qwer5678tyui9012ghjk3456zxcv7890",\n' +
-            '    "customVerifyingPaymasterAddress": "0x123456789ABCDEF0123456789ABCDEF012345678"\n' +
-            '}',
-          onChange: (event: any) =>
-            setChainConfigObject(event.currentTarget.value),
-        },
-      ],
-      action: {
-        disabled: Boolean(accountId),
-        callback: async () => await setChainConfig(),
-        label: 'Set Chain Configs',
-      },
-      successMessage: 'Chain Config Set',
-    },
-  ];
 
   const accountManagementMethods = [
     {
@@ -291,11 +265,19 @@ const Index = () => {
       <StyledBox sx={{ flexGrow: 1 }}>
         <Grid container spacing={4} columns={[1, 2, 3]}>
           <Grid item xs={8} sm={4} md={2}>
+            <DividerTitle>Options</DividerTitle>
+            <Toggle
+              title="Use Paymaster"
+              defaultChecked={snapState.usePaymaster}
+              onToggle={handleUsePaymasterToggle}
+              enabled={Boolean(state.installedSnap)}
+            />
             <DividerTitle>Methods</DividerTitle>
             <Accordion items={accountManagementMethods} />
             <Divider />
-            <DividerTitle>UserOp Methods</DividerTitle>
-            <Accordion items={userOpMethods} />
+            <DividerTitle>Snap Configuration</DividerTitle>
+            <ChainConfigComponent />
+            <PaymasterDeployer />
             <Divider />
           </Grid>
           <Grid item xs={4} sm={2} md={1}>

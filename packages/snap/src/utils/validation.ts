@@ -1,23 +1,27 @@
-import { exactOptional } from '@metamask/keyring-api';
+import { exactOptional } from '@metamask/keyring-utils';
+import { assert, define, object, StructError } from '@metamask/superstruct';
 import type { Hex } from '@metamask/utils';
 import { isValidHexAddress } from '@metamask/utils';
 import { ethers } from 'ethers';
-import { assert, define, object, StructError } from 'superstruct';
 
 import { throwError } from './util';
 import { CONFIG_ERROR_MESSAGES, CONFIG_KEYS } from '../constants/chainConfig';
 import type { ChainConfig } from '../keyring';
 
+// TODO: TEMP remove when @metamask/keyring-api reexports it.
+export const UrlStruct = define<string>('Url', (value: unknown) => {
+  try {
+    const url = new URL(value as string);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch (_) {
+    return false;
+  }
+});
+
 const EthereumAddress = define(
   'EthereumAddress',
   (value) => typeof value === 'string' && isValidHexAddress(value as Hex),
 );
-
-const Url = define('Url', (value) => {
-  const urlPattern =
-    /^(https?:\/\/)?[\w.-]+(:\d{2,6})?(\/[\w.-]*)?(\?[\w.&=%-]*)?$/u;
-  return typeof value === 'string' && urlPattern.test(value);
-});
 
 const PrivateKey = define('PrivateKey', (value) => {
   return typeof value === 'string' && ethers.isHexString(value, 32);
@@ -26,10 +30,10 @@ const PrivateKey = define('PrivateKey', (value) => {
 const ChainConfigStruct = object({
   [CONFIG_KEYS.SIMPLE_ACCOUNT_FACTORY]: exactOptional(EthereumAddress),
   [CONFIG_KEYS.ENTRY_POINT]: exactOptional(EthereumAddress),
-  [CONFIG_KEYS.BUNDLER_URL]: exactOptional(Url),
+  [CONFIG_KEYS.BUNDLER_URL]: exactOptional(UrlStruct),
   [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_ADDRESS]:
     exactOptional(EthereumAddress),
-  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_PK]: exactOptional(PrivateKey),
+  [CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_SK]: exactOptional(PrivateKey),
 });
 
 /**
@@ -72,9 +76,9 @@ export function validateConfig(config: ChainConfig): void {
             CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_ADDRESS
           } ${String(value)}`;
           break;
-        case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_PK:
+        case CONFIG_KEYS.CUSTOM_VERIFYING_PAYMASTER_SK:
           customMessage = `${
-            CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_PK
+            CONFIG_ERROR_MESSAGES.INVALID_CUSTOM_VERIFYING_PAYMASTER_SK
           } ${String(value)}`;
           break;
         default:

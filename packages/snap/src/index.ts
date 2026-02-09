@@ -1,8 +1,9 @@
 import {
   MethodNotSupportedError,
   handleKeyringRequest,
-} from '@metamask/keyring-api';
+} from '@metamask/keyring-snap-sdk';
 import type {
+  Json,
   OnKeyringRequestHandler,
   OnRpcRequestHandler,
 } from '@metamask/snaps-sdk';
@@ -55,13 +56,29 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
     );
   }
 
+  const keyringInstance = await getKeyring();
   // Handle custom methods.
   switch (request.method) {
     case InternalMethod.SetConfig: {
-      if (!request.params?.length) {
+      if (!request.params) {
         throw new Error('Missing config');
       }
-      return (await getKeyring()).setConfig(request.params as ChainConfig);
+      return (await keyringInstance.setConfig(
+        request.params as ChainConfig,
+      )) as Json;
+    }
+
+    case InternalMethod.GetConfigs: {
+      return (await keyringInstance.getConfigs()) as Json;
+    }
+
+    case InternalMethod.TogglePaymasterUsage: {
+      await keyringInstance.togglePaymasterUsage();
+      return null;
+    }
+
+    case InternalMethod.IsUsingPaymaster: {
+      return keyringInstance.isUsingPaymaster();
     }
 
     default: {
@@ -70,8 +87,6 @@ export const onRpcRequest: OnRpcRequestHandler = async ({
   }
 };
 
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore TODO: fix types
 export const onKeyringRequest: OnKeyringRequestHandler = async ({
   origin,
   request,
@@ -89,5 +104,5 @@ export const onKeyringRequest: OnKeyringRequestHandler = async ({
   }
 
   // Handle keyring methods.
-  return handleKeyringRequest(await getKeyring(), request);
+  return (await handleKeyringRequest(await getKeyring(), request)) ?? null;
 };

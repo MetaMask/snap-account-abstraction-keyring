@@ -1,6 +1,6 @@
 {
   "name": "@metamask/snap-account-abstraction-keyring-monorepo",
-  "version": "0.2.2",
+  "version": "1.0.0",
   "private": true,
   "description": "An account abstraction keyring snap that integrates with MetaMask accounts.",
   "keywords": [
@@ -40,8 +40,7 @@
     "lint:constraints": "yarn constraints",
     "lint:dependencies": "depcheck && yarn dedupe",
     "start": "yarn workspaces foreach --parallel --verbose --interlaced run start",
-    "test": "yarn workspaces foreach --parallel --verbose run test",
-    "install-chrome": "./scripts/install-chrome.sh"
+    "test": "yarn workspaces foreach --parallel --verbose run test"
   },
   "dependencies": {
     "postinstall": "^0.9.0"

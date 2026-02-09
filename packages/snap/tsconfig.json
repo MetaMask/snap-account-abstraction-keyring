@@ -6,10 +6,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "baseUrl": "./",
-    "paths": {
-      "@metamask/*": ["../../../*/src"]
-    }
+    "baseUrl": "./"
   },
   "include": ["./src/", "snap.config.ts", "./contracts/", "./scripts/**/*"],
   "files": ["./hardhat.config.ts"]

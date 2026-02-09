@@ -10,4 +10,11 @@ module.exports = {
     'contracts',
     'artifacts',
   ],
+  coverageThreshold: {
+    './src/keyring.ts': {
+      statements: 95,
+      functions: 95,
+      lines: 95,
+    },
+  },
 };

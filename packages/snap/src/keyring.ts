@@ -17,13 +17,10 @@ import type {
   KeyringRequest,
   SubmitRequestResponse,
 } from '@metamask/keyring-api';
-import {
-  emitSnapKeyringEvent,
-  EthAccountType,
-  EthMethod,
-} from '@metamask/keyring-api';
-import { KeyringEvent } from '@metamask/keyring-api/dist/events';
-import { hexToBytes, type Json, type JsonRpcRequest } from '@metamask/utils';
+import { EthAccountType, EthMethod, KeyringEvent } from '@metamask/keyring-api';
+import { emitSnapKeyringEvent } from '@metamask/keyring-snap-sdk';
+import type { CaipChainId, Json, JsonRpcRequest } from '@metamask/utils';
+import { hexToBytes, parseCaipChainId } from '@metamask/utils';
 import { Buffer } from 'buffer';
 import type { BigNumberish } from 'ethers';
 import { ethers } from 'ethers';
@@ -37,7 +34,6 @@ import {
 } from './constants/dummy-values';
 import { DEFAULT_ENTRYPOINTS } from './constants/entrypoints';
 import { logger } from './logger';
-import { InternalMethod } from './permissions';
 import { saveState } from './stateManagement';
 import {
   EntryPoint__factory,
@@ -45,14 +41,10 @@ import {
   SimpleAccountFactory__factory,
   VerifyingPaymaster__factory,
 } from './types';
+import { CaipNamespaces, isEvmChain, toCaipChainId } from './utils/caip';
 import { getUserOperationHash } from './utils/ecdsa';
 import { getSigner, provider } from './utils/ethers';
-import {
-  isEvmChain,
-  isUniqueAddress,
-  runSensitive,
-  throwError,
-} from './utils/util';
+import { isUniqueAddress, runSensitive, throwError } from './utils/util';
 import { validateConfig } from './utils/validation';
 
 const unsupportedAAMethods = [
@@ -68,13 +60,16 @@ export type ChainConfig = {
   simpleAccountFactory?: string;
   entryPoint?: string;
   bundlerUrl?: string;
-  customVerifyingPaymasterPK?: string;
+  customVerifyingPaymasterSK?: string;
   customVerifyingPaymasterAddress?: string;
 };
 
+export type ChainConfigs = Record<string, ChainConfig>;
+
 export type KeyringState = {
   wallets: Record<string, Wallet>;
-  config: Record<number, ChainConfig>;
+  config: ChainConfigs;
+  usePaymaster: boolean;
 };
 
 export type Wallet = {
@@ -106,12 +101,20 @@ export class AccountAbstractionKeyring implements Keyring {
     validateConfig(config);
 
     this.#state.config[Number(chainId)] = {
-      ...this.#state.config[Number(chainId)],
+      ...this.#state.config[Number(chainId).toString()],
       ...config,
     };
 
     await this.#saveState();
-    return this.#state.config[Number(chainId)]!;
+    return this.#state.config[Number(chainId).toString()]!;
+  }
+
+  /**
+   * Retrieves the configuration settings for the keyring.
+   * @returns A promise that resolves to the ChainConfigs object containing the configuration settings.
+   */
+  async getConfigs(): Promise<ChainConfigs> {
+    return this.#state.config;
   }
 
   /**
@@ -156,9 +159,6 @@ export class AccountAbstractionKeyring implements Keyring {
       options?.privateKey as string | undefined,
     );
 
-    if (!isUniqueAddress(admin, Object.values(this.#state.wallets))) {
-      throw new Error(`Account address already in use: ${admin}`);
-    }
     // The private key should not be stored in the account options since the
     // account object is exposed to external components, such as MetaMask and
     // the snap UI.
@@ -179,6 +179,12 @@ export class AccountAbstractionKeyring implements Keyring {
       ethers.AbiCoder.defaultAbiCoder().encode(['uint256'], [random]);
 
     const aaAddress = await aaFactory.getAccountAddress(admin, salt);
+
+    if (!isUniqueAddress(aaAddress, Object.values(this.#state.wallets))) {
+      throw new Error(
+        `[Snap] Account abstraction address already in use: ${aaAddress}`,
+      );
+    }
 
     const initCode = ethers.concat([
       aaFactory.target as string,
@@ -202,10 +208,12 @@ export class AccountAbstractionKeyring implements Keyring {
     // }
 
     try {
+      const scope = toCaipChainId(CaipNamespaces.Eip155, chainId.toString());
       const account: KeyringAccount = {
         id: uuid(),
         options,
         address: aaAddress,
+        scopes: [scope],
         methods: [
           // 4337 methods
           EthMethod.PrepareUserOperation,
@@ -218,7 +226,9 @@ export class AccountAbstractionKeyring implements Keyring {
         account,
         admin, // Address of the admin account from private key
         privateKey,
-        chains: { [chainId.toString()]: false },
+        chains: {
+          [scope]: false,
+        },
         salt,
         initCode,
       };
@@ -252,6 +262,7 @@ export class AccountAbstractionKeyring implements Keyring {
   async updateAccount(account: KeyringAccount): Promise<void> {
     const wallet =
       this.#state.wallets[account.id] ??
+      // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
       throwError(`Account '${account.id}' not found`);
 
     if (
@@ -308,22 +319,20 @@ export class AccountAbstractionKeyring implements Keyring {
   ): Promise<SubmitRequestResponse> {
     const { method, params = [] } = request.request as JsonRpcRequest;
 
-    if (method === InternalMethod.SetConfig) {
-      return {
-        pending: false,
-        result: await this.setConfig((params as [ChainConfig])[0]),
-      };
+    switch (method) {
+      default: {
+        const signature = await this.#handleSigningRequest({
+          account: this.#getWalletById(request.account).account,
+          method,
+          params,
+          scope: request.scope,
+        });
+        return {
+          pending: false,
+          result: signature,
+        };
+      }
     }
-
-    const signature = await this.#handleSigningRequest({
-      account: this.#getWalletById(request.account).account,
-      method,
-      params,
-    });
-    return {
-      pending: false,
-      result: signature,
-    };
   }
 
   #getWalletById(accountId: string): Wallet {
@@ -369,21 +378,42 @@ export class AccountAbstractionKeyring implements Keyring {
 
   async #handleSigningRequest({
     account,
+    scope,
     method,
     params,
   }: {
     account: KeyringAccount;
+    scope: string;
     method: string;
     params: Json;
   }): Promise<Json> {
     const { chainId } = await provider.getNetwork();
+    try {
+      const parsedScope = parseCaipChainId(scope as CaipChainId);
+      if (String(chainId) !== parsedScope.reference) {
+        throwError(
+          `[Snap] Chain ID '${chainId}' mismatch with scope '${scope}'`,
+        );
+      }
+    } catch (error) {
+      throwError(
+        `[Snap] Error parsing request scope '${scope}': ${
+          (error as Error).message
+        }`,
+      );
+    }
     if (!this.#isSupportedChain(Number(chainId))) {
       throwError(`[Snap] Unsupported chain ID: ${Number(chainId)}`);
+    }
+    if (!this.#doesAccountSupportChain(account.id, scope)) {
+      throwError(`[Snap] Account does not support chain: ${scope}`);
     }
 
     switch (method) {
       case EthMethod.PrepareUserOperation: {
         const transactions = params as EthBaseTransaction[];
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore-error will fix type in next PR
         return await this.#prepareUserOperation(account.address, transactions);
       }
 
@@ -437,8 +467,9 @@ export class AccountAbstractionKeyring implements Keyring {
       nonce = `0x${((await aaInstance.getNonce()) as BigNumberish).toString(
         16,
       )}`;
-      if (!wallet.chains[chainId.toString()]) {
-        wallet.chains[chainId.toString()] = true;
+      const scope = toCaipChainId(CaipNamespaces.Eip155, chainId.toString());
+      if (!Object.prototype.hasOwnProperty.call(wallet.chains, scope)) {
+        wallet.chains[scope] = true;
         await this.#saveState();
       }
     } catch (error) {
@@ -446,6 +477,9 @@ export class AccountAbstractionKeyring implements Keyring {
     }
 
     const chainConfig = this.#getChainConfig(Number(chainId));
+    if (!chainConfig?.bundlerUrl) {
+      throwError(`[Snap] Bundler URL not found for chain: ${chainId}`);
+    }
 
     const verifyingPaymasterAddress =
       chainConfig?.customVerifyingPaymasterAddress;
@@ -462,7 +496,7 @@ export class AccountAbstractionKeyring implements Keyring {
       dummyPaymasterAndData: getDummyPaymasterAndData(
         verifyingPaymasterAddress,
       ),
-      bundlerUrl: chainConfig?.bundlerUrl ?? '',
+      bundlerUrl: chainConfig.bundlerUrl,
     };
     return ethBaseUserOp;
   }
@@ -490,7 +524,7 @@ export class AccountAbstractionKeyring implements Keyring {
     );
 
     const verifyingSigner = getSigner(
-      chainConfig?.customVerifyingPaymasterPK ?? wallet.privateKey,
+      chainConfig?.customVerifyingPaymasterSK ?? wallet.privateKey,
     );
 
     // Create a hash that doesn't expire
@@ -575,6 +609,26 @@ export class AccountAbstractionKeyring implements Keyring {
       Object.values(CHAIN_IDS).includes(chainId) ||
       Boolean(this.#state.config[chainId])
     );
+  }
+
+  #doesAccountSupportChain(accountId: string, scope: string): boolean {
+    const wallet = this.#getWalletById(accountId);
+    return Object.prototype.hasOwnProperty.call(wallet.chains, scope);
+  }
+
+  async togglePaymasterUsage(): Promise<void> {
+    const updatedState = {
+      ...this.#state,
+      usePaymaster: !this.#state.usePaymaster,
+    };
+
+    this.#state = updatedState;
+
+    await saveState(updatedState);
+  }
+
+  isUsingPaymaster(): boolean {
+    return this.#state.usePaymaster;
   }
 
   async #saveState(): Promise<void> {

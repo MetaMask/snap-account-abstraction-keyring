@@ -79,8 +79,8 @@ jobs:
             exit 1
           fi
 
-  e2e-test:
-    name: End-to-end Test
+  test:
+    name: Test
     runs-on: ubuntu-latest
     needs:
       - prepare
@@ -92,16 +92,9 @@ jobs:
         with:
           node-version-file: '.nvmrc'
           cache: 'yarn'
-      - name: Restore snap build cache
-        uses: actions/cache@v3
-        with:
-          path: ./packages/snap/dist
-          key: snap-${{ runner.os }}-${{ github.sha }}
-      - run: yarn install --immutable
-      - name: Install Google Chrome
-        run: yarn install-chrome
-      - name: Run e2e tests
-        run: yarn workspace @metamask/snap-account-abstraction-keyring run test
+      - run: yarn --immutable --immutable-cache
+      - run: yarn build
+      - run: yarn test
       - name: Require clean working directory
         shell: bash
         run: |

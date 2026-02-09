@@ -2,6 +2,7 @@ import type { KeyringAccount } from '@metamask/keyring-api';
 
 export type KeyringState = {
   accounts: KeyringAccount[];
+  usePaymaster: boolean;
 };
 
 /**
