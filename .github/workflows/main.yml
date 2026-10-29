@@ -39,8 +39,6 @@ jobs:
       paths-ignored: |
         **/__snapshots__/
         **/*.snap
-        **/*.stories.js
-        **/*.stories.tsx
         **/*.test.browser.ts*
         **/*.test.js*
         **/*.test.ts*
