@@ -31,7 +31,8 @@ jobs:
           retention-days: 4
           include-hidden-files: true
           path: |
-            ./dist
+            ./packages/**/dist
+            ./packages/site/public
             ./node_modules/.yarn-state.yml
 
   publish-npm-dry-run:
