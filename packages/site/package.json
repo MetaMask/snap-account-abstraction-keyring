@@ -36,7 +36,7 @@
   "dependencies": {
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
-    "@lavamoat/allow-scripts": "^3.0.4",
+    "@lavamoat/allow-scripts": "^5.1.0",
     "@metamask/keyring-api": "^13.0.0",
     "@metamask/keyring-snap-client": "^1.1.0",
     "@metamask/providers": "^17.1.2",
@@ -85,7 +85,7 @@
     "typescript": "^4.9.5"
   },
   "engines": {
-    "node": ">=18.6.0"
+    "node": ">=22"
   },
   "lavamoat": {
     "allowScripts": {
@@ -99,9 +99,7 @@
       "gatsby>lmdb": false,
       "gatsby>lmdb>msgpackr>msgpackr-extract": false,
       "gatsby>memoizee>es5-ext": false,
-      "react-scripts>tailwindcss>postcss-load-config>ts-node>@swc/core": false,
-      "eslint-plugin-jest>jest>jest-cli>jest-config>ts-node>@swc/core": false,
-      "react-scripts>react-app-polyfill>core-js": false
+      "react-scripts>tailwindcss>postcss-load-config>ts-node>@swc/core": false
     }
   }
 }
