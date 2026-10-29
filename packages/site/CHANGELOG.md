@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **BREAKING:** Drop support for Node.js 18x and 20x ([#221](https://github.com/MetaMask/snap-account-abstraction-keyring/pull/221))
+
 ## [1.0.0]
 
 ### Changed
