@@ -6,9 +6,6 @@ on:
       destination_dir:
         required: true
         type: string
-    secrets:
-      PUBLISH_DOCS_TOKEN:
-        required: true
 
 jobs:
   publish-dapp-to-gh-pages:
@@ -17,19 +14,25 @@ jobs:
     environment: github-pages
     permissions:
       contents: write
+      id-token: write
     steps:
       - name: Ensure `destination_dir` is not empty
         if: ${{ inputs.destination_dir == '' }}
         run: exit 1
-      - name: Checkout the repository
-        uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Get access token
+        id: get-token
+        uses: MetaMask/github-tools/.github/actions/get-token@v1
         with:
-          node-version-file: '.nvmrc'
-          cache: 'yarn'
-      - name: Install npm dependencies
-        run: yarn --immutable
+          token-exchange-url: ${{ vars.TOKEN_EXCHANGE_URL }}
+          permissions: |
+            contents: write
+        continue-on-error: true
+      - name: Checkout and setup environment
+        if: ${{ steps.get-token.outcome == 'success' }}
+        uses: MetaMask/action-checkout-and-setup@v3
+        with:
+          is-high-risk-environment: true
+          persist-credentials: false
       - name: Set snap origin
         run: |
           echo GATSBY_SNAP_ORIGIN=npm:@metamask/${{ github.event.repository.name }}-snap >> .env.production
@@ -40,8 +43,8 @@ jobs:
       - name: Deploy to `${{ inputs.destination_dir }}` directory of `gh-pages` branch
         uses: peaceiris/actions-gh-pages@de7ea6f8efb354206b205ef54722213d99067935
         with:
-          # This `PUBLISH_DOCS_TOKEN` needs to be manually set per-repository.
-          # Look in the repository settings under "Environments", and set this token in the `github-pages` environment.
-          personal_token: ${{ secrets.PUBLISH_DOCS_TOKEN }}
-          publish_dir: ./packages/site/public
+          # A policy must be registered for this repo and workflow
+          # within the Token Exchange Service.
+          personal_token: ${{ steps.get-token.outputs.token }}
+          publish_dir: ./docs
           destination_dir: ${{ inputs.destination_dir }}
