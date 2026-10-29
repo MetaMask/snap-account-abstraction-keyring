@@ -3,39 +3,44 @@ name: Build, Lint, and Test
 on:
   workflow_call:
 
+permissions:
+  contents: read
+
+env:
+  # How each command below is invoked. Jobs override this when debug logging is
+  # enabled, so that commands run through the permission audit rather than
+  # directly, without every step needing a second copy of itself.
+  RUN: yarn
+
 jobs:
   prepare:
     name: Prepare
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
         with:
-          node-version-file: '.nvmrc'
-          cache: 'yarn'
-      - name: Install Yarn dependencies
-        run: yarn --immutable
+          is-high-risk-environment: false
+          persist-credentials: false
+          node-version: 22.x
+          cache-node-modules: true
 
   build:
     name: Build
+    needs: prepare
     runs-on: ubuntu-latest
-    needs:
-      - prepare
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
         with:
-          node-version-file: '.nvmrc'
-          cache: 'yarn'
-      - run: yarn --immutable --immutable-cache
-      - run: yarn build
-      - name: Cache snap build
-        uses: actions/cache@v3
-        with:
-          path: ./packages/snap/dist
-          key: snap-${{ runner.os }}-${{ github.sha }}
+          is-high-risk-environment: false
+          persist-credentials: false
+          node-version: 22.x
+      - name: Enable permission audit for debug runs
+        if: ${{ runner.debug == '1' }}
+        run: echo 'RUN=yarn audit-script --verbose' >> "$GITHUB_ENV"
+      - name: Build
+        run: $RUN build
       - name: Require clean working directory
         shell: bash
         run: |
@@ -46,31 +51,26 @@ jobs:
 
   lint:
     name: Lint
+    needs: prepare
     runs-on: ubuntu-latest
-    needs:
-      - prepare
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
         with:
-          node-version-file: '.nvmrc'
-          cache: 'yarn'
-      - run: yarn --immutable --immutable-cache
-      - run: yarn lint
-      - name: Require clean working directory
-        shell: bash
-        run: |
-          if ! git diff --exit-code; then
-            echo "Working tree dirty at end of job"
-            exit 1
-          fi
+          is-high-risk-environment: false
+          persist-credentials: false
+          node-version: 22.x
+      - name: Enable permission audit for debug runs
+        if: ${{ runner.debug == '1' }}
+        run: echo 'RUN=yarn audit-script --verbose' >> "$GITHUB_ENV"
+      - name: Lint
+        run: $RUN lint
       - name: Validate RC changelog
         if: ${{ startsWith(github.head_ref, 'release/') }}
-        run: yarn lint:changelog
-      - name: Validate changelog --rc
+        run: $RUN lint:changelog --rc
+      - name: Validate changelog
         if: ${{ !startsWith(github.head_ref, 'release/') }}
-        run: yarn lint:changelog
+        run: $RUN lint:changelog
       - name: Require clean working directory
         shell: bash
         run: |
@@ -81,20 +81,22 @@ jobs:
 
   test:
     name: Test
+    needs: prepare
     runs-on: ubuntu-latest
-    needs:
-      - prepare
-      - build
     steps:
-      - uses: actions/checkout@v3
-      - name: Use Node.js
-        uses: actions/setup-node@v3
+      - name: Checkout and setup environment
+        uses: MetaMask/action-checkout-and-setup@v3
         with:
-          node-version-file: '.nvmrc'
-          cache: 'yarn'
-      - run: yarn --immutable --immutable-cache
-      - run: yarn build
-      - run: yarn test
+          is-high-risk-environment: false
+          persist-credentials: false
+          node-version: 22.x
+      - name: Enable permission audit for debug runs
+        if: ${{ runner.debug == '1' }}
+        run: echo 'RUN=yarn audit-script --verbose' >> "$GITHUB_ENV"
+      - name: Build
+        run: $RUN build
+      - name: Test
+        run: $RUN test
       - name: Require clean working directory
         shell: bash
         run: |
